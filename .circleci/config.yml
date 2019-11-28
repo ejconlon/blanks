@@ -1,0 +1,28 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: fpco/stack-build:lts-14.16
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore Cached Dependencies
+          keys:
+            - build-cache-v1-{-{ checksum "stack.yaml" }-}-{-{ checksum "package.yaml" }-}
+      - run:
+          name: Resolve/Update Dependencies
+          command: stack --no-terminal setup
+      - run:
+          name: Run tests
+          command: stack --no-terminal test
+      - save_cache:
+          name: Cache Dependencies
+          key: build-cache-v1-{-{ checksum "stack.yaml" }-}-{-{ checksum "package.yaml" }-}
+          paths:
+            - "/root/.stack"
+            - ".stack-work"
+workflows:
+  version: 2
+  build_and_render:
+    jobs:
+      - build

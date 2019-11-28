@@ -1,0 +1,88 @@
+name:                blanks
+version:             0.1.0
+github:              "ejconlon/blanks"
+license:             BSD3
+author:              "Eric Conlon"
+maintainer:          "ejconlon@gmail.com"
+copyright:           "(c) 2019 Eric Conlon"
+
+extra-source-files:
+- README.md
+
+description: Please see the README on GitHub at <https://github.com/ejconlon/blanks#readme>
+
+dependencies:
+- base >= 4.12 && < 5
+# - bytestring
+# - containers
+# - free
+# - hashable
+# - lens
+# - mtl
+# - template-haskell
+# - text
+# - transformers
+# - unordered-containers
+# - vector
+
+default-extensions:
+  - ConstraintKinds
+  - DataKinds
+  - DeriveFunctor
+  - DeriveFoldable
+  - DeriveGeneric
+  - DeriveTraversable
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - KindSignatures
+  - LambdaCase
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - Rank2Types
+  - TemplateHaskell
+  - TupleSections
+  - TypeApplications
+  - TypeFamilies
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wpartial-fields
+- -Wredundant-constraints
+- -fno-warn-unused-top-binds
+
+library:
+  source-dirs: src
+
+executables:
+  blanks-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - blanks
+
+tests:
+  blanks-test:
+    main:                Tasty.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - blanks
+    - tasty
+    - tasty-discover
+    - tasty-hunit
