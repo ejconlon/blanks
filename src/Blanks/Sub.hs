@@ -1,7 +1,7 @@
 module Blanks.Sub where
 
 import Control.Exception (Exception)
-import Control.Monad.Except (Except, MonadError(..), runExcept)
+import Control.Monad.Except (Except, MonadError (..), runExcept)
 import Data.Typeable (Typeable)
 
 data SubError

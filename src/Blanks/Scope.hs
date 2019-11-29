@@ -3,15 +3,15 @@
 
 module Blanks.Scope where
 
-import Blanks.Sub (SubError(..), ThrowSub(..))
+import Blanks.Sub (SubError (..), ThrowSub (..))
 import Control.Lens (Iso', iso)
 import Control.Lens.TH (makePrisms)
 import Control.Monad (ap)
-import Control.Monad.Trans (MonadTrans(..))
+import Control.Monad.Trans (MonadTrans (..))
 import Control.Newtype.Generics (Newtype)
-import Data.Bifoldable (Bifoldable(..))
-import Data.Bifunctor (Bifunctor(..))
-import Data.Bitraversable (Bitraversable(..))
+import Data.Bifoldable (Bifoldable (..))
+import Data.Bifunctor (Bifunctor (..))
+import Data.Bitraversable (Bitraversable (..))
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
