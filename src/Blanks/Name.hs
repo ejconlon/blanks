@@ -1,4 +1,7 @@
-module Blanks.Name where
+module Blanks.Name
+  ( Name (..)
+  , NameOnly
+  ) where
 
 data Name n a =
   Name

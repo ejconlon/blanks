@@ -1,4 +1,9 @@
-module Blanks.Sub where
+module Blanks.Sub
+  ( Sub (..)
+  , SubError (..)
+  , ThrowSub (..)
+  , runSub
+  ) where
 
 import Control.Exception (Exception)
 import Control.Monad.Except (Except, MonadError (..), runExcept)

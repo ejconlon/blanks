@@ -2,7 +2,27 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Blanks.Scoped where
+module Blanks.Scoped
+  ( Scoped (..)
+  , ScopedFold
+  , ScopedType
+  , boundScoped
+  , reviewBoundScoped
+  , freeScoped
+  , reviewFreeScoped
+  , binderScoped
+  , reviewBinderScoped
+  , embedScoped
+  , wrapScoped
+  , liftScoped
+  , abstractScoped
+  , abstract1Scoped
+  , unAbstractScoped
+  , unAbstract1Scoped
+  , instantiateScoped
+  , instantiate1Scoped
+  , foldScoped
+  ) where
 
 import Blanks.Fold
 import Blanks.Scope
@@ -98,9 +118,10 @@ instantiate1Scoped v = instantiateScoped (Seq.singleton v)
 foldScoped :: Scoped h => ScopedFold h r -> h -> r
 foldScoped f = foldScope f . view scoped
 
-shiftScoped :: (Scoped h, Functor (ScopedFunctor h)) => Int -> h -> h
-shiftScoped i = over scoped (scopeShift i)
+-- shiftScoped :: (Scoped h, Functor (ScopedFunctor h)) => Int -> h -> h
+-- shiftScoped i = over scoped (scopeShift i)
 
+-- TODO(ejconlon) Finish these
 -- applyScoped :: (ThrowSub m, Applicative m, Scoped h, Functor (ScopedFunctor h)) => Seq h -> h -> m h
 -- applyScoped vs = undefined -- over scoped (apply (fmap (review (from scoped)) vs))
 -- apply1Scoped :: (ThrowSub m, Applicative m, Scoped h, Functor (ScopedFunctor h)) => h -> h -> m h

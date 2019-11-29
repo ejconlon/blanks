@@ -1,7 +1,29 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Blanks.Scope where
+module Blanks.Scope
+  ( BoundScope (..)
+  , FreeScope (..)
+  , BinderScope (..)
+  , EmbedScope (..)
+  , UnderScope (..)
+  , Scope (..)
+  , Binder
+  , _UnderScope
+  , _UnderBoundScope
+  , _UnderFreeScope
+  , _UnderBinderScope
+  , _UnderEmbedScope
+  , BottomUp
+  , abstract
+  , abstract1
+  , unAbstract
+  , unAbstract1
+  , instantiate
+  , instantiate1
+  , apply
+  , apply1
+  ) where
 
 import Blanks.Sub (SubError (..), ThrowSub (..))
 import Control.Lens (Iso', iso)
@@ -34,9 +56,9 @@ newtype FreeScope a =
 
 data BinderScope n e =
   BinderScope
-    { binderScopeArity :: Int
-    , binderScopeInfo :: n
-    , binderScopeBody :: e
+    { binderScopeArity :: !Int
+    , binderScopeInfo :: !n
+    , binderScopeBody :: !e
     }
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
@@ -47,10 +69,10 @@ newtype EmbedScope f e =
   deriving (Eq, Show, Functor)
 
 data UnderScope n f e a
-  = UnderBoundScope BoundScope
-  | UnderFreeScope (FreeScope a)
-  | UnderBinderScope (BinderScope n e)
-  | UnderEmbedScope (EmbedScope f e)
+  = UnderBoundScope !BoundScope
+  | UnderFreeScope !(FreeScope a)
+  | UnderBinderScope !(BinderScope n e)
+  | UnderEmbedScope !(EmbedScope f e)
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
 $(makePrisms ''UnderScope)

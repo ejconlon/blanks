@@ -1,4 +1,8 @@
-module Blanks.Fold where
+module Blanks.Fold
+  ( ScopeFold (..)
+  , boundFold
+  , foldScope
+  ) where
 
 import Blanks.Scope
 import Blanks.Sub
