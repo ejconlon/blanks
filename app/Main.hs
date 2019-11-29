@@ -1,7 +1,5 @@
 module Main where
 
-import Blanks.Prelude (IO)
-import qualified Blanks.Main
-
+-- TODO(ejconlon) Create demo app
 main :: IO ()
-main = Blanks.Main.main
+main = pure ()

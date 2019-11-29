@@ -12,42 +12,18 @@ extra-source-files:
 description: Please see the README on GitHub at <https://github.com/ejconlon/blanks#readme>
 
 dependencies:
-- base >= 4.12 && < 5
-# - bytestring
-# - containers
-# - free
-# - hashable
-# - lens
-# - mtl
-# - template-haskell
-# - text
-# - transformers
-# - unordered-containers
-# - vector
+- base >= 4.12
+- lens >= 4.17
+- mtl >= 2.2
+- containers >= 0.6
+- newtype-generics >= 0.5
 
 default-extensions:
-  - ConstraintKinds
-  - DataKinds
-  - DeriveFunctor
-  - DeriveFoldable
-  - DeriveGeneric
-  - DeriveTraversable
-  - FlexibleContexts
-  - FlexibleInstances
-  - FunctionalDependencies
-  - GADTs
-  - GeneralizedNewtypeDeriving
-  - KindSignatures
-  - LambdaCase
-  - MultiParamTypeClasses
-  - MultiWayIf
-  - NoImplicitPrelude
-  - OverloadedStrings
-  - Rank2Types
-  - TemplateHaskell
-  - TupleSections
-  - TypeApplications
-  - TypeFamilies
+- DeriveFunctor
+- DeriveFoldable
+- DeriveGeneric
+- DeriveTraversable
+- GeneralizedNewtypeDeriving
 
 ghc-options:
 - -Wall
