@@ -15,6 +15,8 @@ module Blanks.Scope
   , _UnderBinderScope
   , _UnderEmbedScope
   , BottomUp
+  , scopeFreeVars
+  , transformScope
   , abstract
   , abstract1
   , unAbstract
