@@ -25,6 +25,9 @@ module Blanks.Scope
   , instantiate1
   , apply
   , apply1
+  , simpleEmbed
+  , simpleAbstract1
+  , simpleAbstract
   ) where
 
 import Blanks.Sub (SubError (..), ThrowSub (..))
@@ -226,3 +229,12 @@ instantiate1 v = instantiate (Seq.singleton v)
 
 apply1 :: (ThrowSub m, Applicative m, Functor f) => Scope n f a -> Binder n f a -> m (Scope n f a)
 apply1 v = apply (Seq.singleton v)
+
+simpleEmbed :: f (Scope n f a) -> Scope n f a
+simpleEmbed = Scope . UnderEmbedScope . EmbedScope
+
+simpleAbstract1 :: (Functor f, Eq a) => n -> a -> Scope n f a -> Scope n f a
+simpleAbstract1 n k = Scope . UnderBinderScope . abstract1 n k
+
+simpleAbstract :: (Functor f, Eq a) => n -> Seq a -> Scope n f a -> Scope n f a
+simpleAbstract n ks = Scope. UnderBinderScope . abstract n ks
