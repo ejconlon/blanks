@@ -1,28 +1,36 @@
 version: 2.1
 jobs:
-  build:
+  build_and_render:
     docker:
-      - image: fpco/stack-build:lts-14.16
+      - image: fpco/stack-build:lts-14.18
     steps:
       - checkout
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
-            - build-cache-v1-{-{ checksum "stack.yaml" }-}-{-{ checksum "package.yaml" }-}
+            - build-cache-v1-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
       - run:
           name: Resolve/Update Dependencies
-          command: stack --no-terminal setup
+          command: make cisetup
       - run:
           name: Run tests
-          command: stack --no-terminal test
+          command: make citest
+      - run:
+          name: Generate docs
+          command: make cidocs
+      - run:
+          name: Compress docs
+          command: make cicompress
       - save_cache:
           name: Cache Dependencies
-          key: build-cache-v1-{-{ checksum "stack.yaml" }-}-{-{ checksum "package.yaml" }-}
+          key: build-cache-v1-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
           paths:
             - "/root/.stack"
             - ".stack-work"
+      - store_artifacts:
+          path: /tmp/haddock.tar.gz
 workflows:
   version: 2
   build_and_render:
     jobs:
-      - build
+      - build_and_render
