@@ -3,7 +3,8 @@
 
 module Blanks.ScopeT where
 
-import Blanks.UnderScope
+import Blanks.Class (Blanks (..))
+import Blanks.UnderScope (UnderScope, underScopeBind, underScopePure, underScopeShift)
 import Control.Monad (ap)
 import Data.Bifunctor (bimap, first)
 
@@ -29,8 +30,11 @@ instance (Foldable t, Foldable f) => Foldable (ScopeT t n f) where
 instance (Traversable t, Traversable f) => Traversable (ScopeT t n f) where
   traverse = undefined
 
+scopeTPure :: Applicative t => a -> ScopeT t n f a
+scopeTPure = ScopeT . pure . underScopePure
+
 instance (Monad t, Traversable f) => Applicative (ScopeT t n f) where
-  pure = ScopeT . pure . underScopePure
+  pure = scopeTPure
   (<*>) = ap
 
 instance (Monad t, Traversable f) => Monad (ScopeT t n f) where
@@ -45,3 +49,7 @@ subScopeTBind n (ScopeT tu) g = ScopeT (tu >>= \u -> underScopeBind scopeTShift 
 
 scopeTBind :: (Monad t, Traversable f) => Int -> ScopeT t n f a -> (a -> ScopeT t n f b) -> ScopeT t n f b
 scopeTBind n s f = subScopeTBind n s (unScopeT . f)
+
+instance Monad t => Blanks (ScopeT t) where
+  pureBlanks = scopeTPure
+  bindBlanks = scopeTBind 0
