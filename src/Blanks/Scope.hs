@@ -1,20 +1,10 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Blanks.Scope
-  ( BoundScope (..)
-  , FreeScope (..)
-  , BinderScope (..)
-  , EmbedScope (..)
-  , UnderScope (..)
-  , Scope (..)
-  , Binder
-  , _UnderScope
-  , _UnderBoundScope
-  , _UnderFreeScope
-  , _UnderBinderScope
-  , _UnderEmbedScope
+  ( Binder
   , BottomUp
+  , Scope (..)
+  , _UnderScope
   , scopeFreeVars
   , transformScope
   , abstract
@@ -31,14 +21,14 @@ module Blanks.Scope
   ) where
 
 import Blanks.Sub (SubError (..), ThrowSub (..))
+import Blanks.UnderScope
 import Control.Lens (Iso', iso)
-import Control.Lens.TH (makePrisms)
 import Control.Monad (ap)
 import Control.Monad.Trans (MonadTrans (..))
 import Control.Newtype.Generics (Newtype)
-import Data.Bifoldable (Bifoldable (..))
-import Data.Bifunctor (Bifunctor (..))
-import Data.Bitraversable (Bitraversable (..))
+import Data.Bifunctor (bimap)
+import Data.Bifoldable (bifoldr)
+import Data.Bitraversable (bitraverse)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
@@ -46,59 +36,6 @@ import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
-
-newtype BoundScope =
-  BoundScope
-    { unBoundScope :: Int
-    }
-  deriving (Eq, Show)
-
-newtype FreeScope a =
-  FreeScope
-    { unFreeScope :: a
-    }
-  deriving (Eq, Show, Functor, Foldable, Traversable)
-
-data BinderScope n e =
-  BinderScope
-    { binderScopeArity :: !Int
-    , binderScopeInfo :: !n
-    , binderScopeBody :: !e
-    }
-  deriving (Eq, Show, Functor, Foldable, Traversable)
-
-newtype EmbedScope f e =
-  EmbedScope
-    { unEmbedScope :: f e
-    }
-  deriving (Eq, Show, Functor)
-
-data UnderScope n f e a
-  = UnderBoundScope !BoundScope
-  | UnderFreeScope !(FreeScope a)
-  | UnderBinderScope !(BinderScope n e)
-  | UnderEmbedScope !(EmbedScope f e)
-  deriving (Eq, Show, Functor, Foldable, Traversable)
-
-$(makePrisms ''UnderScope)
-
-instance Functor f => Bifunctor (UnderScope n f) where
-  bimap _ _ (UnderBoundScope (BoundScope b)) = UnderBoundScope (BoundScope b)
-  bimap _ g (UnderFreeScope (FreeScope a)) = UnderFreeScope (FreeScope (g a))
-  bimap f _ (UnderBinderScope (BinderScope i x e)) = UnderBinderScope (BinderScope i x (f e))
-  bimap f _ (UnderEmbedScope (EmbedScope fe)) = UnderEmbedScope (EmbedScope (f <$> fe))
-
-instance Foldable f => Bifoldable (UnderScope n f) where
-  bifoldr _ _ z (UnderBoundScope _) = z
-  bifoldr _ g z (UnderFreeScope (FreeScope a)) = g a z
-  bifoldr f _ z (UnderBinderScope (BinderScope _ _ e)) = f e z
-  bifoldr f _ z (UnderEmbedScope (EmbedScope fe)) = foldr f z fe
-
-instance Traversable f => Bitraversable (UnderScope n f) where
-  bitraverse _ _ (UnderBoundScope (BoundScope b)) = pure (UnderBoundScope (BoundScope b))
-  bitraverse _ g (UnderFreeScope (FreeScope a)) = UnderFreeScope . FreeScope <$> g a
-  bitraverse f _ (UnderBinderScope (BinderScope i x e)) = UnderBinderScope . BinderScope i x <$> f e
-  bitraverse f _ (UnderEmbedScope (EmbedScope fe)) = UnderEmbedScope . EmbedScope <$> traverse f fe
 
 newtype Scope n f a =
   Scope

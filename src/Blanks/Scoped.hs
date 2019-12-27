@@ -26,6 +26,7 @@ module Blanks.Scoped
 
 import Blanks.Fold
 import Blanks.Scope
+import Blanks.UnderScope
 import Control.Lens (Iso', Prism', from, over, prism, review, simple, view, withPrism)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq

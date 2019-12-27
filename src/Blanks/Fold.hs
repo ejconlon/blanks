@@ -6,6 +6,7 @@ module Blanks.Fold
 
 import Blanks.Scope
 import Blanks.Sub
+import Blanks.UnderScope
 
 data ScopeFold n f a r =
   ScopeFold

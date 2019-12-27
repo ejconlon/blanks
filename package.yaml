@@ -12,11 +12,12 @@ extra-source-files:
 description: Please see the README on GitHub at <https://github.com/ejconlon/blanks#readme>
 
 dependencies:
-- base >= 4.12
-- lens >= 4.17
-- mtl >= 2.2
-- containers >= 0.6
-- newtype-generics >= 0.5
+- base >=4.12
+- lens >=4.17
+- mmorph >=1.1
+- mtl >=2.2
+- containers >=0.6
+- newtype-generics >=0.5
 
 default-extensions:
 - DeriveFunctor
