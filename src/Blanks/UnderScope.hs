@@ -13,7 +13,7 @@ module Blanks.UnderScope
   , underScopePure
   , underScopeShift
   , underScopeBind
-  -- , underScopeBindOpt
+  , underScopeBindOpt
   ) where
 
 import Control.Lens.TH (makePrisms)
@@ -60,7 +60,7 @@ instance Functor f => Bifunctor (UnderScope n f) where
   bimap _ _ (UnderBoundScope (BoundScope b)) = UnderBoundScope (BoundScope b)
   bimap _ g (UnderFreeScope (FreeScope a)) = UnderFreeScope (FreeScope (g a))
   bimap f _ (UnderBinderScope (BinderScope i x e)) = UnderBinderScope (BinderScope i x (f e))
-  bimap f _ (UnderEmbedScope (EmbedScope fe)) = UnderEmbedScope (EmbedScope (f <$> fe))
+  bimap f _ (UnderEmbedScope (EmbedScope fe)) = UnderEmbedScope (EmbedScope (fmap f fe))
 
 instance Foldable f => Bifoldable (UnderScope n f) where
   bifoldr _ _ z (UnderBoundScope _) = z
@@ -70,9 +70,9 @@ instance Foldable f => Bifoldable (UnderScope n f) where
 
 instance Traversable f => Bitraversable (UnderScope n f) where
   bitraverse _ _ (UnderBoundScope (BoundScope b)) = pure (UnderBoundScope (BoundScope b))
-  bitraverse _ g (UnderFreeScope (FreeScope a)) = UnderFreeScope . FreeScope <$> g a
-  bitraverse f _ (UnderBinderScope (BinderScope i x e)) = UnderBinderScope . BinderScope i x <$> f e
-  bitraverse f _ (UnderEmbedScope (EmbedScope fe)) = UnderEmbedScope . EmbedScope <$> traverse f fe
+  bitraverse _ g (UnderFreeScope (FreeScope a)) = fmap (UnderFreeScope . FreeScope) (g a)
+  bitraverse f _ (UnderBinderScope (BinderScope i x e)) = fmap (UnderBinderScope . BinderScope i x) (f e)
+  bitraverse f _ (UnderEmbedScope (EmbedScope fe)) = fmap (UnderEmbedScope . EmbedScope) (traverse f fe)
 
 underScopePure :: a -> UnderScope n f e a
 underScopePure = UnderFreeScope . FreeScope
@@ -88,28 +88,56 @@ underScopeShift recShift c d us =
     UnderBinderScope (BinderScope i x e) -> UnderBinderScope (BinderScope i x (recShift (c + i) d e))
     UnderEmbedScope (EmbedScope fe) -> UnderEmbedScope (EmbedScope (fmap (recShift c d) fe))
 
-underScopeBind :: (Applicative t, Traversable f) => (Int -> Int -> u -> u) -> (Int -> e -> (a -> t (UnderScope n f u b)) -> u) -> Int -> UnderScope n f e a -> (a -> t (UnderScope n f u b)) -> t (UnderScope n f u b)
+underScopeBind :: (Applicative t, Functor f) => (Int -> Int -> u -> u) -> (Int -> e -> (a -> t (UnderScope n f u b)) -> u) -> Int -> UnderScope n f e a -> (a -> t (UnderScope n f u b)) -> t (UnderScope n f u b)
 underScopeBind recShift recBind n us f =
   case us of
-    UnderBoundScope (BoundScope b) -> pure (UnderBoundScope (BoundScope b))
+    UnderBoundScope x -> pure (UnderBoundScope x)
     UnderFreeScope (FreeScope a) -> fmap (underScopeShift recShift 0 n) (f a)
     UnderBinderScope (BinderScope i x e) -> pure (UnderBinderScope (BinderScope i x (recBind (n + i) e f)))
     UnderEmbedScope (EmbedScope fe) -> pure (UnderEmbedScope (EmbedScope (fmap (\e -> recBind n e f) fe)))
 
--- underScopeBindOpt ::
---   (Monad t, Functor f) =>
---   (Int -> Int -> e -> t e) ->
---   (Int -> e -> (a -> Maybe (UnderScope n f e a)) -> t e) ->
+underScopeBindOpt ::
+  (Applicative t, Functor f) =>
+  (Int -> Int -> u -> u) ->
+  (Int -> e -> (a -> Maybe (t (UnderScope n f u a))) -> u) ->
+  Int ->
+  UnderScope n f e a ->
+  (a -> Maybe (t (UnderScope n f u a))) ->
+  t (UnderScope n f u a)
+underScopeBindOpt recShift recBindOpt n us f =
+  case us of
+    UnderBoundScope x -> pure (UnderBoundScope x)
+    UnderFreeScope x@(FreeScope a) ->
+      case f a of
+        Nothing -> pure (UnderFreeScope x)
+        Just us' -> fmap (underScopeShift recShift 0 n) us'
+    UnderBinderScope (BinderScope i x e) -> pure (UnderBinderScope (BinderScope i x (recBindOpt (n + i) e f)))
+    UnderEmbedScope (EmbedScope fe) -> pure (UnderEmbedScope (EmbedScope (fmap (\e -> recBindOpt n e f) fe)))
+
+-- subUnderAbstract ::
+--   (Applicative t, Functor f, Eq a) =>
+--   (Int -> Int -> e -> e) ->
+--   (Int -> e -> (a -> Maybe (t (UnderScope n f e a))) -> e) ->
 --   Int ->
+--   n ->
+--   Seq a ->
 --   UnderScope n f e a ->
---   (a -> Maybe (t (UnderScope n f e a))) ->
 --   t (UnderScope n f e a)
--- underScopeBindOpt recShift recBindOpt n us f =
---   case us of
---     UnderBoundScope _ -> pure us
---     UnderFreeScope (FreeScope a) ->
---       case f a of
---         Nothing -> pure us
---         Just us' -> underScopeShift recShift n us'
---     UnderBinderScope (BinderScope i x e) -> UnderBinderScope (BinderScope i x (recBindOpt (n + i) e f))
---     UnderEmbedScope (EmbedScope fe) -> UnderEmbedScope (EmbedScope ((\e -> recBindOpt n e f) <$> fe))
+-- subUnderAbstract recShift recBind r n ks us =
+--   let tus = underScopeBindOpt recShift recBind 0 us (fmap (UnderBoundScope . BoundScope) . flip Seq.elemIndexL ks)
+--   in fmap (UnderBinderScope . BinderScope r n) tus
+
+-- -- underScopeAbstract :: (Functor f, Eq a) => (Int -> Int -> e -> e) -> n -> Seq a -> Scope n f a -> Binder n f a
+-- -- underScopeAbstract recShift n ks =
+-- --   let r = Seq.length ks
+-- --    in subUnderAbstract r n ks . underScopeShift recShift 0 n
+
+-- underScopeAbstract ::
+--   (Applicative t, Functor f, Eq a) =>
+--   (Int -> Int -> e -> e) ->
+--   (Int -> e -> (a -> Maybe (t (UnderScope n f e a))) -> e) ->
+--   n ->
+--   Seq a ->
+--   UnderScope n f e a ->
+--   t (UnderScope n f e a)
+-- underScopeAbstract recShift recBind n ks = let r = Seq.length ks in subUnderAbstract recShift recBind r n ks . underScopeShift recShift 0 r
