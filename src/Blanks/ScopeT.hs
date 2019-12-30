@@ -1,19 +1,24 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Blanks.ScopeT
   ( ScopeT (..)
   , liftAnno
   , hoistAnno
+  , scopeTFold
   ) where
 
 import Blanks.Class (Blanks (..))
-import Blanks.UnderScope (BinderScope (..), BoundScope (..), UnderScope (..), underScopeBind, underScopeBindOpt,
-                          underScopePure, underScopeShift)
+import Blanks.UnderScope (BinderScope (..), BoundScope (..), EmbedScope (..), UnderScope (..), UnderScopeFold (..), underScopeBind, underScopeBindOpt,
+                          underScopeFold, underScopePure, underScopeShift)
+import Blanks.Sub (SubError (..))
 import Control.Monad (ap)
 import Data.Bifunctor (bimap, first)
+import Data.Bitraversable (bitraverse)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
@@ -40,7 +45,7 @@ instance (Foldable t, Foldable f) => Foldable (ScopeT t n f) where
   foldr f z (ScopeT tu) = foldr (flip (foldr f)) z tu
 
 instance (Traversable t, Traversable f) => Traversable (ScopeT t n f) where
-  traverse = undefined
+  traverse f (ScopeT tu) = fmap ScopeT (traverse (bitraverse (traverse f) f) tu)
 
 scopeTPure :: Applicative t => a -> ScopeT t n f a
 scopeTPure = ScopeT . pure . underScopePure
@@ -74,6 +79,12 @@ scopeTBound = ScopeT . pure . UnderBoundScope . BoundScope
 scopeTBinder :: Applicative t => Int -> n -> ScopeT t n f a -> ScopeT t n f a
 scopeTBinder r n e = ScopeT (pure (UnderBinderScope (BinderScope r n e)))
 
+scopeTEmbed :: Applicative t => f (ScopeT t n f a) -> ScopeT t n f a
+scopeTEmbed fs = ScopeT (pure (UnderEmbedScope (EmbedScope fs)))
+
+scopeTCompact :: Monad t => t (ScopeT t n f a) -> ScopeT t n f a
+scopeTCompact ts = ScopeT (ts >>= unScopeT)
+
 subScopeTAbstract :: (Monad t, Functor f, Eq a) => Int -> n -> Seq a -> ScopeT t n f a -> ScopeT t n f a
 subScopeTAbstract r n ks e =
   let f = fmap scopeTBound . flip Seq.elemIndexL ks
@@ -85,5 +96,47 @@ scopeTAbstract n ks =
   let r = Seq.length ks
   in subScopeTAbstract r n ks . scopeTShift 0 r
 
-instance (Monad t, Traversable f) => Blanks n f (ScopeT t n f) where
+scopeTUnAbstract :: (Monad t, Traversable t, Functor f) => Seq a -> ScopeT t n f a -> ScopeT t n f a
+scopeTUnAbstract ks = scopeTInstantiate (fmap scopeTPure ks)
+
+subScopeTInstantiate :: (Monad t, Traversable t, Functor f) => Int -> Seq (ScopeT t n f a) -> ScopeT t n f a -> ScopeT t n f a
+subScopeTInstantiate h vs = ScopeT . (>>= go h vs) . unScopeT where
+  go !i ws us =
+    case us of
+      UnderBoundScope (BoundScope b) -> maybe (pure us) unScopeT (vs Seq.!? (b - i))
+      UnderFreeScope _ -> pure us
+      UnderBinderScope (BinderScope r n e) ->
+        let ws' = fmap (scopeTShift 0 r) ws
+            e' = subScopeTInstantiate (r + i) ws' e
+        in pure (UnderBinderScope (BinderScope r n e'))
+      UnderEmbedScope (EmbedScope fe) ->
+        pure (UnderEmbedScope (EmbedScope (fmap (subScopeTInstantiate i ws) fe)))
+
+scopeTInstantiate :: (Monad t, Traversable t, Functor f) => Seq (ScopeT t n f a) -> ScopeT t n f a -> ScopeT t n f a
+scopeTInstantiate = subScopeTInstantiate 0
+
+scopeTApply :: (Monad t, Traversable t, Functor f) => Seq (ScopeT t n f a) -> ScopeT t n f a -> Either SubError (ScopeT t n f a)
+scopeTApply vs = fmap scopeTCompact . traverse go . unScopeT where
+  go us =
+    case us of
+      UnderBinderScope (BinderScope r _ e) ->
+        let len = Seq.length vs
+        in if len == r
+              then Right (scopeTShift 0 (-1) (scopeTInstantiate vs e))
+              else Left (ApplyError len r)
+      _ -> Left NonBinderError
+
+type ScopeTFold t n f a r = UnderScopeFold n f (ScopeT t n f a) a r
+
+scopeTFold :: Functor t => ScopeTFold t n f a r -> ScopeT t n f a -> t r
+scopeTFold usf = fmap (underScopeFold usf) . unScopeT
+
+instance (Monad t, Traversable t, Traversable f) => Blanks n f (ScopeT t n f) where
+  type BlankFold (ScopeT t n f) a r = ScopeTFold t n f a r
+  type BlankFoldResult (ScopeT t n f) r = t r
+
   abstract = scopeTAbstract
+  unAbstract = scopeTUnAbstract
+  instantiate = scopeTInstantiate
+  apply = scopeTApply
+  runFold _ = scopeTFold

@@ -2,6 +2,7 @@
 
 module Blanks.LocScope where
 
+import Blanks.Class (Blanks)
 import Blanks.ScopeT
 import Control.Monad (ap)
 
@@ -20,7 +21,9 @@ instance Monoid l => Monad (Located l) where
 
 newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeT (Located l) n f a
-  } deriving (Functor, Foldable, Traversable, Applicative, Monad)
+  } deriving (Functor, Foldable, Traversable, Applicative, Monad, Blanks n f)
 
 instance (Eq (f (ScopeT (Located l) n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) where
   LocScope su == LocScope sv = su == sv
+
+-- TODO show instance

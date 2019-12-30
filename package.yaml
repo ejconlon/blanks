@@ -13,10 +13,10 @@ description: Please see the README on GitHub at <https://github.com/ejconlon/bla
 
 dependencies:
 - base >=4.12
+- containers >=0.6
 - lens >=4.17
 - mmorph >=1.1
 - mtl >=2.2
-- containers >=0.6
 - newtype-generics >=0.5
 
 default-extensions:

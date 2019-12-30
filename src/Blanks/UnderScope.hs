@@ -6,14 +6,16 @@ module Blanks.UnderScope
   , EmbedScope (..)
   , FreeScope (..)
   , UnderScope (..)
+  , UnderScopeFold (..)
   , _UnderBinderScope
   , _UnderBoundScope
   , _UnderEmbedScope
   , _UnderFreeScope
-  , underScopePure
-  , underScopeShift
   , underScopeBind
   , underScopeBindOpt
+  , underScopeFold
+  , underScopePure
+  , underScopeShift
   ) where
 
 import Control.Lens.TH (makePrisms)
@@ -113,6 +115,23 @@ underScopeBindOpt recShift recBindOpt n us f =
         Just us' -> fmap (underScopeShift recShift 0 n) us'
     UnderBinderScope (BinderScope i x e) -> pure (UnderBinderScope (BinderScope i x (recBindOpt (n + i) e f)))
     UnderEmbedScope (EmbedScope fe) -> pure (UnderEmbedScope (EmbedScope (fmap (\e -> recBindOpt n e f) fe)))
+
+data UnderScopeFold n f e a r =
+  UnderScopeFold
+    { usfBound :: BoundScope -> r
+    , usfFree :: FreeScope a -> r
+    , usfBinder :: BinderScope n e -> r
+    , usfEmbed :: EmbedScope f e -> r
+    }
+  deriving (Functor)
+
+underScopeFold :: UnderScopeFold n f e a r -> UnderScope n f e a -> r
+underScopeFold (UnderScopeFold bound free binder embed) us =
+  case us of
+    UnderBoundScope x -> bound x
+    UnderFreeScope x -> free x
+    UnderBinderScope x -> binder x
+    UnderEmbedScope x -> embed x
 
 -- subUnderAbstract ::
 --   (Applicative t, Functor f, Eq a) =>
