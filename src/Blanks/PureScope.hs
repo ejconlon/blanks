@@ -14,7 +14,8 @@ newtype PureScope n f a = PureScope
 instance (Eq (f (ScopeT Identity n f a)), Eq n, Eq a) => Eq (PureScope n f a) where
   PureScope su == PureScope sv = su == sv
 
--- TODO show instance
+instance (Show (f (ScopeT Identity n f a)), Show n, Show a) => Show (PureScope n f a) where
+  showsPrec d (PureScope (ScopeT tu)) = showString "PureScope " . showsPrec (d+1) tu
 
 type PureScopeFold n f a r = BlankFold (PureScope n f) a r
 

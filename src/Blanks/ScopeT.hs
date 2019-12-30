@@ -9,7 +9,6 @@ module Blanks.ScopeT
   ( ScopeT (..)
   , liftAnno
   , hoistAnno
-  , scopeTFold
   ) where
 
 import Blanks.Class (Blanks (..))
@@ -26,11 +25,11 @@ newtype ScopeT t n f a = ScopeT
   { unScopeT :: t (UnderScope n f (ScopeT t n f a) a)
   }
 
-liftUnder :: Functor t => (UnderScope n f (ScopeT t n f a) a -> UnderScope n f (ScopeT t n f b) b) -> ScopeT t n f a -> ScopeT t n f b
-liftUnder f = ScopeT . fmap f . unScopeT
-
 instance Eq (t (UnderScope n f (ScopeT t n f a) a)) => Eq (ScopeT t n f a) where
   ScopeT tu == ScopeT tv = tu == tv
+
+instance Show (t (UnderScope n f (ScopeT t n f a) a)) => Show (ScopeT t n f a) where
+  showsPrec d (ScopeT tu) = showString "ScopeT " . showsPrec (d+1) tu
 
 liftAnno :: Functor t => t a -> ScopeT t n f a
 liftAnno ta = ScopeT (fmap underScopePure ta)

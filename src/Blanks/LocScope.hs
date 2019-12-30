@@ -26,4 +26,5 @@ newtype LocScope l n f a = LocScope
 instance (Eq (f (ScopeT (Located l) n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) where
   LocScope su == LocScope sv = su == sv
 
--- TODO show instance
+instance (Show (f (ScopeT (Located l) n f a)), Show l, Show n, Show a) => Show (LocScope l n f a) where
+  showsPrec d (LocScope (ScopeT tu)) = showString "LocScope " . showsPrec (d+1) tu
