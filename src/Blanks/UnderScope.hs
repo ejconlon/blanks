@@ -54,7 +54,7 @@ data UnderScope n f e a
   | UnderFreeScope !(FreeScope a)
   | UnderBinderScope !(BinderScope n e)
   | UnderEmbedScope !(EmbedScope f e)
-  deriving (Eq, Show, Functor, Foldable, Traversable)
+  deriving (Eq, Show, Functor)
 
 $(makePrisms ''UnderScope)
 
@@ -132,31 +132,3 @@ underScopeFold (UnderScopeFold bound free binder embed) us =
     UnderFreeScope x -> free x
     UnderBinderScope x -> binder x
     UnderEmbedScope x -> embed x
-
--- subUnderAbstract ::
---   (Applicative t, Functor f, Eq a) =>
---   (Int -> Int -> e -> e) ->
---   (Int -> e -> (a -> Maybe (t (UnderScope n f e a))) -> e) ->
---   Int ->
---   n ->
---   Seq a ->
---   UnderScope n f e a ->
---   t (UnderScope n f e a)
--- subUnderAbstract recShift recBind r n ks us =
---   let tus = underScopeBindOpt recShift recBind 0 us (fmap (UnderBoundScope . BoundScope) . flip Seq.elemIndexL ks)
---   in fmap (UnderBinderScope . BinderScope r n) tus
-
--- -- underScopeAbstract :: (Functor f, Eq a) => (Int -> Int -> e -> e) -> n -> Seq a -> Scope n f a -> Binder n f a
--- -- underScopeAbstract recShift n ks =
--- --   let r = Seq.length ks
--- --    in subUnderAbstract r n ks . underScopeShift recShift 0 n
-
--- underScopeAbstract ::
---   (Applicative t, Functor f, Eq a) =>
---   (Int -> Int -> e -> e) ->
---   (Int -> e -> (a -> Maybe (t (UnderScope n f e a))) -> e) ->
---   n ->
---   Seq a ->
---   UnderScope n f e a ->
---   t (UnderScope n f e a)
--- underScopeAbstract recShift recBind n ks = let r = Seq.length ks in subUnderAbstract recShift recBind r n ks . underScopeShift recShift 0 r

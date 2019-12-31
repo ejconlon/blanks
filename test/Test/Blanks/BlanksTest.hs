@@ -2,90 +2,61 @@ module Test.Blanks.BlanksTest where
 
 import Blanks
 import Control.Monad.Identity (Identity (..))
-import Data.Set as Set
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Test.Blanks.Assertions ((@/=))
 import Test.Tasty
 import Test.Tasty.HUnit
 
-type BareScope = Scope (NameOnly Char) Identity Char
+type BareScope = PureScope (NameOnly Char) Identity Char
 
-type BareBinder = Binder (NameOnly Char) Identity Char
+abst :: Char -> BareScope -> BareScope
+abst a = abstract1 (Name a ()) a
 
-absBound :: Char -> BareScope -> BareBinder
-absBound a = abstract1 (Name a ()) a
+bound :: Int -> BareScope
+bound = PureScope . ScopeT . pure . UnderBoundScope . BoundScope
 
-absScope :: Char -> BareScope -> BareScope
-absScope a = reviewBinderScoped . absBound a
+var :: Char -> BareScope
+var = pure
+
+freeVars :: BareScope -> Set Char
+freeVars = foldMap Set.singleton
 
 test_sub :: TestTree
 test_sub =
-  let svar = pure 'x' :: BareScope
-      sbound = reviewBoundScoped 0 :: BareScope
-      bfree = absBound 'y' (pure 'x') :: BareBinder
-      sfree = reviewBinderScoped bfree
-      bfree2 = absBound 'z' (absScope 'y' (pure 'x')) :: BareBinder
-      sfree2 = reviewBinderScoped bfree2
-      bid = absBound 'x' (pure 'x') :: BareBinder
-      sid = reviewBinderScoped bid
-      bwonky = absBound 'x' (reviewBoundScoped 0) :: BareBinder
-      swonky = reviewBinderScoped bwonky
-      bconst = absBound 'x' (absScope 'y' (pure 'x')) :: BareBinder
-      sconst = reviewBinderScoped bconst
-      bflip = absBound 'x' (absScope 'y' (pure 'y')) :: BareBinder
-      sflip = reviewBinderScoped bflip
-      svar2 = pure 'e' :: BareScope
-      swonky2 = absScope 'x' svar2 :: BareScope
+  let svar = var 'x'
+      sbound = bound 0
+      sfree = abst 'y' (var 'x')
+      sfree2 = abst 'z' (abst 'y' (var 'x'))
+      sid = abst 'x' (var 'x')
+      swonky = abst 'x' (bound 0)
+      sconst = abst 'x' (abst 'y' (var 'x'))
+      sflip = abst 'x' (abst 'y' (var 'y'))
+      svar2 = var 'e'
+      swonky2 = abst 'x' svar2
 
       testEq =
         testCase "eq" $ do
           svar @?= svar
           svar @/= svar2
-          sid @?= absScope 'x' (pure 'x')
-          sid @?= absScope 'y' (pure 'y')
-          sid @/= absScope 'x' (pure 'y')
-          sid @/= absScope 'y' (pure 'x')
+          sid @?= abst 'x' (var 'x')
+          sid @?= abst 'y' (var 'y')
+          sid @/= abst 'x' (var 'y')
+          sid @/= abst 'y' (var 'x')
           sid @/= svar
 
       testFreeVars =
         testCase "free vars" $ do
-          scopeFreeVars sid @?= Set.empty
-          scopeFreeVars sconst @?= Set.empty
-          scopeFreeVars sfree @?= Set.singleton 'x'
-          scopeFreeVars sfree2 @?= Set.singleton 'x'
-          scopeFreeVars svar @?= Set.singleton 'x'
-          scopeFreeVars svar2 @=? Set.singleton 'e'
-
-      testAbstract =
-        testCase "abstract" $ do
-          svar @?= (Scope (UnderFreeScope (FreeScope 'x')) :: BareScope)
-          sbound @?= (Scope (UnderBoundScope (BoundScope 0)) :: BareScope)
-          sfree @?=
-            (Scope (UnderBinderScope (BinderScope 1 (Name 'y' ()) (Scope (UnderFreeScope (FreeScope 'x'))))) :: BareScope)
-          sfree2 @?=
-            (Scope
-               (UnderBinderScope
-                  (BinderScope
-                     1
-                     (Name 'z' ())
-                     (Scope (UnderBinderScope (BinderScope 1 (Name 'y' ()) (Scope (UnderFreeScope (FreeScope 'x')))))))) :: BareScope)
-          sid @?=
-            (Scope (UnderBinderScope (BinderScope 1 (Name 'x' ()) (Scope (UnderBoundScope (BoundScope 0))))) :: BareScope)
-          swonky @?=
-            (Scope (UnderBinderScope (BinderScope 1 (Name 'x' ()) (Scope (UnderBoundScope (BoundScope 1))))) :: BareScope)
-          sconst @?=
-            (Scope
-               (UnderBinderScope
-                  (BinderScope
-                     1
-                     (Name 'x' ())
-                     (Scope (UnderBinderScope (BinderScope 1 (Name 'y' ()) (Scope (UnderBoundScope (BoundScope 1)))))))) :: BareScope)
-          sflip @?=
-            (Scope
-               (UnderBinderScope
-                  (BinderScope
-                     1
-                     (Name 'x' ())
-                     (Scope (UnderBinderScope (BinderScope 1 (Name 'y' ()) (Scope (UnderBoundScope (BoundScope 0)))))))) :: BareScope)
+          freeVars svar @?= Set.singleton 'x'
+          freeVars sbound @?= Set.empty
+          freeVars sfree @?= Set.singleton 'x'
+          freeVars sfree2 @?= Set.singleton 'x'
+          freeVars sid @?= Set.empty
+          freeVars swonky @?= Set.empty
+          freeVars sconst @?= Set.empty
+          freeVars sflip @?= Set.empty
+          freeVars svar2 @=? Set.singleton 'e'
+          freeVars swonky2 @?= Set.singleton 'e'
 
       testInstantiate =
         testCase "instantiate" $ do
@@ -96,21 +67,21 @@ test_sub =
 
       testApply =
         testCase "apply" $ do
-          runSub (apply1 svar2 bid) @?= Right svar2
-          runSub (apply1 svar2 bwonky) @?= Right sbound
-          runSub (apply1 svar2 bconst) @?= Right swonky2
-          runSub (apply1 svar2 bflip) @?= Right sid
+          apply1 svar2 sid @?= Right svar2
+          apply1 svar2 swonky @?= Right sbound
+          apply1 svar2 sconst @?= Right swonky2
+          apply1 svar2 sflip @?= Right sid
 
       testVarSub =
         testCase "var sub" $ do
           (svar >>= const svar2) @?= svar2
-          (sfree >>= const svar2) @?= absScope 'y' svar2
-          (sfree2 >>= const svar2) @?= absScope 'c' (absScope 'd' svar2)
+          (sfree >>= const svar2) @?= abst 'y' svar2
+          (sfree2 >>= const svar2) @?= abst 'c' (abst 'd' svar2)
 
       testIdSub =
         testCase "id sub" $ do
           (svar >>= const sid) @?= sid
-          (sfree >>= const sid) @?= absScope 'y' sid
-          (sfree2 >>= const sid) @?= absScope 'c' (absScope 'd' sid)
+          (sfree >>= const sid) @?= abst 'y' sid
+          (sfree2 >>= const sid) @?= abst 'c' (abst 'd' sid)
 
-   in testGroup "sub" [testEq, testFreeVars, testAbstract, testInstantiate, testApply, testVarSub, testIdSub]
+   in testGroup "sub" [testEq, testFreeVars, testInstantiate, testApply, testVarSub, testIdSub]

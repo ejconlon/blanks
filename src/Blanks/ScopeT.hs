@@ -17,6 +17,7 @@ import Blanks.UnderScope (BinderScope (..), BoundScope (..), EmbedScope (..), Un
 import Blanks.Sub (SubError (..))
 import Control.Monad (ap)
 import Data.Bifunctor (bimap, first)
+import Data.Bifoldable (bifoldr)
 import Data.Bitraversable (bitraverse)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
@@ -41,7 +42,7 @@ instance (Functor t, Functor f) => Functor (ScopeT t n f) where
   fmap f (ScopeT tu) = ScopeT (fmap (bimap (fmap f) f) tu)
 
 instance (Foldable t, Foldable f) => Foldable (ScopeT t n f) where
-  foldr f z (ScopeT tu) = foldr (flip (foldr f)) z tu
+  foldr f z (ScopeT tu) = foldr (flip (bifoldr (flip (foldr f)) f)) z tu
 
 instance (Traversable t, Traversable f) => Traversable (ScopeT t n f) where
   traverse f (ScopeT tu) = fmap ScopeT (traverse (bitraverse (traverse f) f) tu)

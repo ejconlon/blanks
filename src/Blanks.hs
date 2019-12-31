@@ -2,9 +2,10 @@ module Blanks
   ( module Blanks
   ) where
 
-import Blanks.Fold as Blanks
+import Blanks.Class as Blanks
+import Blanks.LocScope as Blanks
 import Blanks.Name as Blanks
-import Blanks.Scope as Blanks
-import Blanks.Scoped as Blanks
+import Blanks.PureScope as Blanks
+import Blanks.ScopeT as Blanks
 import Blanks.Sub as Blanks
 import Blanks.UnderScope as Blanks
