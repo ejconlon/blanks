@@ -2,8 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Blanks.ScopeT
   ( ScopeT (..)
@@ -12,12 +12,12 @@ module Blanks.ScopeT
   ) where
 
 import Blanks.Class (Blanks (..))
-import Blanks.UnderScope (BinderScope (..), BoundScope (..), EmbedScope (..), UnderScope (..), UnderScopeFold (..), underScopeBind, underScopeBindOpt,
-                          underScopeFold, underScopePure, underScopeShift)
 import Blanks.Sub (SubError (..))
+import Blanks.UnderScope (BinderScope (..), BoundScope (..), EmbedScope (..), UnderScope (..), UnderScopeFold (..),
+                          underScopeBind, underScopeBindOpt, underScopeFold, underScopePure, underScopeShift)
 import Control.Monad (ap)
-import Data.Bifunctor (bimap, first)
 import Data.Bifoldable (bifoldr)
+import Data.Bifunctor (bimap, first)
 import Data.Bitraversable (bitraverse)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq

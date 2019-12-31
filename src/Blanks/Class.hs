@@ -1,12 +1,11 @@
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Blanks.Class where
 
 import Blanks.Sub (SubError)
-import Data.Sequence (Seq)
 import Data.Proxy (Proxy)
+import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
 class Monad m => Blanks (n :: *) (f :: * -> *) (m :: * -> *) | m -> n f where
