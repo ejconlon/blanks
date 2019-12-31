@@ -2,6 +2,7 @@ module Blanks.Sub
   ( Sub (..)
   , SubError (..)
   , ThrowSub (..)
+  , rethrowSub
   , runSub
   ) where
 

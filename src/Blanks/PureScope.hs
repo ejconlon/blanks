@@ -1,6 +1,10 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Blanks.PureScope where
+module Blanks.PureScope
+  ( PureScope (..)
+  , PureScopeFold
+  , pureScopeFold
+  ) where
 
 import Blanks.Class (Blanks (..))
 import Blanks.ScopeT

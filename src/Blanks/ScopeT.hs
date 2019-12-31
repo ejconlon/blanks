@@ -7,8 +7,10 @@
 
 module Blanks.ScopeT
   ( ScopeT (..)
+  , ScopeTFold
   , liftAnno
   , hoistAnno
+  , scopeTFold
   ) where
 
 import Blanks.Class (Blanks (..))

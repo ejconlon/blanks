@@ -1,8 +1,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Blanks.LocScope where
+module Blanks.LocScope
+  ( Located (..)
+  , LocScope (..)
+  , LocScopeFold
+  , locScopeFold
+  ) where
 
-import Blanks.Class (Blanks)
+import Blanks.Class (Blanks (..))
 import Blanks.ScopeT
 import Control.Monad (ap)
 
@@ -28,3 +33,8 @@ instance (Eq (f (ScopeT (Located l) n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l
 
 instance (Show (f (ScopeT (Located l) n f a)), Show l, Show n, Show a) => Show (LocScope l n f a) where
   showsPrec d (LocScope (ScopeT tu)) = showString "LocScope " . showsPrec (d+1) tu
+
+type LocScopeFold l n f a r = BlankFold (LocScope l n f) a r
+
+locScopeFold :: LocScopeFold l n f a r -> LocScope l n f a -> r
+locScopeFold = undefined
