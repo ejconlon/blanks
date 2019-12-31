@@ -35,6 +35,10 @@ splices: buildsplices printsplices
 test:
 	stack test
 
+.PHONY: ghci
+ghci:
+	stack ghci --ghci-options "-ghci-script .ghci-manual"
+
 .PHONY: docs
 docs:
 	stack haddock --no-haddock-deps
