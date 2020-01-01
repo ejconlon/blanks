@@ -8,8 +8,9 @@
 module Blanks.ScopeT
   ( ScopeT (..)
   , ScopeTFold
-  , liftAnno
   , hoistAnno
+  , liftAnno
+  , scopeTAdjointFold
   , scopeTFold
   ) where
 
@@ -21,6 +22,7 @@ import Control.Monad (ap)
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap, first)
 import Data.Bitraversable (bitraverse)
+import Data.Functor.Adjunction (Adjunction (..))
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
@@ -133,12 +135,11 @@ type ScopeTFold t n f a r = UnderScopeFold n f (ScopeT t n f a) a r
 scopeTFold :: Functor t => ScopeTFold t n f a r -> ScopeT t n f a -> t r
 scopeTFold usf = fmap (underScopeFold usf) . unScopeT
 
-instance (Monad t, Traversable t, Traversable f) => Blanks n f (ScopeT t n f) where
-  type BlankFold (ScopeT t n f) a r = ScopeTFold t n f a r
-  type BlankFoldResult (ScopeT t n f) r = t r
+scopeTAdjointFold :: Adjunction t u => ScopeTFold t n f a (u r) -> ScopeT t n f a -> r
+scopeTAdjointFold usf = counit . scopeTFold usf
 
+instance (Monad t, Traversable t, Traversable f) => Blanks n f (ScopeT t n f) where
   abstract = scopeTAbstract
   unAbstract = scopeTUnAbstract
   instantiate = scopeTInstantiate
   apply = scopeTApply
-  runFold _ = scopeTFold

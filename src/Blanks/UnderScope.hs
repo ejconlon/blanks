@@ -14,6 +14,7 @@ module Blanks.UnderScope
   , underScopeBind
   , underScopeBindOpt
   , underScopeFold
+  , underScopeFoldContraMap
   , underScopePure
   , underScopeShift
   ) where
@@ -132,3 +133,9 @@ underScopeFold (UnderScopeFold bound free binder embed) us =
     UnderFreeScope x -> free x
     UnderBinderScope x -> binder x
     UnderEmbedScope x -> embed x
+
+underScopeFoldContraMap :: Functor f => (x -> e) -> UnderScopeFold n f e a r -> UnderScopeFold n f x a r
+underScopeFoldContraMap f (UnderScopeFold bound free binder embed) = UnderScopeFold bound free binder' embed' where
+  binder' (BinderScope r n x) = binder (BinderScope r n (f x))
+  embed' (EmbedScope fx) = embed (EmbedScope (fmap f fx))
+

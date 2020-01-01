@@ -1,19 +1,13 @@
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE KindSignatures #-}
 
 module Blanks.Class where
 
 import Blanks.Sub (SubError)
-import Data.Proxy (Proxy)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
 class Monad m => Blanks (n :: *) (f :: * -> *) (m :: * -> *) | m -> n f where
-  type BlankFold m a r :: *
-  type BlankFoldResult m r :: *
-
-  runFold :: Proxy r -> BlankFold m a r -> m a -> BlankFoldResult m r
-
   abstract :: Eq a => n -> Seq a -> m a -> m a
 
   abstract1 :: Eq a => n -> a -> m a -> m a
