@@ -13,7 +13,7 @@ import Control.Monad.Identity (Identity (..))
 
 newtype PureScope n f a = PureScope
   { unPureScope :: ScopeT Identity n f a
-  } deriving (Functor, Foldable, Traversable, Applicative, Monad, Blanks n f)
+  } deriving (Functor, Foldable, Traversable, Applicative, Monad, Blanks)
 
 instance (Eq (f (ScopeT Identity n f a)), Eq n, Eq a) => Eq (PureScope n f a) where
   PureScope su == PureScope sv = su == sv

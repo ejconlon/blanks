@@ -1,6 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -138,7 +136,9 @@ scopeTFold usf = fmap (underScopeFold usf) . unScopeT
 scopeTAdjointFold :: Adjunction t u => ScopeTFold t n f a (u r) -> ScopeT t n f a -> r
 scopeTAdjointFold usf = counit . scopeTFold usf
 
-instance (Monad t, Traversable t, Traversable f) => Blanks n f (ScopeT t n f) where
+instance (Monad t, Traversable t, Traversable f) => Blanks (ScopeT t n f) where
+  type BlankInfo (ScopeT t n f) = n
+
   abstract = scopeTAbstract
   unAbstract = scopeTUnAbstract
   instantiate = scopeTInstantiate

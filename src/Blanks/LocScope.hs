@@ -54,7 +54,7 @@ instance Monoid l => Monad (Located l) where
 
 newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeT (Located l) n f a
-  } deriving (Functor, Foldable, Traversable, Applicative, Monad, Blanks n f)
+  } deriving (Functor, Foldable, Traversable, Applicative, Monad, Blanks)
 
 instance (Eq (f (ScopeT (Located l) n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) where
   LocScope su == LocScope sv = su == sv

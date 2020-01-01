@@ -1,5 +1,5 @@
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Blanks.Class where
 
@@ -7,10 +7,12 @@ import Blanks.Sub (SubError)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
-class Monad m => Blanks (n :: *) (f :: * -> *) (m :: * -> *) | m -> n f where
-  abstract :: Eq a => n -> Seq a -> m a -> m a
+class Monad m => Blanks (m :: * -> *) where
+  type BlankInfo m :: *
 
-  abstract1 :: Eq a => n -> a -> m a -> m a
+  abstract :: Eq a => BlankInfo m -> Seq a -> m a -> m a
+
+  abstract1 :: Eq a => BlankInfo m -> a -> m a -> m a
   abstract1 n k = abstract n (Seq.singleton k)
 
   unAbstract :: Seq a -> m a -> m a
