@@ -52,13 +52,13 @@ instance Monoid l => Monad (Located l) where
 
 newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeT (Located l) n f a
-  } deriving (Functor, Foldable, Traversable, Applicative, Monad, BlankAbstract (Colocated l))
+  } deriving (Functor, Foldable, Traversable, BlankAbstract)
 
 type instance BlankInfo (LocScope l n f) = n
 type instance BlankFunctor (LocScope l n f) = f
 
-instance Functor f => BlankEmbed (Colocated l) (LocScope l n f) where
-  embed = embedLocScope
+instance (Monoid l, Functor f) => BlankEmbed (LocScope l n f) where
+  blankEmbed fe = runColocated (embedLocScope fe) mempty
 
 instance (Eq (f (ScopeT (Located l) n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) where
   LocScope su == LocScope sv = su == sv

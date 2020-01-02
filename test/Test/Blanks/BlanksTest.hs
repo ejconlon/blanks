@@ -11,7 +11,7 @@ import Test.Tasty.HUnit
 type BareScope = PureScope (NameOnly Char) Identity Char
 
 abst :: Char -> BareScope -> BareScope
-abst a = abstract1 (Name a ()) a
+abst a = blankAbstract1 (Name a ()) a
 
 bound :: Int -> BareScope
 bound = PureScope . ScopeT . pure . UnderBoundScope . BoundScope
@@ -60,17 +60,17 @@ test_sub =
 
       testInstantiate =
         testCase "instantiate" $ do
-          instantiate1 svar2 svar @?= svar
-          instantiate1 svar2 sbound @?= svar2
-          instantiate1 svar2 sid @?= sid
-          instantiate1 svar2 swonky @?= swonky2
+          blankInstantiate1 svar2 svar @?= svar
+          blankInstantiate1 svar2 sbound @?= svar2
+          blankInstantiate1 svar2 sid @?= sid
+          blankInstantiate1 svar2 swonky @?= swonky2
 
       testApply =
         testCase "apply" $ do
-          apply1 svar2 sid @?= Right svar2
-          apply1 svar2 swonky @?= Right sbound
-          apply1 svar2 sconst @?= Right swonky2
-          apply1 svar2 sflip @?= Right sid
+          blankApply1 svar2 sid @?= Right svar2
+          blankApply1 svar2 swonky @?= Right sbound
+          blankApply1 svar2 sconst @?= Right swonky2
+          blankApply1 svar2 sflip @?= Right sid
 
       testVarSub =
         testCase "var sub" $ do

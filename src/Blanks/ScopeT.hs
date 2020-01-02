@@ -4,17 +4,19 @@
 module Blanks.ScopeT
   ( ScopeT (..)
   , ScopeTFold
-  , hoistAnno
-  , liftAnno
   , scopeTAdjointFold
+  , scopeTHoistAnno
+  , scopeTBind
+  , scopeTFree
   , scopeTFold
+  , scopeTLiftAnno
   ) where
 
 import Blanks.Class
 import Blanks.Sub (SubError (..))
-import Blanks.UnderScope (BinderScope (..), BoundScope (..), EmbedScope (..), UnderScope (..), UnderScopeFold (..),
-                          underScopeBind, underScopeBindOpt, underScopeFold, underScopePure, underScopeShift)
-import Control.Monad (ap)
+import Blanks.UnderScope (BinderScope (..), BoundScope (..), EmbedScope (..), FreeScope (..), UnderScope (..),
+                          UnderScopeFold (..), underScopeBind, underScopeBindOpt, underScopeFold, underScopePure,
+                          underScopeShift)
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap, first)
 import Data.Bitraversable (bitraverse)
@@ -41,52 +43,66 @@ instance (Foldable t, Foldable f) => Foldable (ScopeT t n f) where
 instance (Traversable t, Traversable f) => Traversable (ScopeT t n f) where
   traverse f (ScopeT tu) = fmap ScopeT (traverse (bitraverse (traverse f) f) tu)
 
-scopeTPure :: Applicative t => a -> ScopeT t n f a
-scopeTPure = ScopeT . pure . underScopePure
-
-instance (Monad t, Traversable f) => Applicative (ScopeT t n f) where
-  pure = scopeTPure
-  (<*>) = ap
-
-instance (Monad t, Traversable f) => Monad (ScopeT t n f) where
-  return = pure
-  (>>=) = scopeTBind 0
-
 type instance BlankFunctor (ScopeT t n f) = f
 type instance BlankInfo (ScopeT t n f) = n
 
-instance Adjunction t u => BlankEmbed u (ScopeT t n f) where
-  embed = scopeTEmbedAdj
+instance (Adjunction t u, Applicative t) => BlankEmbed (ScopeT t n f) where
+  blankEmbed = scopeTEmbed
 
-instance (Monad t, Traversable t, Traversable f, Adjunction t u) => BlankAbstract u (ScopeT t n f) where
-  abstract = scopeTAbstract
-  unAbstract = scopeTUnAbstract
-  instantiate = scopeTInstantiate
-  apply = scopeTApply
+instance (Adjunction t u, Monad t, Traversable t, Traversable f) => BlankAbstract (ScopeT t n f) where
+  blankFree = scopeTFree
+  blankAbstract = scopeTAbstract
+  blankUnAbstract = scopeTUnAbstract
+  blankInstantiate = scopeTInstantiate
+  blankApply = scopeTApply
+
+scopeTUnAdj :: (Applicative t, Adjunction t u) => u (ScopeT t n f a) -> ScopeT t n f a
+scopeTUnAdj = counit . pure
+
+scopeTWrapAdj :: Adjunction t u => UnderScope n f (ScopeT t n f a) a -> u (ScopeT t n f a)
+scopeTWrapAdj = fmap ScopeT . unit
+
+scopeTWrap :: Applicative t => UnderScope n f (ScopeT t n f a) a -> ScopeT t n f a
+scopeTWrap = ScopeT . pure
+
+scopeTBoundAdj :: Adjunction t u => Int -> u (ScopeT t n f a)
+scopeTBoundAdj = scopeTWrapAdj . UnderBoundScope . BoundScope
+
+scopeTBound :: Applicative t => Int -> ScopeT t n f a
+scopeTBound = scopeTWrap . UnderBoundScope . BoundScope
+
+scopeTFreeAdj :: Adjunction t u => a -> u (ScopeT t n f a)
+scopeTFreeAdj = scopeTWrapAdj . UnderFreeScope . FreeScope
+
+scopeTFree :: Applicative t => a -> ScopeT t n f a
+scopeTFree = scopeTWrap . UnderFreeScope . FreeScope
+
+scopeTBinderAdj :: Adjunction t u => Int -> n -> ScopeT t n f a -> u (ScopeT t n f a)
+scopeTBinderAdj r n e = scopeTWrapAdj (UnderBinderScope (BinderScope r n e))
+
+scopeTBinder :: Applicative t => Int -> n -> ScopeT t n f a -> ScopeT t n f a
+scopeTBinder r n e = scopeTWrap (UnderBinderScope (BinderScope r n e))
+
+scopeTEmbedAdj :: Adjunction t u => f (ScopeT t n f a) -> u (ScopeT t n f a)
+scopeTEmbedAdj fe = fmap ScopeT (unit (UnderEmbedScope (EmbedScope fe)))
+
+scopeTEmbed :: Applicative t => f (ScopeT t n f a) -> ScopeT t n f a
+scopeTEmbed = scopeTWrap . UnderEmbedScope . EmbedScope
 
 scopeTShift :: (Functor t, Functor f) => Int -> Int -> ScopeT t n f a -> ScopeT t n f a
 scopeTShift c d (ScopeT tu) = ScopeT (fmap (underScopeShift scopeTShift c d) tu)
 
-subScopeTBind :: (Monad t, Functor f) => Int -> ScopeT t n f a -> (a -> t (UnderScope n f (ScopeT t n f b) b)) -> ScopeT t n f b
-subScopeTBind n (ScopeT tu) g = ScopeT (tu >>= \u -> underScopeBind scopeTShift subScopeTBind n u g)
+subScopeTBindOpt :: (Monad t, Functor f) => (a -> Maybe (t (UnderScope n f (ScopeT t n f a) a))) -> Int -> ScopeT t n f a -> ScopeT t n f a
+subScopeTBindOpt g n (ScopeT tu) = ScopeT (tu >>= underScopeBindOpt scopeTShift subScopeTBindOpt g n)
 
-scopeTBind :: (Monad t, Functor f) => Int -> ScopeT t n f a -> (a -> ScopeT t n f b) -> ScopeT t n f b
-scopeTBind n s f = subScopeTBind n s (unScopeT . f)
+scopeTBindOpt :: (Monad t, Functor f) => (a -> Maybe (ScopeT t n f a)) -> Int -> ScopeT t n f a -> ScopeT t n f a
+scopeTBindOpt f = subScopeTBindOpt (fmap unScopeT . f)
 
-subScopeTBindOpt :: (Monad t, Functor f) => Int -> ScopeT t n f a -> (a -> Maybe (t (UnderScope n f (ScopeT t n f a) a))) -> ScopeT t n f a
-subScopeTBindOpt n (ScopeT tu) g = ScopeT (tu >>= \u -> underScopeBindOpt scopeTShift subScopeTBindOpt n u g)
+subScopeTBind :: (Monad t, Functor f) => (a -> t (UnderScope n f (ScopeT t n f b) b)) -> Int -> ScopeT t n f a -> ScopeT t n f b
+subScopeTBind g n (ScopeT tu) = ScopeT (tu >>= underScopeBind scopeTShift subScopeTBind g n)
 
-scopeTBindOpt :: (Monad t, Functor f) => Int -> ScopeT t n f a -> (a -> Maybe (ScopeT t n f a)) -> ScopeT t n f a
-scopeTBindOpt n s f = subScopeTBindOpt n s (fmap unScopeT . f)
-
-scopeTBound :: Applicative t => Int -> ScopeT t n f a
-scopeTBound = ScopeT . pure . UnderBoundScope . BoundScope
-
-scopeTBinder :: Applicative t => Int -> n -> ScopeT t n f a -> ScopeT t n f a
-scopeTBinder r n e = ScopeT (pure (UnderBinderScope (BinderScope r n e)))
-
-scopeTEmbed :: Applicative t => f (ScopeT t n f a) -> ScopeT t n f a
-scopeTEmbed fs = ScopeT (pure (UnderEmbedScope (EmbedScope fs)))
+scopeTBind :: (Monad t, Functor f) => (a -> ScopeT t n f b) -> Int -> ScopeT t n f a -> ScopeT t n f b
+scopeTBind f = subScopeTBind (unScopeT . f)
 
 scopeTCompact :: Monad t => t (ScopeT t n f a) -> ScopeT t n f a
 scopeTCompact ts = ScopeT (ts >>= unScopeT)
@@ -94,7 +110,7 @@ scopeTCompact ts = ScopeT (ts >>= unScopeT)
 subScopeTAbstract :: (Monad t, Functor f, Eq a) => Int -> n -> Seq a -> ScopeT t n f a -> ScopeT t n f a
 subScopeTAbstract r n ks e =
   let f = fmap scopeTBound . flip Seq.elemIndexL ks
-      e' = scopeTBindOpt 0 e f
+      e' = scopeTBindOpt f 0 e
   in scopeTBinder r n e'
 
 scopeTAbstract :: (Monad t, Functor f, Eq a) => n -> Seq a -> ScopeT t n f a -> ScopeT t n f a
@@ -103,7 +119,7 @@ scopeTAbstract n ks =
   in subScopeTAbstract r n ks . scopeTShift 0 r
 
 scopeTUnAbstract :: (Monad t, Traversable t, Functor f) => Seq a -> ScopeT t n f a -> ScopeT t n f a
-scopeTUnAbstract ks = scopeTInstantiate (fmap scopeTPure ks)
+scopeTUnAbstract ks = scopeTInstantiate (fmap scopeTFree ks)
 
 subScopeTInstantiate :: (Monad t, Traversable t, Functor f) => Int -> Seq (ScopeT t n f a) -> ScopeT t n f a -> ScopeT t n f a
 subScopeTInstantiate h vs = ScopeT . (>>= go h vs) . unScopeT where
@@ -140,11 +156,8 @@ scopeTFold usf = fmap (underScopeFold usf) . unScopeT
 scopeTAdjointFold :: Adjunction t u => ScopeTFold t n f a (u r) -> ScopeT t n f a -> r
 scopeTAdjointFold usf = counit . scopeTFold usf
 
-scopeTEmbedAdj :: Adjunction t u => f (ScopeT t n f a) -> u (ScopeT t n f a)
-scopeTEmbedAdj fe = fmap ScopeT (unit (UnderEmbedScope (EmbedScope fe)))
+scopeTLiftAnno :: Functor t => t a -> ScopeT t n f a
+scopeTLiftAnno ta = ScopeT (fmap underScopePure ta)
 
-liftAnno :: Functor t => t a -> ScopeT t n f a
-liftAnno ta = ScopeT (fmap underScopePure ta)
-
-hoistAnno :: (Functor t, Functor f) => (forall x. t x -> w x) -> ScopeT t n f a -> ScopeT w n f a
-hoistAnno nat (ScopeT tu) = ScopeT (nat (fmap (first (hoistAnno nat)) tu))
+scopeTHoistAnno :: (Functor t, Functor f) => (forall x. t x -> w x) -> ScopeT t n f a -> ScopeT w n f a
+scopeTHoistAnno nat (ScopeT tu) = ScopeT (nat (fmap (first (scopeTHoistAnno nat)) tu))

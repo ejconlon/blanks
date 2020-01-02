@@ -8,29 +8,30 @@ import qualified Data.Sequence as Seq
 
 type family BlankInfo (m :: * -> *) :: *
 type family BlankFunctor (m :: * -> *) :: * -> *
-type family BlankContext (m :: * -> *) :: * -> *
 
-class BlankEmbed (u :: * -> *) (m :: * -> *) | m -> u where
-  embed :: BlankFunctor m (m a) -> u (m a)
+class BlankEmbed (m :: * -> *) where
+  blankEmbed :: BlankFunctor m (m a) -> m a
 
-class Applicative m => BlankAbstract (u :: * -> *) (m :: * -> *) | m -> u where
-  abstract :: Eq a => BlankInfo m -> Seq a -> m a -> m a
+class BlankAbstract (m :: * -> *) where
+  blankFree :: a -> m a
 
-  abstract1 :: Eq a => BlankInfo m -> a -> m a -> m a
-  abstract1 n k = abstract n (Seq.singleton k)
+  blankAbstract :: Eq a => BlankInfo m -> Seq a -> m a -> m a
 
-  unAbstract :: Seq a -> m a -> m a
+  blankAbstract1 :: Eq a => BlankInfo m -> a -> m a -> m a
+  blankAbstract1 n k = blankAbstract n (Seq.singleton k)
 
-  unAbstract1 :: a -> m a -> m a
-  unAbstract1 = unAbstract . Seq.singleton
+  blankUnAbstract :: Seq a -> m a -> m a
 
-  instantiate :: Seq (m a) -> m a -> m a
+  blankUnAbstract1 :: a -> m a -> m a
+  blankUnAbstract1 = blankUnAbstract . Seq.singleton
 
-  instantiate1 :: m a -> m a -> m a
-  instantiate1 = instantiate . Seq.singleton
+  blankInstantiate :: Seq (m a) -> m a -> m a
 
-  apply :: Seq (m a) -> m a -> Either SubError (m a)
+  blankInstantiate1 :: m a -> m a -> m a
+  blankInstantiate1 = blankInstantiate . Seq.singleton
 
-  apply1 :: m a -> m a -> Either SubError (m a)
-  apply1 = apply . Seq.singleton
+  blankApply :: Seq (m a) -> m a -> Either SubError (m a)
+
+  blankApply1 :: m a -> m a -> Either SubError (m a)
+  blankApply1 = blankApply . Seq.singleton
 
