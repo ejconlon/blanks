@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Blanks.UnderScope
   ( BinderScope (..)
   , BoundScope (..)
@@ -7,10 +5,6 @@ module Blanks.UnderScope
   , FreeScope (..)
   , UnderScope (..)
   , UnderScopeFold (..)
-  , _UnderBinderScope
-  , _UnderBoundScope
-  , _UnderEmbedScope
-  , _UnderFreeScope
   , underScopeBind
   , underScopeBindOpt
   , underScopeFold
@@ -19,7 +13,6 @@ module Blanks.UnderScope
   , underScopeShift
   ) where
 
-import Control.Lens.TH (makePrisms)
 import Data.Bifoldable (Bifoldable (..))
 import Data.Bifunctor (Bifunctor (..))
 import Data.Bitraversable (Bitraversable (..))
@@ -56,8 +49,6 @@ data UnderScope n f e a
   | UnderBinderScope !(BinderScope n e)
   | UnderEmbedScope !(EmbedScope f e)
   deriving (Eq, Show, Functor)
-
-$(makePrisms ''UnderScope)
 
 instance Functor f => Bifunctor (UnderScope n f) where
   bimap _ _ (UnderBoundScope (BoundScope b)) = UnderBoundScope (BoundScope b)

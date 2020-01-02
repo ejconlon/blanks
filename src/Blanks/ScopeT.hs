@@ -1,6 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Blanks.ScopeT
@@ -12,7 +10,7 @@ module Blanks.ScopeT
   , scopeTFold
   ) where
 
-import Blanks.Class (Blanks (..))
+import Blanks.Class
 import Blanks.Sub (SubError (..))
 import Blanks.UnderScope (BinderScope (..), BoundScope (..), EmbedScope (..), UnderScope (..), UnderScopeFold (..),
                           underScopeBind, underScopeBindOpt, underScopeFold, underScopePure, underScopeShift)
@@ -34,12 +32,6 @@ instance Eq (t (UnderScope n f (ScopeT t n f a) a)) => Eq (ScopeT t n f a) where
 instance Show (t (UnderScope n f (ScopeT t n f a) a)) => Show (ScopeT t n f a) where
   showsPrec d (ScopeT tu) = showString "ScopeT " . showsPrec (d+1) tu
 
-liftAnno :: Functor t => t a -> ScopeT t n f a
-liftAnno ta = ScopeT (fmap underScopePure ta)
-
-hoistAnno :: (Functor t, Functor f) => (forall x. t x -> w x) -> ScopeT t n f a -> ScopeT w n f a
-hoistAnno nat (ScopeT tu) = ScopeT (nat (fmap (first (hoistAnno nat)) tu))
-
 instance (Functor t, Functor f) => Functor (ScopeT t n f) where
   fmap f (ScopeT tu) = ScopeT (fmap (bimap (fmap f) f) tu)
 
@@ -59,6 +51,18 @@ instance (Monad t, Traversable f) => Applicative (ScopeT t n f) where
 instance (Monad t, Traversable f) => Monad (ScopeT t n f) where
   return = pure
   (>>=) = scopeTBind 0
+
+type instance BlankFunctor (ScopeT t n f) = f
+type instance BlankInfo (ScopeT t n f) = n
+
+instance Adjunction t u => BlankEmbed u (ScopeT t n f) where
+  embed = scopeTEmbedAdj
+
+instance (Monad t, Traversable t, Traversable f, Adjunction t u) => BlankAbstract u (ScopeT t n f) where
+  abstract = scopeTAbstract
+  unAbstract = scopeTUnAbstract
+  instantiate = scopeTInstantiate
+  apply = scopeTApply
 
 scopeTShift :: (Functor t, Functor f) => Int -> Int -> ScopeT t n f a -> ScopeT t n f a
 scopeTShift c d (ScopeT tu) = ScopeT (fmap (underScopeShift scopeTShift c d) tu)
@@ -136,10 +140,11 @@ scopeTFold usf = fmap (underScopeFold usf) . unScopeT
 scopeTAdjointFold :: Adjunction t u => ScopeTFold t n f a (u r) -> ScopeT t n f a -> r
 scopeTAdjointFold usf = counit . scopeTFold usf
 
-instance (Monad t, Traversable t, Traversable f) => Blanks (ScopeT t n f) where
-  type BlankInfo (ScopeT t n f) = n
+scopeTEmbedAdj :: Adjunction t u => f (ScopeT t n f a) -> u (ScopeT t n f a)
+scopeTEmbedAdj fe = fmap ScopeT (unit (UnderEmbedScope (EmbedScope fe)))
 
-  abstract = scopeTAbstract
-  unAbstract = scopeTUnAbstract
-  instantiate = scopeTInstantiate
-  apply = scopeTApply
+liftAnno :: Functor t => t a -> ScopeT t n f a
+liftAnno ta = ScopeT (fmap underScopePure ta)
+
+hoistAnno :: (Functor t, Functor f) => (forall x. t x -> w x) -> ScopeT t n f a -> ScopeT w n f a
+hoistAnno nat (ScopeT tu) = ScopeT (nat (fmap (first (hoistAnno nat)) tu))

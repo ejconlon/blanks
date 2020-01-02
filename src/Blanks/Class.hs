@@ -1,5 +1,4 @@
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Blanks.Class where
 
@@ -7,9 +6,14 @@ import Blanks.Sub (SubError)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
-class Monad m => Blanks (m :: * -> *) where
-  type BlankInfo m :: *
+type family BlankInfo (m :: * -> *) :: *
+type family BlankFunctor (m :: * -> *) :: * -> *
+type family BlankContext (m :: * -> *) :: * -> *
 
+class BlankEmbed (u :: * -> *) (m :: * -> *) | m -> u where
+  embed :: BlankFunctor m (m a) -> u (m a)
+
+class Applicative m => BlankAbstract (u :: * -> *) (m :: * -> *) | m -> u where
   abstract :: Eq a => BlankInfo m -> Seq a -> m a -> m a
 
   abstract1 :: Eq a => BlankInfo m -> a -> m a -> m a
@@ -29,3 +33,4 @@ class Monad m => Blanks (m :: * -> *) where
 
   apply1 :: m a -> m a -> Either SubError (m a)
   apply1 = apply . Seq.singleton
+

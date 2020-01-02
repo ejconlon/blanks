@@ -16,17 +16,22 @@ dependencies:
 - adjunctions >=4.4
 - containers >=0.6
 - distributive >=0.6
-- lens >=4.17
 - mmorph >=1.1
 - mtl >=2.2
 - newtype-generics >=0.5
 
 default-extensions:
+- BangPatterns
 - DeriveFunctor
 - DeriveFoldable
 - DeriveGeneric
 - DeriveTraversable
+- FunctionalDependencies
 - GeneralizedNewtypeDeriving
+- KindSignatures
+- MultiParamTypeClasses
+- Rank2Types
+- TypeFamilies
 
 ghc-options:
 - -Wall
