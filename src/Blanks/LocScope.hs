@@ -6,12 +6,16 @@ module Blanks.LocScope
   , LocScope (..)
   , LocScopeFold
   , colocated
-  , runColocated
+  , locScopeBind
+  , locScopeEmbed
   , locScopeFold
+  , locScopeFree
+  , runColocated
   ) where
 
 import Blanks.Class
-import Blanks.ScopeT (ScopeT (..), scopeTAdjointFold)
+import Blanks.RightAdjunct (RightAdjunct)
+import Blanks.ScopeT (ScopeT (..), scopeTBind, scopeTFold, scopeTFree)
 import Blanks.UnderScope (EmbedScope (..), UnderScope (..), UnderScopeFold (..), underScopeFoldContraMap)
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
@@ -28,6 +32,8 @@ data Located l a = Located
 newtype Colocated l a = Colocated
   { unColocated :: Reader l a
   } deriving (Functor, Applicative, Monad, MonadReader l, Representable)
+
+type instance RightAdjunct (Located l) = Colocated l
 
 colocated :: (l -> a) -> Colocated l a
 colocated f = Colocated (ReaderT (Identity . f))
@@ -56,9 +62,10 @@ newtype LocScope l n f a = LocScope
 
 type instance BlankInfo (LocScope l n f) = n
 type instance BlankFunctor (LocScope l n f) = f
+type instance BlankCodomain (LocScope l n f) = Colocated l
 
-instance (Monoid l, Functor f) => BlankEmbed (LocScope l n f) where
-  blankEmbed fe = runColocated (embedLocScope fe) mempty
+instance Functor f => BlankEmbed (LocScope l n f) where
+  blankEmbed = locScopeEmbed
 
 instance (Eq (f (ScopeT (Located l) n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) where
   LocScope su == LocScope sv = su == sv
@@ -66,10 +73,16 @@ instance (Eq (f (ScopeT (Located l) n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l
 instance (Show (f (ScopeT (Located l) n f a)), Show l, Show n, Show a) => Show (LocScope l n f a) where
   showsPrec d (LocScope (ScopeT tu)) = showString "LocScope " . showsPrec (d+1) tu
 
-embedLocScope :: Functor f => f (LocScope l n f a) -> Colocated l (LocScope l n f a)
-embedLocScope fe = colocated (\l -> LocScope (ScopeT (Located l (UnderEmbedScope (EmbedScope (fmap unLocScope fe))))))
+locScopeEmbed :: Functor f => f (LocScope l n f a) -> Colocated l (LocScope l n f a)
+locScopeEmbed fe = colocated (\l -> LocScope (ScopeT (Located l (UnderEmbedScope (EmbedScope (fmap unLocScope fe))))))
+
+locScopeBind :: Functor f => (a -> Colocated l (LocScope l n f b)) -> LocScope l n f a -> LocScope l n f b
+locScopeBind f = LocScope . scopeTBind (fmap unLocScope . f) . unLocScope
+
+locScopeFree :: a -> Colocated l (LocScope l n f a)
+locScopeFree = fmap LocScope . scopeTFree
 
 type LocScopeFold l n f a r = UnderScopeFold n f (LocScope l n f a) a (Colocated l r)
 
 locScopeFold :: Functor f => LocScopeFold l n f a r -> LocScope l n f a -> r
-locScopeFold usf = scopeTAdjointFold (underScopeFoldContraMap LocScope usf) . unLocScope
+locScopeFold usf = scopeTFold (underScopeFoldContraMap LocScope usf) . unLocScope

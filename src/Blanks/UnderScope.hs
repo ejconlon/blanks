@@ -5,8 +5,6 @@ module Blanks.UnderScope
   , FreeScope (..)
   , UnderScope (..)
   , UnderScopeFold (..)
-  , underScopeBind
-  , underScopeBindOpt
   , underScopeFold
   , underScopeFoldContraMap
   , underScopePure
@@ -81,39 +79,6 @@ underScopeShift recShift c d us =
     UnderFreeScope _ -> us
     UnderBinderScope (BinderScope i x e) -> UnderBinderScope (BinderScope i x (recShift (c + i) d e))
     UnderEmbedScope (EmbedScope fe) -> UnderEmbedScope (EmbedScope (fmap (recShift c d) fe))
-
-underScopeBind ::
-  (Applicative t, Functor f) =>
-  (Int -> Int -> x -> x) ->
-  ((a -> t (UnderScope n f x b)) -> Int -> e -> x) ->
-  (a -> t (UnderScope n f x b)) ->
-  Int ->
-  UnderScope n f e a ->
-  t (UnderScope n f x b)
-underScopeBind recShift recBind f n us =
-  case us of
-    UnderBoundScope x -> pure (UnderBoundScope x)
-    UnderFreeScope (FreeScope a) -> fmap (underScopeShift recShift 0 n) (f a)
-    UnderBinderScope (BinderScope i x e) -> pure (UnderBinderScope (BinderScope i x (recBind f (n + i) e)))
-    UnderEmbedScope (EmbedScope fe) -> pure (UnderEmbedScope (EmbedScope (fmap (recBind f n) fe)))
-
-underScopeBindOpt ::
-  (Applicative t, Functor f) =>
-  (Int -> Int -> x -> x) ->
-  ((a -> Maybe (t (UnderScope n f x a))) -> Int -> e -> x) ->
-  (a -> Maybe (t (UnderScope n f x a))) ->
-  Int ->
-  UnderScope n f e a ->
-  t (UnderScope n f x a)
-underScopeBindOpt recShift recBindOpt f n us =
-  case us of
-    UnderBoundScope x -> pure (UnderBoundScope x)
-    UnderFreeScope x@(FreeScope a) ->
-      case f a of
-        Nothing -> pure (UnderFreeScope x)
-        Just us' -> fmap (underScopeShift recShift 0 n) us'
-    UnderBinderScope (BinderScope i x e) -> pure (UnderBinderScope (BinderScope i x (recBindOpt f (n + i) e)))
-    UnderEmbedScope (EmbedScope fe) -> pure (UnderEmbedScope (EmbedScope (fmap (recBindOpt f n) fe)))
 
 data UnderScopeFold n f e a r =
   UnderScopeFold
