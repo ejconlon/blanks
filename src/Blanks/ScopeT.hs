@@ -5,6 +5,7 @@
 module Blanks.ScopeT
   ( ScopeT (..)
   , ScopeTFold
+  , ScopeTRawFold
   , scopeTBind
   , scopeTEmbed
   , scopeTFold
@@ -154,9 +155,10 @@ scopeTApply vs = scopeTModM go where
               else Left (ApplyError len r)
       _ -> Left NonBinderError
 
-type ScopeTFold t n f a r = UnderScopeFold n f (ScopeT t n f a) a (RightAdjunct t r)
+type ScopeTRawFold t n f a r = UnderScopeFold n f (ScopeT t n f a) a r
+type ScopeTFold t n f a r = ScopeTRawFold t n f a (RightAdjunct t r)
 
-scopeTRawFold :: Functor t => UnderScopeFold n f (ScopeT t n f a) a r -> ScopeT t n f a -> t r
+scopeTRawFold :: Functor t => ScopeTRawFold t n f a r -> ScopeT t n f a -> t r
 scopeTRawFold usf = fmap (underScopeFold usf) . unScopeT
 
 scopeTFold :: RightAdjunction t => ScopeTFold t n f a r -> ScopeT t n f a -> r

@@ -14,6 +14,7 @@ description: Please see the README on GitHub at <https://github.com/ejconlon/bla
 dependencies:
 - base >=4.12
 - adjunctions >=4.4
+- comonad >=5.0
 - containers >=0.6
 - distributive >=0.6
 - mmorph >=1.1

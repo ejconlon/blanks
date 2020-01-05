@@ -15,7 +15,7 @@ module Blanks.LocScope
 
 import Blanks.Class
 import Blanks.RightAdjunct (RightAdjunct)
-import Blanks.ScopeT (ScopeT (..), scopeTBind, scopeTFold, scopeTFree)
+import Blanks.ScopeT (ScopeT (..), scopeTBind, scopeTFold, scopeTFree, scopeTRawFold)
 import Blanks.UnderScope (EmbedScope (..), UnderScope (..), UnderScopeFold (..), underScopeFoldContraMap)
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
@@ -25,8 +25,8 @@ import Data.Functor.Adjunction (Adjunction (..))
 import Data.Functor.Rep (Representable)
 
 data Located l a = Located
-  { _locatedLoc :: l
-  , _locatedVal :: a
+  { _locatedLoc :: !l
+  , _locatedVal :: !a
   } deriving (Eq, Show, Functor, Foldable, Traversable)
 
 newtype Colocated l a = Colocated
@@ -82,7 +82,11 @@ locScopeBind f = LocScope . scopeTBind (fmap unLocScope . f) . unLocScope
 locScopeFree :: a -> Colocated l (LocScope l n f a)
 locScopeFree = fmap LocScope . scopeTFree
 
-type LocScopeFold l n f a r = UnderScopeFold n f (LocScope l n f a) a (Colocated l r)
+type LocScopeRawFold l n f a r = UnderScopeFold n f (LocScope l n f a) a r
+type LocScopeFold l n f a r = LocScopeRawFold l n f a (Colocated l r)
+
+locScopeRawFold :: Functor f => LocScopeRawFold l n f a r -> LocScope l n f a -> Located l r
+locScopeRawFold usf = scopeTRawFold (underScopeFoldContraMap LocScope usf) . unLocScope
 
 locScopeFold :: Functor f => LocScopeFold l n f a r -> LocScope l n f a -> r
 locScopeFold usf = scopeTFold (underScopeFoldContraMap LocScope usf) . unLocScope
