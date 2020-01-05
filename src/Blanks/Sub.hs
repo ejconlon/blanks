@@ -28,7 +28,7 @@ newtype Sub a =
   Sub
     { unSub :: Except SubError a
     }
-  deriving (Functor, Applicative, Monad)
+  deriving (Functor, Applicative, Monad, Foldable, Traversable)
 
 instance ThrowSub Sub where
   throwSub = Sub . throwError
