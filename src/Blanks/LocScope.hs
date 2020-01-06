@@ -4,10 +4,13 @@ module Blanks.LocScope
   ( Colocated (..)
   , Located (..)
   , LocScope (..)
+  , LocScopeRawFold
   , LocScopeFold
+  , askColocated
   , colocated
   , locScopeBind
   , locScopeEmbed
+  , locScopeRawFold
   , locScopeFold
   , locScopeFree
   , runColocated
@@ -19,7 +22,7 @@ import Blanks.ScopeT (ScopeT (..), scopeTBind, scopeTFold, scopeTFree, scopeTRaw
 import Blanks.UnderScope (EmbedScope (..), UnderScope (..), UnderScopeFold (..), underScopeFoldContraMap)
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
-import Control.Monad.Reader (MonadReader, Reader, ReaderT (..), runReader)
+import Control.Monad.Reader (MonadReader, Reader, ReaderT (..), ask, runReader)
 import Data.Distributive (Distributive (..))
 import Data.Functor.Adjunction (Adjunction (..))
 import Data.Functor.Rep (Representable)
@@ -37,6 +40,9 @@ type instance RightAdjunct (Located l) = Colocated l
 
 colocated :: (l -> a) -> Colocated l a
 colocated f = Colocated (ReaderT (Identity . f))
+
+askColocated :: Colocated l l
+askColocated = Colocated ask
 
 runColocated :: Colocated l a -> l -> a
 runColocated = runReader . unColocated
