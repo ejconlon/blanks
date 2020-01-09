@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 908cf27959513b0581708f41f2ca6ec76d9a3a5afcd949208e70a5e898b622be
+-- hash: 6dd5dac29a7eb8991e9d2728daa61f8651bf8e283305aa1063f1daf4dce65fd8
 
 name:           blanks
 version:        0.3.0
@@ -45,7 +45,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds
   build-depends:
       adjunctions >=4.4
-    , base >=4.12
+    , base >=4.12 && <5
     , containers >=0.6
     , distributive >=0.6
     , mtl >=2.2
@@ -61,7 +61,7 @@ executable blanks-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       adjunctions >=4.4
-    , base >=4.12
+    , base >=4.12 && <5
     , blanks
     , containers >=0.6
     , distributive >=0.6
@@ -81,7 +81,7 @@ test-suite blanks-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       adjunctions >=4.4
-    , base >=4.12
+    , base >=4.12 && <5
     , blanks
     , containers >=0.6
     , distributive >=0.6
