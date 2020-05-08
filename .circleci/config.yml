@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build_and_render:
     docker:
-      - image: fpco/stack-build:lts-14.20
+      - image: fpco/stack-build-small:lts-15.11
     steps:
       - checkout
       - restore_cache:

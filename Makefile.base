@@ -45,7 +45,7 @@ docs:
 
 .PHONY: deps
 deps:
-	stack build --copy-compiler-tool apply-refact hlint stylish-haskell ghcid
+	stack build --copy-compiler-tool hlint stylish-haskell ghcid
 
 .PHONY: watch
 watch:
@@ -58,7 +58,3 @@ format:
 .PHONY: lint
 lint:
 	stack exec -- hlint -i 'Parse error' -i 'Reduce duplication' src
-
-.PHONY: refactor
-refactor:
-	find . -path ./.stack-work -prune -o -name '*.hs' | xargs -t -L1 stack exec -- hlint --refactor --refactor-options -i
