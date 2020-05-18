@@ -45,7 +45,7 @@ docs:
 
 .PHONY: deps
 deps:
-	stack build --copy-compiler-tool hlint stylish-haskell ghcid
+	stack build --copy-compiler-tool ghcid hlint hpack stylish-haskell
 
 .PHONY: watch
 watch:
@@ -58,3 +58,7 @@ format:
 .PHONY: lint
 lint:
 	stack exec -- hlint -i 'Parse error' -i 'Reduce duplication' src
+
+.PHONY: hpack
+hpack:
+	stack exec -- hpack
