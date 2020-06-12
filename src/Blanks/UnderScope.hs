@@ -64,6 +64,8 @@ pattern UnderBinderScopePat i n e = UnderBinderScope (BinderScope i n e)
 pattern UnderEmbedScopePat :: f e -> UnderScope n f e a
 pattern UnderEmbedScopePat fe = UnderEmbedScope (EmbedScope fe)
 
+{-# COMPLETE UnderBoundScopePat, UnderFreeScopePat, UnderBinderScopePat, UnderEmbedScopePat #-}
+
 instance Functor f => Bifunctor (UnderScope n f) where
   bimap _ _ (UnderBoundScope (BoundScope b)) = UnderBoundScope (BoundScope b)
   bimap _ g (UnderFreeScope (FreeScope a)) = UnderFreeScope (FreeScope (g a))

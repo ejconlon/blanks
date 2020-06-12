@@ -82,6 +82,8 @@ pattern LocScopeBinder l i n e = LocScope (ScopeT (Located l (UnderBinderScopePa
 pattern LocScopeEmbed :: l -> f (ScopeT (Located l) n f a) -> LocScope l n f a
 pattern LocScopeEmbed l fe = LocScope (ScopeT (Located l (UnderEmbedScopePat fe)))
 
+{-# COMPLETE LocScopeBound, LocScopeFree, LocScopeBinder, LocScopeEmbed #-}
+
 type instance BlankInfo (LocScope l n f) = n
 type instance BlankFunctor (LocScope l n f) = f
 type instance BlankCodomain (LocScope l n f) = Colocated l

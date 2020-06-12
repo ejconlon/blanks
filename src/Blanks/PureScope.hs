@@ -35,6 +35,8 @@ pattern PureScopeBinder i n e = PureScope (ScopeT (Identity (UnderBinderScopePat
 pattern PureScopeEmbed :: f (ScopeT Identity n f a) -> PureScope n f a
 pattern PureScopeEmbed fe = PureScope (ScopeT (Identity (UnderEmbedScopePat fe)))
 
+{-# COMPLETE PureScopeBound, PureScopeFree, PureScopeBinder, PureScopeEmbed #-}
+
 type instance BlankInfo (PureScope n f) = n
 type instance BlankFunctor (PureScope n f) = f
 type instance BlankCodomain (PureScope n f) = Identity
