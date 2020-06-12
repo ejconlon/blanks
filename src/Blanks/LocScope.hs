@@ -6,10 +6,10 @@ module Blanks.LocScope
   , LocScope (..)
   , LocScopeRawFold
   , LocScopeFold
-  , pattern LocScopeBoundPat
-  , pattern LocScopeFreePat
-  , pattern LocScopeBinderPat
-  , pattern LocScopeEmbedPat
+  , pattern LocScopeBound
+  , pattern LocScopeFree
+  , pattern LocScopeBinder
+  , pattern LocScopeEmbed
   , askColocated
   , colocated
   , locScopeBind
@@ -70,17 +70,17 @@ newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeT (Located l) n f a
   } deriving (Functor, Foldable, Traversable, BlankAbstract)
 
-pattern LocScopeBoundPat :: l -> Int -> LocScope l n f a
-pattern LocScopeBoundPat l b = LocScope (ScopeT (Located l (UnderBoundScopePat b)))
+pattern LocScopeBound :: l -> Int -> LocScope l n f a
+pattern LocScopeBound l b = LocScope (ScopeT (Located l (UnderBoundScopePat b)))
 
-pattern LocScopeFreePat :: l -> a -> LocScope l n f a
-pattern LocScopeFreePat l a = LocScope (ScopeT (Located l (UnderFreeScopePat a)))
+pattern LocScopeFree :: l -> a -> LocScope l n f a
+pattern LocScopeFree l a = LocScope (ScopeT (Located l (UnderFreeScopePat a)))
 
-pattern LocScopeBinderPat :: l -> Int -> n -> ScopeT (Located l) n f a -> LocScope l n f a
-pattern LocScopeBinderPat l i n e = LocScope (ScopeT (Located l (UnderBinderScopePat i n e)))
+pattern LocScopeBinder :: l -> Int -> n -> ScopeT (Located l) n f a -> LocScope l n f a
+pattern LocScopeBinder l i n e = LocScope (ScopeT (Located l (UnderBinderScopePat i n e)))
 
-pattern LocScopeEmbedPat :: l -> f (ScopeT (Located l) n f a) -> LocScope l n f a
-pattern LocScopeEmbedPat l fe = LocScope (ScopeT (Located l (UnderEmbedScopePat fe)))
+pattern LocScopeEmbed :: l -> f (ScopeT (Located l) n f a) -> LocScope l n f a
+pattern LocScopeEmbed l fe = LocScope (ScopeT (Located l (UnderEmbedScopePat fe)))
 
 type instance BlankInfo (LocScope l n f) = n
 type instance BlankFunctor (LocScope l n f) = f

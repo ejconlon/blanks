@@ -3,10 +3,10 @@
 module Blanks.PureScope
   ( PureScope (..)
   , PureScopeFold
-  , pattern PureScopeBoundPat
-  , pattern PureScopeFreePat
-  , pattern PureScopeBinderPat
-  , pattern PureScopeEmbedPat
+  , pattern PureScopeBound
+  , pattern PureScopeFree
+  , pattern PureScopeBinder
+  , pattern PureScopeEmbed
   , pureScopeBind
   , pureScopeEmbed
   , pureScopeFold
@@ -23,17 +23,17 @@ newtype PureScope n f a = PureScope
   { unPureScope :: ScopeT Identity n f a
   } deriving (Functor, Foldable, Traversable, BlankAbstract)
 
-pattern PureScopeBoundPat :: Int -> PureScope n f a
-pattern PureScopeBoundPat b = PureScope (ScopeT (Identity (UnderBoundScopePat b)))
+pattern PureScopeBound :: Int -> PureScope n f a
+pattern PureScopeBound b = PureScope (ScopeT (Identity (UnderBoundScopePat b)))
 
-pattern PureScopeFreePat :: a -> PureScope n f a
-pattern PureScopeFreePat a = PureScope (ScopeT (Identity (UnderFreeScopePat a)))
+pattern PureScopeFree :: a -> PureScope n f a
+pattern PureScopeFree a = PureScope (ScopeT (Identity (UnderFreeScopePat a)))
 
-pattern PureScopeBinderPat :: Int -> n -> ScopeT Identity n f a -> PureScope n f a
-pattern PureScopeBinderPat i n e = PureScope (ScopeT (Identity (UnderBinderScopePat i n e)))
+pattern PureScopeBinder :: Int -> n -> ScopeT Identity n f a -> PureScope n f a
+pattern PureScopeBinder i n e = PureScope (ScopeT (Identity (UnderBinderScopePat i n e)))
 
-pattern PureScopeEmbedPat :: f (ScopeT Identity n f a) -> PureScope n f a
-pattern PureScopeEmbedPat fe = PureScope (ScopeT (Identity (UnderEmbedScopePat fe)))
+pattern PureScopeEmbed :: f (ScopeT Identity n f a) -> PureScope n f a
+pattern PureScopeEmbed fe = PureScope (ScopeT (Identity (UnderEmbedScopePat fe)))
 
 type instance BlankInfo (PureScope n f) = n
 type instance BlankFunctor (PureScope n f) = f
