@@ -6,6 +6,10 @@ module Blanks.LocScope
   , LocScope (..)
   , LocScopeRawFold
   , LocScopeFold
+  , pattern LocScopeBoundPat
+  , pattern LocScopeFreePat
+  , pattern LocScopeBinderPat
+  , pattern LocScopeEmbedPat
   , askColocated
   , colocated
   , locScopeBind
@@ -19,7 +23,7 @@ module Blanks.LocScope
 import Blanks.Class
 import Blanks.RightAdjunct (RightAdjunct)
 import Blanks.ScopeT (ScopeT (..), scopeTBind, scopeTFold, scopeTFree, scopeTRawFold)
-import Blanks.UnderScope (EmbedScope (..), UnderScope (..), UnderScopeFold (..), underScopeFoldContraMap)
+import Blanks.UnderScope
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.Reader (MonadReader, Reader, ReaderT (..), ask, runReader)
@@ -65,6 +69,18 @@ instance Monoid l => Monad (Located l) where
 newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeT (Located l) n f a
   } deriving (Functor, Foldable, Traversable, BlankAbstract)
+
+pattern LocScopeBoundPat :: l -> Int -> LocScope l n f a
+pattern LocScopeBoundPat l b = LocScope (ScopeT (Located l (UnderBoundScopePat b)))
+
+pattern LocScopeFreePat :: l -> a -> LocScope l n f a
+pattern LocScopeFreePat l a = LocScope (ScopeT (Located l (UnderFreeScopePat a)))
+
+pattern LocScopeBinderPat :: l -> Int -> n -> ScopeT (Located l) n f a -> LocScope l n f a
+pattern LocScopeBinderPat l i n e = LocScope (ScopeT (Located l (UnderBinderScopePat i n e)))
+
+pattern LocScopeEmbedPat :: l -> f (ScopeT (Located l) n f a) -> LocScope l n f a
+pattern LocScopeEmbedPat l fe = LocScope (ScopeT (Located l (UnderEmbedScopePat fe)))
 
 type instance BlankInfo (LocScope l n f) = n
 type instance BlankFunctor (LocScope l n f) = f

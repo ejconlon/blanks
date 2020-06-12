@@ -30,6 +30,7 @@ default-extensions:
 - GeneralizedNewtypeDeriving
 - KindSignatures
 - MultiParamTypeClasses
+- PatternSynonyms
 - Rank2Types
 - TypeFamilies
 

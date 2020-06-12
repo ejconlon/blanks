@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6dd5dac29a7eb8991e9d2728daa61f8651bf8e283305aa1063f1daf4dce65fd8
+-- hash: 61c97fd1d62991cbd4e1bdf26abc1bf7d6c8ee14625f8a65aeebd263b066f5a9
 
 name:           blanks
 version:        0.3.0
@@ -41,7 +41,7 @@ library
       Paths_blanks
   hs-source-dirs:
       src
-  default-extensions: BangPatterns DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses Rank2Types TypeFamilies
+  default-extensions: BangPatterns DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds
   build-depends:
       adjunctions >=4.4
@@ -57,7 +57,7 @@ executable blanks-exe
       Paths_blanks
   hs-source-dirs:
       app
-  default-extensions: BangPatterns DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses Rank2Types TypeFamilies
+  default-extensions: BangPatterns DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       adjunctions >=4.4
@@ -77,7 +77,7 @@ test-suite blanks-test
       Paths_blanks
   hs-source-dirs:
       test
-  default-extensions: BangPatterns DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses Rank2Types TypeFamilies
+  default-extensions: BangPatterns DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       adjunctions >=4.4

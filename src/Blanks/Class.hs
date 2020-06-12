@@ -9,18 +9,19 @@ module Blanks.Class
   ) where
 
 import Blanks.Sub (SubError)
+import Data.Kind (Type)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
-type family BlankInfo (m :: * -> *) :: *
-type family BlankFunctor (m :: * -> *) :: * -> *
-type family BlankCodomain (m :: * -> *) :: * -> *
+type family BlankInfo (m :: Type -> Type) :: Type
+type family BlankFunctor (m :: Type -> Type) :: Type -> Type
+type family BlankCodomain (m :: Type -> Type) :: Type -> Type
 
-class BlankEmbed (m :: * -> *) where
+class BlankEmbed (m :: Type -> Type) where
   -- | "embed functor"
   blankEmbed :: BlankFunctor m (m a) -> BlankCodomain m (m a)
 
-class BlankAbstract (m :: * -> *) where
+class BlankAbstract (m :: Type -> Type) where
   -- | "free name"
   blankFree :: a -> BlankCodomain m (m a)
 

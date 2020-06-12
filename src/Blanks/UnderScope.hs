@@ -5,6 +5,10 @@ module Blanks.UnderScope
   , FreeScope (..)
   , UnderScope (..)
   , UnderScopeFold (..)
+  , pattern UnderBoundScopePat
+  , pattern UnderFreeScopePat
+  , pattern UnderBinderScopePat
+  , pattern UnderEmbedScopePat
   , underScopeFold
   , underScopeFoldContraMap
   , underScopePure
@@ -47,6 +51,18 @@ data UnderScope n f e a
   | UnderBinderScope !(BinderScope n e)
   | UnderEmbedScope !(EmbedScope f e)
   deriving (Eq, Show, Functor)
+
+pattern UnderBoundScopePat :: Int -> UnderScope n f e a
+pattern UnderBoundScopePat i = UnderBoundScope (BoundScope i)
+
+pattern UnderFreeScopePat :: a -> UnderScope n f e a
+pattern UnderFreeScopePat a = UnderFreeScope (FreeScope a)
+
+pattern UnderBinderScopePat :: Int -> n -> e -> UnderScope n f e a
+pattern UnderBinderScopePat i n e = UnderBinderScope (BinderScope i n e)
+
+pattern UnderEmbedScopePat :: f e -> UnderScope n f e a
+pattern UnderEmbedScopePat fe = UnderEmbedScope (EmbedScope fe)
 
 instance Functor f => Bifunctor (UnderScope n f) where
   bimap _ _ (UnderBoundScope (BoundScope b)) = UnderBoundScope (BoundScope b)
