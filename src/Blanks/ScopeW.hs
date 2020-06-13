@@ -8,20 +8,21 @@ module Blanks.ScopeW
   , ScopeWFold
   ) where
 
-import Blanks.Class (Blank (..), BlankDomain, BlankInfo, BlankFunctor, BlankEmbedded, BlankRawFold, BlankFold)
-import Blanks.NatTrans (RealNatIso)
+import Blanks.Class (Blank (..), BlankDomain, BlankEmbedded, BlankFold, BlankFunctor, BlankInfo, BlankRawFold)
 import Blanks.Internal (BlankInternal (..), blankShift, defaultBlankBind, defaultBlankBindOpt, defaultBlankInstantiate)
+import Blanks.NatTrans (RealNatIso)
 import Blanks.RightAdjunct
 import Blanks.Sub (SubError (..))
-import Blanks.UnderScope (UnderScope, pattern UnderScopeBound, pattern UnderScopeFree, pattern UnderScopeBinder, pattern UnderScopeEmbed, underScopeFold, underScopeShift)
+import Blanks.UnderScope (UnderScope, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+                          pattern UnderScopeFree, underScopeFold, underScopeShift)
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap)
 import Data.Bitraversable (bitraverse)
+import Data.Coerce (coerce)
 import Data.Functor.Adjunction (Adjunction (..))
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
-import Data.Coerce (coerce)
 
 -- * ScopeW, patterns, and instances
 
@@ -106,7 +107,7 @@ scopeWEmbed :: RightAdjunction t => f (g a) -> RightAdjunct t (ScopeW t n f g a)
 scopeWEmbed fe = fmap ScopeW (unit (UnderScopeEmbed fe))
 
 relatedBindN :: ScopeC t n f g => (a -> RightAdjunct t (ScopeW t n f g b)) -> Int -> g a -> g b
-relatedBindN f i e = blankBindN (fmap coerce . f) i e
+relatedBindN f = blankBindN (fmap coerce . f)
 
 scopeWBindN :: ScopeC t n f g => (a -> RightAdjunct t (ScopeW t n f g b)) -> Int -> ScopeW t n f g a -> ScopeW t n f g b
 scopeWBindN f = scopeWMod . go where
@@ -118,7 +119,7 @@ scopeWBindN f = scopeWMod . go where
       UnderScopeEmbed fe -> scopeWEmbed (fmap (relatedBindN f i) fe)
 
 relatedBindOptN :: ScopeC t n f g => (a -> Maybe (RightAdjunct t (ScopeW t n f g a))) -> Int -> g a -> g a
-relatedBindOptN f i e = blankBindOptN (fmap (fmap coerce) . f) i e
+relatedBindOptN f = blankBindOptN (fmap (fmap coerce) . f)
 
 scopeWBindOptN :: ScopeC t n f g => (a -> Maybe (RightAdjunct t (ScopeW t n f g a))) -> Int -> ScopeW t n f g a -> ScopeW t n f g a
 scopeWBindOptN f = scopeWModOpt . go where

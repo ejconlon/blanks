@@ -12,8 +12,8 @@ module Blanks.NatTrans
   , realNatIsoTo
   ) where
 
-import Data.Kind (Type)
 import Data.Coerce (Coercible, coerce)
+import Data.Kind (Type)
 
 newtype NatTrans (f :: Type -> Type) (g :: Type -> Type) = NatTrans { unNatTrans :: forall a. f a -> g a }
 

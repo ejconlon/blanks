@@ -11,7 +11,7 @@ module Blanks.PureScope
   -- , pureScopeFold
   ) where
 
-import Blanks.Class (Blank (..), BlankDomain, BlankInfo, BlankFunctor, BlankEmbedded)
+import Blanks.Class (Blank (..), BlankDomain, BlankEmbedded, BlankFunctor, BlankInfo)
 import Blanks.Internal (BlankInternal)
 import Blanks.NatTrans (RealNatIso)
 import Blanks.ScopeW (ScopeW (..))

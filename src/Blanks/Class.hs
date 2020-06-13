@@ -12,9 +12,9 @@ module Blanks.Class
   , BlankFold
   ) where
 
+import Blanks.RightAdjunct (RightAdjunct)
 import Blanks.Sub (SubError)
 import Blanks.UnderScope (UnderScopeFold)
-import Blanks.RightAdjunct (RightAdjunct)
 import Data.Kind (Type)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq

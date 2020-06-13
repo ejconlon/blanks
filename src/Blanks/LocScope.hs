@@ -11,12 +11,13 @@ module Blanks.LocScope
   , pattern LocScopeEmbed
   ) where
 
-import Blanks.Class (Blank (..), BlankDomain, BlankFunctor, BlankInfo, BlankEmbedded, BlankRawFold, BlankFold)
+import Blanks.Class (Blank (..), BlankDomain, BlankEmbedded, BlankFold, BlankFunctor, BlankInfo, BlankRawFold)
 -- import Blanks.Internal (BlankInternal)
 import Blanks.Located (Located (..))
 import Blanks.NatTrans (RealNatIso)
 import Blanks.ScopeW (ScopeW (..))
-import Blanks.UnderScope (pattern UnderScopeBound, pattern UnderScopeFree, pattern UnderScopeBinder, pattern UnderScopeEmbed)
+import Blanks.UnderScope (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+                          pattern UnderScopeFree)
 import Data.Coerce (coerce)
 
 newtype LocScope l n f a = LocScope
