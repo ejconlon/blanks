@@ -14,7 +14,7 @@ abst :: Char -> BareScope -> BareScope
 abst a = runIdentity . blankAbstract1 (Name a ()) a
 
 bound :: Int -> BareScope
-bound = PureScope . ScopeT . pure . UnderBoundScope . BoundScope
+bound = PureScopeBound
 
 var :: Char -> BareScope
 var = pure

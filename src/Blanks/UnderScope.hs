@@ -5,13 +5,12 @@ module Blanks.UnderScope
   , FreeScope (..)
   , UnderScope (..)
   , UnderScopeFold (..)
-  , pattern UnderBoundScopePat
-  , pattern UnderFreeScopePat
-  , pattern UnderBinderScopePat
-  , pattern UnderEmbedScopePat
+  , pattern UnderScopeBound
+  , pattern UnderScopeFree
+  , pattern UnderScopeBinder
+  , pattern UnderScopeEmbed
   , underScopeFold
   , underScopeFoldContraMap
-  , underScopePure
   , underScopeShift
   ) where
 
@@ -52,19 +51,19 @@ data UnderScope n f e a
   | UnderEmbedScope !(EmbedScope f e)
   deriving (Eq, Show, Functor)
 
-pattern UnderBoundScopePat :: Int -> UnderScope n f e a
-pattern UnderBoundScopePat i = UnderBoundScope (BoundScope i)
+pattern UnderScopeBound :: Int -> UnderScope n f e a
+pattern UnderScopeBound i = UnderBoundScope (BoundScope i)
 
-pattern UnderFreeScopePat :: a -> UnderScope n f e a
-pattern UnderFreeScopePat a = UnderFreeScope (FreeScope a)
+pattern UnderScopeFree :: a -> UnderScope n f e a
+pattern UnderScopeFree a = UnderFreeScope (FreeScope a)
 
-pattern UnderBinderScopePat :: Int -> n -> e -> UnderScope n f e a
-pattern UnderBinderScopePat i n e = UnderBinderScope (BinderScope i n e)
+pattern UnderScopeBinder :: Int -> n -> e -> UnderScope n f e a
+pattern UnderScopeBinder i n e = UnderBinderScope (BinderScope i n e)
 
-pattern UnderEmbedScopePat :: f e -> UnderScope n f e a
-pattern UnderEmbedScopePat fe = UnderEmbedScope (EmbedScope fe)
+pattern UnderScopeEmbed :: f e -> UnderScope n f e a
+pattern UnderScopeEmbed fe = UnderEmbedScope (EmbedScope fe)
 
-{-# COMPLETE UnderBoundScopePat, UnderFreeScopePat, UnderBinderScopePat, UnderEmbedScopePat #-}
+{-# COMPLETE UnderScopeBound, UnderScopeFree, UnderScopeBinder, UnderScopeEmbed #-}
 
 instance Functor f => Bifunctor (UnderScope n f) where
   bimap _ _ (UnderBoundScope (BoundScope b)) = UnderBoundScope (BoundScope b)
@@ -83,9 +82,6 @@ instance Traversable f => Bitraversable (UnderScope n f) where
   bitraverse _ g (UnderFreeScope (FreeScope a)) = fmap (UnderFreeScope . FreeScope) (g a)
   bitraverse f _ (UnderBinderScope (BinderScope i x e)) = fmap (UnderBinderScope . BinderScope i x) (f e)
   bitraverse f _ (UnderEmbedScope (EmbedScope fe)) = fmap (UnderEmbedScope . EmbedScope) (traverse f fe)
-
-underScopePure :: a -> UnderScope n f e a
-underScopePure = UnderFreeScope . FreeScope
 
 underScopeShift :: Functor f => (Int -> Int -> e -> e) -> Int -> Int -> UnderScope n f e a -> UnderScope n f e a
 underScopeShift recShift c d us =

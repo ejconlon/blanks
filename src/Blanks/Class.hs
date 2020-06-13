@@ -1,27 +1,34 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 
 module Blanks.Class
-  ( BlankAbstract (..)
+  ( Blank (..)
+  , BlankDomain
   , BlankCodomain
-  , BlankEmbed (..)
+  , BlankEmbedded
   , BlankFunctor
   , BlankInfo
+  , BlankRawFold
+  , BlankFold
   ) where
 
 import Blanks.Sub (SubError)
+import Blanks.UnderScope (UnderScopeFold)
+import Blanks.RightAdjunct (RightAdjunct)
 import Data.Kind (Type)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 
+type family BlankDomain (m :: Type -> Type) :: Type -> Type
+type BlankCodomain (m :: Type -> Type) = RightAdjunct (BlankDomain m)
 type family BlankInfo (m :: Type -> Type) :: Type
 type family BlankFunctor (m :: Type -> Type) :: Type -> Type
-type family BlankCodomain (m :: Type -> Type) :: Type -> Type
+type family BlankEmbedded (m :: Type -> Type) :: Type -> Type
 
-class BlankEmbed (m :: Type -> Type) where
-  -- | "embed functor"
-  blankEmbed :: BlankFunctor m (m a) -> BlankCodomain m (m a)
+type BlankRawFold m a r = UnderScopeFold (BlankInfo m) (BlankFunctor m) (BlankEmbedded m a) a r
+type BlankFold m a r = BlankRawFold m a (BlankCodomain m r)
 
-class BlankAbstract (m :: Type -> Type) where
+class Blank (m :: Type -> Type) where
   -- | "free name"
   blankFree :: a -> BlankCodomain m (m a)
 
@@ -52,3 +59,21 @@ class BlankAbstract (m :: Type -> Type) where
   -- | 'blankApply' for a single argument
   blankApply1 :: BlankCodomain m (m a) -> m a -> Either SubError (m a)
   blankApply1 = blankApply . Seq.singleton
+
+  -- | Substitution as a kind of monadic bind
+  blankBind :: (a -> BlankCodomain m (m b)) -> m a -> m b
+
+  -- | Optional substitution
+  blankBindOpt :: (a -> Maybe (BlankCodomain m (m a))) -> m a -> m a
+
+  -- | "embed functor"
+  blankEmbed :: BlankFunctor m (BlankEmbedded m a) -> BlankCodomain m (m a)
+
+  -- | Raw fold
+  blankRawFold :: BlankRawFold m a r -> m a -> BlankDomain m r
+
+  -- | Fold
+  blankFold :: BlankFold m a r -> m a -> r
+
+  -- | Lift annotation
+  blankLiftAnno :: BlankDomain m a -> m a

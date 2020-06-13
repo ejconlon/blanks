@@ -5,7 +5,7 @@
 module Blanks.RightAdjunct
   ( RightAdjunct
   , RightAdjunction
-  , RightAdjunctionApplicative
+  , ApplicativeRightAdjunction
   ) where
 
 import Control.Monad.Identity (Identity)
@@ -18,4 +18,4 @@ type instance RightAdjunct Identity = Identity
 
 type RightAdjunction (t :: Type -> Type) = Adjunction t (RightAdjunct t)
 
-type RightAdjunctionApplicative t = (RightAdjunction t, Applicative (RightAdjunct t))
+type ApplicativeRightAdjunction t = (RightAdjunction t, Applicative (RightAdjunct t))
