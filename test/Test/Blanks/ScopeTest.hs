@@ -1,4 +1,6 @@
-module Test.Blanks.BlanksTest where
+module Test.Blanks.ScopeTest
+  ( testScope
+  ) where
 
 import Blanks
 import Control.Monad.Identity (Identity (..))
@@ -22,8 +24,8 @@ var = pure
 freeVars :: BareScope -> Set Char
 freeVars = foldMap Set.singleton
 
-test_sub :: TestTree
-test_sub =
+testScope :: TestTree
+testScope =
   let svar = var 'x'
       sbound = bound 0
       sfree = abst 'y' (var 'x')
@@ -84,4 +86,4 @@ test_sub =
           (sfree >>= const sid) @?= abst 'y' sid
           (sfree2 >>= const sid) @?= abst 'c' (abst 'd' sid)
 
-   in testGroup "sub" [testEq, testFreeVars, testInstantiate, testApply, testVarSub, testIdSub]
+   in testGroup "Scope" [testEq, testFreeVars, testInstantiate, testApply, testVarSub, testIdSub]

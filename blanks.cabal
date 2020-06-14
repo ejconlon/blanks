@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 22c23c28d66709e0683e5536bc532ae3152de0c3fc8c41c86d403276da7bec17
+-- hash: 004b4b3801fe075c671ff24f771f4e4d14c3ddc61f426bbaf0e5b9fa9eb7ea77
 
 name:           blanks
 version:        0.4.0
@@ -43,35 +43,34 @@ library
       Paths_blanks
   hs-source-dirs:
       src
-  default-extensions: BangPatterns DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
+  default-extensions: BangPatterns ConstraintKinds DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds
   build-depends:
-      adjunctions >=4.4
+      adjunctions >=4.4 && <5
     , base >=4.12 && <5
-    , containers >=0.6
-    , distributive >=0.6
-    , mtl >=2.2
+    , containers >=0.6 && <1
+    , distributive >=0.6 && <1
+    , mtl >=2.2 && <3
   default-language: Haskell2010
 
 test-suite blanks-test
   type: exitcode-stdio-1.0
-  main-is: Tasty.hs
+  main-is: Main.hs
   other-modules:
       Test.Blanks.Assertions
-      Test.Blanks.BlanksTest
+      Test.Blanks.ScopeTest
       Paths_blanks
   hs-source-dirs:
       test
-  default-extensions: BangPatterns DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
+  default-extensions: BangPatterns ConstraintKinds DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      adjunctions >=4.4
+      adjunctions >=4.4 && <5
     , base >=4.12 && <5
     , blanks
-    , containers >=0.6
-    , distributive >=0.6
-    , mtl >=2.2
+    , containers >=0.6 && <1
+    , distributive >=0.6 && <1
+    , mtl >=2.2 && <3
     , tasty
-    , tasty-discover
     , tasty-hunit
   default-language: Haskell2010

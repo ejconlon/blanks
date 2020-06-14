@@ -1,8 +1,4 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Blanks.ScopeW
   ( ScopeW (..)
@@ -77,7 +73,9 @@ scopeWShift :: ScopeC t u n f g => Int -> g a -> g a
 scopeWShift = scopeWShiftN 0
 
 scopeWShiftN :: ScopeC t u n f g => Int -> Int -> g a -> g a
-scopeWShiftN c d (natNewtypeFrom -> ScopeW tu) = natNewtypeTo (ScopeW (fmap (underScopeShift scopeWShiftN c d) tu))
+scopeWShiftN c d e =
+  let ScopeW tu = natNewtypeFrom e
+  in natNewtypeTo (ScopeW (fmap (underScopeShift scopeWShiftN c d) tu))
 
 scopeWBinder :: ScopeC t u n f g => Int -> n -> g a -> u (g a)
 scopeWBinder r n e = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeBinder r n e))

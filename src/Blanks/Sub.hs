@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-
 module Blanks.Sub
   ( SubError (..)
   , ThrowSub (..)

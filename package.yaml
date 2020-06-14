@@ -15,17 +15,20 @@ description: Please see the README on GitHub at <https://github.com/ejconlon/bla
 
 dependencies:
 - base >=4.12 && <5
-- adjunctions >=4.4
-- containers >=0.6
-- distributive >=0.6
-- mtl >=2.2
+- adjunctions >=4.4 && <5
+- containers >=0.6 && <1
+- distributive >=0.6 && <1
+- mtl >=2.2 && <3
 
 default-extensions:
 - BangPatterns
+- ConstraintKinds
 - DeriveFunctor
 - DeriveFoldable
 - DeriveGeneric
 - DeriveTraversable
+- FlexibleContexts
+- FlexibleInstances
 - FunctionalDependencies
 - GeneralizedNewtypeDeriving
 - KindSignatures
@@ -49,7 +52,7 @@ library:
 
 tests:
   blanks-test:
-    main:                Tasty.hs
+    main:                Main.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -58,5 +61,4 @@ tests:
     dependencies:
     - blanks
     - tasty
-    - tasty-discover
     - tasty-hunit

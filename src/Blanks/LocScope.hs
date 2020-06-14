@@ -1,10 +1,7 @@
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Blanks.LocScope
   ( LocScope (..)
-  -- , LocScopeRawFold
-  -- , LocScopeFold
   , pattern LocScopeBound
   , pattern LocScopeFree
   , pattern LocScopeBinder
