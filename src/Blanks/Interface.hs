@@ -19,6 +19,8 @@ module Blanks.Interface
   , blankInstantiate1
   , blankApply
   , blankApply1
+  , blankApplyThrow
+  , blankApply1Throw
   , blankBind
   , blankBindOpt
   , blankRawFold
@@ -28,7 +30,7 @@ module Blanks.Interface
 
 import Blanks.NatNewtype (NatNewtype)
 import Blanks.ScopeW
-import Blanks.Sub (SubError)
+import Blanks.Sub (SubError, ThrowSub, rethrowSub)
 import Blanks.UnderScope (UnderScopeFold)
 import Data.Functor.Adjunction (Adjunction)
 import Data.Kind (Type)
@@ -69,7 +71,7 @@ blankAbstract = scopeWAbstract
 
 -- | 'blankAbstract' for a single argument
 blankAbstract1 :: (Blank g, Eq a) => BlankInfo g -> a -> g a -> BlankRight g (g a)
-blankAbstract1 n k = blankAbstract n (Seq.singleton k)
+blankAbstract1 n k = scopeWAbstract n (Seq.singleton k)
 {-# INLINE blankAbstract1 #-}
 
 -- | "unAbstract names body"
@@ -79,7 +81,7 @@ blankUnAbstract = scopeWUnAbstract
 
 -- 'blankUnAbstract' for a single argument
 blankUnAbstract1 :: Blank g => a -> g a -> g a
-blankUnAbstract1 = blankUnAbstract . Seq.singleton
+blankUnAbstract1 = scopeWUnAbstract . Seq.singleton
 {-# INLINE blankUnAbstract1 #-}
 
 -- | "instantiate args body"
@@ -89,7 +91,7 @@ blankInstantiate = scopeWInstantiate
 
 -- | 'blankInstantiate' for a single argument
 blankInstantiate1 :: Blank g => BlankRight g (g a) -> g a -> g a
-blankInstantiate1 = blankInstantiate . Seq.singleton
+blankInstantiate1 = scopeWInstantiate . Seq.singleton
 {-# INLINE blankInstantiate1 #-}
 
 -- | "apply args abstraction"
@@ -99,8 +101,18 @@ blankApply = scopeWApply
 
 -- | 'blankApply' for a single argument
 blankApply1 :: Blank g => BlankRight g (g a) -> g a -> Either SubError (g a)
-blankApply1 = blankApply . Seq.singleton
+blankApply1 = scopeWApply . Seq.singleton
 {-# INLINE blankApply1 #-}
+
+-- | 'ThrowSub' version of 'blankApply'
+blankApplyThrow :: (Blank g, ThrowSub m, Applicative m) => Seq (BlankRight g (g a)) -> g a -> m (g a)
+blankApplyThrow ks = rethrowSub . scopeWApply ks
+{-# INLINE blankApplyThrow #-}
+
+-- | 'ThrowSub' version of 'blankApply1'
+blankApply1Throw :: (Blank g, ThrowSub m, Applicative m) => BlankRight g (g a) -> g a -> m (g a)
+blankApply1Throw k = rethrowSub . scopeWApply (Seq.singleton k)
+{-# INLINE blankApply1Throw #-}
 
 -- | Substitution as a kind of monadic bind
 blankBind :: Blank g => (a -> BlankRight g (g b)) -> g a -> g b
