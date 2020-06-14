@@ -6,6 +6,8 @@
 
 module Blanks.ScopeW
   ( ScopeW (..)
+  , ScopeWRawFold
+  , ScopeWFold
   , scopeWFree
   , scopeWEmbed
   , scopeWAbstract
@@ -14,12 +16,15 @@ module Blanks.ScopeW
   , scopeWApply
   , scopeWBind
   , scopeWBindOpt
+  , scopeWRawFold
+  , scopeWFold
+  , scopeWLiftAnno
   ) where
 
 import Blanks.NatNewtype (NatNewtype, natNewtypeTo, natNewtypeFrom)
 import Blanks.Sub (SubError (..))
-import Blanks.UnderScope (UnderScope, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
-                          pattern UnderScopeFree, underScopeShift)
+import Blanks.UnderScope (UnderScope, UnderScopeFold, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+                          pattern UnderScopeFree, underScopeFold, underScopeShift)
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap)
 import Data.Bitraversable (bitraverse)
@@ -146,18 +151,18 @@ scopeWApply vs = scopeWModM go where
               else Left (ApplyError len r)
       _ -> Left NonBinderError
 
--- -- * Folds
+-- * Folds
 
--- -- type ScopeWRawFold t n f g a r = BlankRawFold (ScopeW t n f g) a r
--- -- type ScopeWFold t n f g a r = BlankFold (ScopeW t n f g) a r
+type ScopeWRawFold n f g a r = UnderScopeFold n f (g a) a r
+type ScopeWFold u n f g a r = ScopeWRawFold n f g a (u r)
 
--- -- scopeWRawFold :: Functor t => ScopeWRawFold t n f g a r -> ScopeW t n f g a -> t r
--- -- scopeWRawFold usf = fmap (underScopeFold usf) . unScopeW
+scopeWRawFold :: (NatNewtype (ScopeW t n f g) g, Functor t) => ScopeWRawFold n f g a r -> g a -> t r
+scopeWRawFold usf = fmap (underScopeFold usf) . unScopeW . natNewtypeFrom
 
--- -- scopeWFold :: RightAdjunction t => ScopeWFold t n f g a r -> ScopeW t n f g a -> r
--- -- scopeWFold usf = counit . scopeWRawFold usf
+scopeWFold :: (NatNewtype (ScopeW t n f g) g, Adjunction t u) => ScopeWFold u n f g a r -> g a -> r
+scopeWFold usf = counit . scopeWRawFold usf
 
--- -- * Annotation functions
+-- * Annotation functions
 
--- -- scopeWLiftAnno :: Functor t => t a -> ScopeW t n f g a
--- -- scopeWLiftAnno ta = ScopeW (fmap UnderScopeFree ta)
+scopeWLiftAnno :: (NatNewtype (ScopeW t n f g) g, Functor t) => t a -> g a
+scopeWLiftAnno = natNewtypeTo . ScopeW . fmap UnderScopeFree

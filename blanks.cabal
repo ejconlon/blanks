@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a7700699db858fae8e5a2443d9db91eac53c57bc8d0013118cacfa185e9c6d6d
+-- hash: 61a494182d892e35abdb8845b515ab5118d6dd3721e81755bf3501884d351813
 
 name:           blanks
-version:        0.3.0
+version:        0.4.0
 synopsis:       Fill-in-the-blanks - A library factoring out substitution from ASTs
 description:    Please see the README on GitHub at <https://github.com/ejconlon/blanks#readme>
 category:       Language
@@ -36,7 +36,6 @@ library
       Blanks.NatNewtype
       Blanks.PureScope
       Blanks.RightAdjunct
-      Blanks.ScopeT
       Blanks.ScopeW
       Blanks.Sub
       Blanks.UnderScope

@@ -3,18 +3,16 @@
 
 module Blanks.PureScope
   ( PureScope
-  -- , PureScopeFold
   , pattern PureScopeBound
   , pattern PureScopeFree
   , pattern PureScopeBinder
   , pattern PureScopeEmbed
-  -- , pureScopeFold
   ) where
 
-import Blanks.Interface
+import Blanks.Interface (Blank, BlankLeft, BlankRight, BlankInfo, BlankFunctor, blankFree, blankBind)
 import Blanks.NatNewtype (NatNewtype)
 import Blanks.ScopeW (ScopeW (..))
-import Blanks.UnderScope
+import Blanks.UnderScope (pattern UnderScopeBound, pattern UnderScopeFree, pattern UnderScopeBinder, pattern UnderScopeEmbed)
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
 
@@ -57,8 +55,3 @@ instance (Eq (f (PureScope n f a)), Eq n, Eq a) => Eq (PureScope n f a) where
 
 instance (Show (f (PureScope n f a)), Show n, Show a) => Show (PureScope n f a) where
   showsPrec d (PureScope (ScopeW tu)) = showString "PureScope " . showsPrec (d+1) tu
-
--- type PureScopeFold n f a r = UnderScopeFold n f (PureScope n f a) a r
-
--- pureScopeFold :: Traversable f => PureScopeFold n f a r -> PureScope n f a -> r
--- pureScopeFold usf = runIdentity . blankFold (underScopeFoldContraMap PureScope usf) . unPureScope
