@@ -17,6 +17,7 @@ dependencies:
 - base >=4.12 && <5
 - adjunctions >=4.4
 - containers >=0.6
+- comonad >=5.0
 - distributive >=0.6
 - mtl >=2.2
 

@@ -1,24 +1,28 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Blanks.ScopeW
   ( ScopeW (..)
-  , ScopeWRawFold
-  , ScopeWFold
+  , scopeWFree
+  , scopeWEmbed
+  , scopeWAbstract
+  , scopeWUnAbstract
+  , scopeWInstantiate
+  , scopeWApply
+  , scopeWBind
+  , scopeWBindOpt
   ) where
 
-import Blanks.Class (Blank (..), BlankDomain, BlankEmbedded, BlankFold, BlankFunctor, BlankInfo, BlankRawFold)
-import Blanks.Internal (BlankInternal (..), blankShift, defaultBlankBind, defaultBlankBindOpt, defaultBlankInstantiate)
-import Blanks.NatTrans (RealNatIso)
-import Blanks.RightAdjunct
+import Blanks.NatNewtype (NatNewtype, natNewtypeTo, natNewtypeFrom)
 import Blanks.Sub (SubError (..))
 import Blanks.UnderScope (UnderScope, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
-                          pattern UnderScopeFree, underScopeFold, underScopeShift)
+                          pattern UnderScopeFree, underScopeShift)
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap)
 import Data.Bitraversable (bitraverse)
-import Data.Coerce (coerce)
 import Data.Functor.Adjunction (Adjunction (..))
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
@@ -45,145 +49,115 @@ instance (Foldable t, Foldable f, Foldable g) => Foldable (ScopeW t n f g) where
 instance (Traversable t, Traversable f, Traversable g) => Traversable (ScopeW t n f g) where
   traverse f (ScopeW tu) = fmap ScopeW (traverse (bitraverse (traverse f) f) tu)
 
-type instance BlankDomain (ScopeW t n f g) = t
-type instance BlankInfo (ScopeW t n f g) = n
-type instance BlankFunctor (ScopeW t n f g) = f
-type instance BlankEmbedded (ScopeW t n f g) = g
-
-instance ScopeC t n f g => BlankInternal (ScopeW t n f g) where
-  blankShiftN = scopeWShiftN
-  blankBindN = scopeWBindN
-  blankBindOptN = scopeWBindOptN
-  blankInstantiateN = scopeWInstantiateN
-
-instance ScopeC t n f g => Blank (ScopeW t n f g) where
-  blankFree = scopeWFree
-  blankAbstract = scopeWAbstract
-  blankUnAbstract = scopeWUnAbstract
-  blankInstantiate = defaultBlankInstantiate
-  blankApply = scopeWApply
-  blankBind = defaultBlankBind
-  blankBindOpt = defaultBlankBindOpt
-  blankEmbed = scopeWEmbed
-  blankRawFold = scopeWRawFold
-  blankFold = scopeWFold
-  blankLiftAnno = scopeWLiftAnno
+type ScopeC t u n f g = (Adjunction t u, Applicative u, Functor f, NatNewtype (ScopeW t n f g) g)
 
 -- * Smart constructors, shift, and bind
 
-type ScopeC t n f g =
-  ( ApplicativeRightAdjunction t
-  , Functor f
-  , BlankDomain g ~ t
-  -- , BlankCodomain g ~ RightAdjunct t
-  , BlankInfo g ~ n
-  , BlankFunctor g ~ f
-  , BlankInternal g
-  , RealNatIso (ScopeW t n f g) g
-  )
+scopeWMod :: ScopeC t u n f g => (UnderScope n f (g a) a -> u x) -> g a -> x
+scopeWMod f = rightAdjunct f . unScopeW . natNewtypeFrom
 
-scopeWMod :: RightAdjunction t => (UnderScope n f (g a) a -> RightAdjunct t x) -> ScopeW t n f g a -> x
-scopeWMod f = rightAdjunct f . unScopeW
+scopeWModOpt :: ScopeC t u n f g => (UnderScope n f (g a) a -> Maybe (u (g a))) -> g a -> g a
+scopeWModOpt f s = rightAdjunct (fromMaybe (pure s) . f) (unScopeW (natNewtypeFrom s))
 
-scopeWModOpt :: ApplicativeRightAdjunction t => (UnderScope n f (g a) a -> Maybe (RightAdjunct t (ScopeW t n f g a))) -> ScopeW t n f g a -> ScopeW t n f g a
-scopeWModOpt f s = rightAdjunct (fromMaybe (pure s) . f) (unScopeW s)
+scopeWModM :: (ScopeC t u n f g, Traversable m) => (UnderScope n f (g a) a -> m (u x)) -> g a -> m x
+scopeWModM f = rightAdjunct (sequenceA . f) . unScopeW . natNewtypeFrom
 
-scopeWModM :: (ApplicativeRightAdjunction t, Traversable m) => (UnderScope n f (g a) a -> m (RightAdjunct t x)) -> ScopeW t n f g a -> m x
-scopeWModM f = rightAdjunct (sequenceA . f) . unScopeW
+scopeWBound :: ScopeC t u n f g => Int -> u (g a)
+scopeWBound b = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeBound b))
 
-scopeWBound :: RightAdjunction t => Int -> RightAdjunct t (ScopeW t n f g a)
-scopeWBound b = fmap ScopeW (unit (UnderScopeBound b))
+scopeWFree :: ScopeC t u n f g => a -> u (g a)
+scopeWFree a = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeFree a))
 
-scopeWFree :: RightAdjunction t => a -> RightAdjunct t (ScopeW t n f g a)
-scopeWFree a = fmap ScopeW (unit (UnderScopeFree a))
+scopeWShift :: ScopeC t u n f g => Int -> g a -> g a
+scopeWShift = scopeWShiftN 0
 
-scopeWShiftN :: ScopeC t n f g => Int -> Int -> ScopeW t n f g a -> ScopeW t n f g a
-scopeWShiftN c d (ScopeW tu) = ScopeW (fmap (underScopeShift blankShiftN c d) tu)
+scopeWShiftN :: ScopeC t u n f g => Int -> Int -> g a -> g a
+scopeWShiftN c d (natNewtypeFrom -> ScopeW tu) = natNewtypeTo (ScopeW (fmap (underScopeShift scopeWShiftN c d) tu))
 
-scopeWBinder :: ScopeC t n f g => Int -> n -> g a -> RightAdjunct t (ScopeW t n f g a)
-scopeWBinder r n e = fmap ScopeW (unit (UnderScopeBinder r n e))
+scopeWBinder :: ScopeC t u n f g => Int -> n -> g a -> u (g a)
+scopeWBinder r n e = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeBinder r n e))
 
-scopeWEmbed :: RightAdjunction t => f (g a) -> RightAdjunct t (ScopeW t n f g a)
-scopeWEmbed fe = fmap ScopeW (unit (UnderScopeEmbed fe))
+scopeWEmbed :: ScopeC t u n f g => f (g a) -> u (g a)
+scopeWEmbed fe = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeEmbed fe))
 
-relatedBindN :: ScopeC t n f g => (a -> RightAdjunct t (ScopeW t n f g b)) -> Int -> g a -> g b
-relatedBindN f = blankBindN (fmap coerce . f)
+scopeWBind :: ScopeC t u n f g => (a -> u (g b)) -> g a -> g b
+scopeWBind f = scopeWBindN f 0
 
-scopeWBindN :: ScopeC t n f g => (a -> RightAdjunct t (ScopeW t n f g b)) -> Int -> ScopeW t n f g a -> ScopeW t n f g b
+scopeWBindN :: ScopeC t u n f g => (a -> u (g b)) -> Int -> g a -> g b
 scopeWBindN f = scopeWMod . go where
   go i us =
     case us of
       UnderScopeBound b -> scopeWBound b
-      UnderScopeFree a -> fmap (blankShift i) (f a)
-      UnderScopeBinder r x e -> scopeWBinder r x (relatedBindN f (i + r) e)
-      UnderScopeEmbed fe -> scopeWEmbed (fmap (relatedBindN f i) fe)
+      UnderScopeFree a -> fmap (scopeWShift i) (f a)
+      UnderScopeBinder r x e -> scopeWBinder r x (scopeWBindN f (i + r) e)
+      UnderScopeEmbed fe -> scopeWEmbed (fmap (scopeWBindN f i) fe)
 
-relatedBindOptN :: ScopeC t n f g => (a -> Maybe (RightAdjunct t (ScopeW t n f g a))) -> Int -> g a -> g a
-relatedBindOptN f = blankBindOptN (fmap (fmap coerce) . f)
+scopeWBindOpt :: ScopeC t u n f g => (a -> Maybe (u (g a))) -> g a -> g a
+scopeWBindOpt f = scopeWBindOptN f 0
 
-scopeWBindOptN :: ScopeC t n f g => (a -> Maybe (RightAdjunct t (ScopeW t n f g a))) -> Int -> ScopeW t n f g a -> ScopeW t n f g a
+scopeWBindOptN :: ScopeC t u n f g => (a -> Maybe (u (g a))) -> Int -> g a -> g a
 scopeWBindOptN f = scopeWModOpt . go where
   go i us =
     case us of
       UnderScopeBound _ -> Nothing
-      UnderScopeFree a -> fmap (fmap (blankShift i)) (f a)
-      UnderScopeBinder r x e -> Just (scopeWBinder r x (relatedBindOptN f (i + r) e))
-      UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (relatedBindOptN f i) fe))
+      UnderScopeFree a -> fmap (fmap (scopeWShift i)) (f a)
+      UnderScopeBinder r x e -> Just (scopeWBinder r x (scopeWBindOptN f (i + r) e))
+      UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWBindOptN f i) fe))
 
--- * Abstraction
+-- -- * Abstraction
 
-subScopeWAbstract :: (ScopeC t n f g, Eq a) => Int -> n -> Seq a -> ScopeW t n f g a -> RightAdjunct t (ScopeW t n f g a)
+subScopeWAbstract :: (ScopeC t u n f g, Eq a) => Int -> n -> Seq a -> g a -> u (g a)
 subScopeWAbstract r n ks e =
   let f = fmap scopeWBound . flip Seq.elemIndexL ks
-      e' = blankBindOpt f e
-      e'' = coerce e'
-  in scopeWBinder r n e''
+      e' = scopeWBindOpt f e
+  in scopeWBinder r n e'
 
-scopeWAbstract :: (ScopeC t n f g, Eq a) => n -> Seq a -> ScopeW t n f g a -> RightAdjunct t (ScopeW t n f g a)
+scopeWAbstract :: (ScopeC t u n f g, Eq a) => n -> Seq a -> g a -> u (g a)
 scopeWAbstract n ks =
   let r = Seq.length ks
-  in subScopeWAbstract r n ks . blankShift r
+  in subScopeWAbstract r n ks . scopeWShift r
 
-scopeWUnAbstract :: ScopeC t n f g => Seq a -> ScopeW t n f g a -> ScopeW t n f g a
-scopeWUnAbstract ks = blankInstantiate (fmap scopeWFree ks)
+scopeWUnAbstract :: ScopeC t u n f g => Seq a -> g a -> g a
+scopeWUnAbstract ks = scopeWInstantiate (fmap scopeWFree ks)
 
-scopeWInstantiateN :: ScopeC t n f g => Int -> Seq (RightAdjunct t (ScopeW t n f g a)) -> ScopeW t n f g a -> ScopeW t n f g a
+scopeWInstantiate :: ScopeC t u n f g => Seq (u (g a)) -> g a -> g a
+scopeWInstantiate = scopeWInstantiateN 0
+
+scopeWInstantiateN :: ScopeC t u n f g => Int -> Seq (u (g a)) -> g a -> g a
 scopeWInstantiateN h vs = scopeWModOpt (go h) where
-  ws = fmap (fmap coerce) vs
   go i us =
     case us of
       UnderScopeBound b -> vs Seq.!? (b - i)
       UnderScopeFree _ -> Nothing
       UnderScopeBinder r n e ->
-        let ws' = fmap (fmap (blankShift r)) ws
-            e' = blankInstantiateN (r + i) ws' e
-            e'' = coerce e'
-        in Just (scopeWBinder r n e'')
-      UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (blankInstantiateN i ws) fe))
+        let vs' = fmap (fmap (scopeWShift r)) vs
+            e' = scopeWInstantiateN (r + i) vs' e
+        in Just (scopeWBinder r n e')
+      UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWInstantiateN i vs) fe))
 
-scopeWApply :: ScopeC t n f g => Seq (RightAdjunct t (ScopeW t n f g a)) -> ScopeW t n f g a -> Either SubError (ScopeW t n f g a)
+scopeWApply :: ScopeC t u n f g => Seq (u (g a)) -> g a -> Either SubError (g a)
 scopeWApply vs = scopeWModM go where
   go us =
     case us of
       UnderScopeBinder r _ e ->
         let len = Seq.length vs
         in if len == r
-              then Right (pure (blankShift (-1) (blankInstantiate vs (coerce e))))
+              then Right (pure (scopeWShift (-1) (scopeWInstantiate vs e)))
               else Left (ApplyError len r)
       _ -> Left NonBinderError
 
--- * Folds
+-- -- * Folds
 
-type ScopeWRawFold t n f g a r = BlankRawFold (ScopeW t n f g) a r
-type ScopeWFold t n f g a r = BlankFold (ScopeW t n f g) a r
+-- -- type ScopeWRawFold t n f g a r = BlankRawFold (ScopeW t n f g) a r
+-- -- type ScopeWFold t n f g a r = BlankFold (ScopeW t n f g) a r
 
-scopeWRawFold :: Functor t => ScopeWRawFold t n f g a r -> ScopeW t n f g a -> t r
-scopeWRawFold usf = fmap (underScopeFold usf) . unScopeW
+-- -- scopeWRawFold :: Functor t => ScopeWRawFold t n f g a r -> ScopeW t n f g a -> t r
+-- -- scopeWRawFold usf = fmap (underScopeFold usf) . unScopeW
 
-scopeWFold :: RightAdjunction t => ScopeWFold t n f g a r -> ScopeW t n f g a -> r
-scopeWFold usf = counit . scopeWRawFold usf
+-- -- scopeWFold :: RightAdjunction t => ScopeWFold t n f g a r -> ScopeW t n f g a -> r
+-- -- scopeWFold usf = counit . scopeWRawFold usf
 
--- * Annotation functions
+-- -- * Annotation functions
 
-scopeWLiftAnno :: Functor t => t a -> ScopeW t n f g a
-scopeWLiftAnno ta = ScopeW (fmap UnderScopeFree ta)
+-- -- scopeWLiftAnno :: Functor t => t a -> ScopeW t n f g a
+-- -- scopeWLiftAnno ta = ScopeW (fmap UnderScopeFree ta)
