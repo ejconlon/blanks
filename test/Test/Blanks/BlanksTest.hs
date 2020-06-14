@@ -8,13 +8,13 @@ import Test.Blanks.Assertions ((@/=))
 import Test.Tasty
 import Test.Tasty.HUnit
 
-type BareScope = PureScope (NameOnly Char) Identity Char
+type BareScope = Scope (NameOnly Char) Identity Char
 
 abst :: Char -> BareScope -> BareScope
 abst a = runIdentity . blankAbstract1 (Name a ()) a
 
 bound :: Int -> BareScope
-bound = PureScopeBound
+bound = ScopeBound
 
 var :: Char -> BareScope
 var = pure

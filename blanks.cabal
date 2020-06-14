@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 61a494182d892e35abdb8845b515ab5118d6dd3721e81755bf3501884d351813
+-- hash: 894498f18d4c552727a3975bb104fe35161e3b7625cdaa0b83b4944f3f7d473a
 
 name:           blanks
 version:        0.4.0
@@ -34,8 +34,8 @@ library
       Blanks.LocScope
       Blanks.Name
       Blanks.NatNewtype
-      Blanks.PureScope
       Blanks.RightAdjunct
+      Blanks.Scope
       Blanks.ScopeW
       Blanks.Sub
       Blanks.UnderScope
@@ -48,7 +48,6 @@ library
   build-depends:
       adjunctions >=4.4
     , base >=4.12 && <5
-    , comonad >=5.0
     , containers >=0.6
     , distributive >=0.6
     , mtl >=2.2
@@ -66,7 +65,6 @@ executable blanks-exe
       adjunctions >=4.4
     , base >=4.12 && <5
     , blanks
-    , comonad >=5.0
     , containers >=0.6
     , distributive >=0.6
     , mtl >=2.2
@@ -87,7 +85,6 @@ test-suite blanks-test
       adjunctions >=4.4
     , base >=4.12 && <5
     , blanks
-    , comonad >=5.0
     , containers >=0.6
     , distributive >=0.6
     , mtl >=2.2

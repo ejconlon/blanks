@@ -21,10 +21,10 @@ module Blanks.ScopeW
   , scopeWLiftAnno
   ) where
 
-import Blanks.NatNewtype (NatNewtype, natNewtypeTo, natNewtypeFrom)
+import Blanks.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
 import Blanks.Sub (SubError (..))
-import Blanks.UnderScope (UnderScope, UnderScopeFold, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
-                          pattern UnderScopeFree, underScopeFold, underScopeShift)
+import Blanks.UnderScope (UnderScope, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+                          UnderScopeFold, pattern UnderScopeFree, underScopeFold, underScopeShift)
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap)
 import Data.Bitraversable (bitraverse)

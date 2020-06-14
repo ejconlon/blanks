@@ -11,11 +11,12 @@ module Blanks.LocScope
   , pattern LocScopeEmbed
   ) where
 
-import Blanks.Interface (Blank, BlankLeft, BlankRight, BlankInfo, BlankFunctor)
-import Blanks.Located (Located (..), Colocated)
+import Blanks.Interface (Blank, BlankFunctor, BlankInfo, BlankLeft, BlankRight)
+import Blanks.Located (Colocated, Located (..))
 import Blanks.NatNewtype (NatNewtype)
 import Blanks.ScopeW (ScopeW (..))
-import Blanks.UnderScope (pattern UnderScopeBound, pattern UnderScopeFree, pattern UnderScopeBinder, pattern UnderScopeEmbed)
+import Blanks.UnderScope (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+                          pattern UnderScopeFree)
 
 newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeW (Located l) n f (LocScope l n f) a

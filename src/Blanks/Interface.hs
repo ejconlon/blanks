@@ -26,9 +26,9 @@ module Blanks.Interface
   , blankLiftAnno
   ) where
 
+import Blanks.NatNewtype (NatNewtype)
 import Blanks.ScopeW
 import Blanks.Sub (SubError)
-import Blanks.NatNewtype (NatNewtype)
 import Blanks.UnderScope (UnderScopeFold)
 import Data.Functor.Adjunction (Adjunction)
 import Data.Kind (Type)
