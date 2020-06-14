@@ -47,17 +47,6 @@ ghc-options:
 library:
   source-dirs: src
 
-executables:
-  blanks-exe:
-    main:                Main.hs
-    source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - blanks
-
 tests:
   blanks-test:
     main:                Tasty.hs
