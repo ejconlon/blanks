@@ -1,8 +1,12 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Test.Blanks.Parsing where
 
 import Control.Applicative (Alternative (..))
+import Control.DeepSeq (NFData)
 import Control.Exception (throwIO)
 import Data.Void (Void)
+import GHC.Generics (Generic)
 import qualified Text.Megaparsec as MP
 import qualified Text.Megaparsec.Char as MPC
 import qualified Text.Megaparsec.Char.Lexer as MPCL
@@ -23,7 +27,8 @@ data SourceSpan = SourceSpan
   , _ssStartColumn :: !MP.Pos
   , _ssEndLine :: !MP.Pos
   , _ssEndColumn :: !MP.Pos
-  } deriving (Eq, Show, Ord)
+  } deriving stock (Eq, Show, Ord, Generic)
+    deriving anyclass (NFData)
 
 mkSourceSpan :: MP.SourcePos -> MP.SourcePos -> SourceSpan
 mkSourceSpan (MP.SourcePos n sl sc) (MP.SourcePos _ el ec) = SourceSpan n sl sc el ec

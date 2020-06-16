@@ -1,5 +1,5 @@
 name:                blanks
-version:             0.4.0
+version:             0.4.1
 github:              "ejconlon/blanks"
 license:             BSD3
 author:              "Eric Conlon"
@@ -17,6 +17,7 @@ dependencies:
 - base >=4.12 && <5
 - adjunctions >=4.4 && <5
 - containers >=0.6 && <1
+- deepseq >=1.4 && <2
 - distributive >=0.6 && <1
 - mtl >=2.2 && <3
 
@@ -27,6 +28,7 @@ default-extensions:
 - DeriveFoldable
 - DeriveGeneric
 - DeriveTraversable
+- DerivingStrategies
 - FlexibleContexts
 - FlexibleInstances
 - FunctionalDependencies

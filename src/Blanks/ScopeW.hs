@@ -26,6 +26,7 @@ import Blanks.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
 import Blanks.Sub (SubError (..))
 import Blanks.UnderScope (UnderScope, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
                           UnderScopeFold, pattern UnderScopeFree, underScopeFold, underScopeShift)
+import Control.DeepSeq (NFData (..))
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap, first)
 import Data.Bitraversable (bitraverse)
@@ -39,6 +40,9 @@ import qualified Data.Sequence as Seq
 newtype ScopeW t n f g a = ScopeW
   { unScopeW :: t (UnderScope n f (g a) a)
   }
+
+instance NFData (t (UnderScope n f (g a) a) )=> NFData (ScopeW t n f g a) where
+  rnf = rnf . unScopeW
 
 instance Eq (t (UnderScope n f (g a) a)) => Eq (ScopeW t n f g a) where
   ScopeW tu == ScopeW tv = tu == tv

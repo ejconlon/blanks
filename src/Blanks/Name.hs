@@ -1,18 +1,24 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Blanks.Name
   ( Name (..)
   , NameOnly
   , pattern NameOnly
   ) where
 
+import Control.DeepSeq (NFData)
+import GHC.Generics (Generic)
+
 -- | 'Name' is compared on value only, allowing you to define and use
 -- things like 'NameOnly' in your 'BlankInfo' values to make alpha-equivalent
 -- terms structurally ('Eq') equivalent.
 data Name n a =
   Name
-    { _nameKey :: n
-    , _nameValue :: a
+    { _nameKey :: !n
+    , _nameValue :: !a
     }
-  deriving (Show, Functor, Foldable, Traversable)
+  deriving stock (Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 instance Eq a => Eq (Name n a) where
   Name _ x == Name _ y = x == y

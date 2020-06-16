@@ -17,6 +17,7 @@ import Blanks.Scope (Scope (..))
 import Blanks.ScopeW (ScopeW (..))
 import Blanks.UnderScope (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
                           pattern UnderScopeFree)
+import Control.DeepSeq (NFData (..))
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.Writer (MonadWriter (..))
@@ -26,7 +27,7 @@ import Control.Monad.Writer (MonadWriter (..))
 -- and inspection.
 newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeW (Located l) n f (LocScope l n f) a
-  } deriving (Functor, Foldable, Traversable)
+  } deriving stock (Functor, Foldable, Traversable)
 
 type instance BlankLeft (LocScope l n f) = Located l
 type instance BlankRight (LocScope l n f) = Colocated l
@@ -35,6 +36,9 @@ type instance BlankFunctor (LocScope l n f) = f
 
 instance Functor f => Blank (LocScope l n f)
 instance NatNewtype (ScopeW (Located l) n f (LocScope l n f)) (LocScope l n f)
+
+instance (NFData l, NFData n, NFData a, NFData (f (LocScope l n f a))) => NFData (LocScope l n f a) where
+  rnf = rnf . unLocScope
 
 pattern LocScopeBound :: l -> Int -> LocScope l n f a
 pattern LocScopeBound l b = LocScope (ScopeW (Located l (UnderScopeBound b)))

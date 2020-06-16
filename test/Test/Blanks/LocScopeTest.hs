@@ -1,13 +1,16 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Test.Blanks.LocScopeTest where
 
 import Blanks
-import Data.String (IsString)
+import Control.DeepSeq (NFData, force)
+import GHC.Generics (Generic)
 import Test.Blanks.Parsing
 import Test.Tasty
 import Test.Tasty.HUnit
 
 -- A newtype indicating an identifier in our language
-newtype Ident = Ident { unIdent :: String } deriving (Eq, Show, Ord, IsString)
+newtype Ident = Ident { unIdent :: String } deriving newtype (Eq, Show, Ord, NFData)
 
 -- The type of concrete expressions, labeled with source location
 data CExp l =
@@ -45,7 +48,8 @@ data Exp a =
   | ExpAdd a a
   | ExpIf a a a
   | ExpIsZero a
-  deriving (Eq, Show, Functor, Foldable, Traversable)
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 -- A nameless equivalent to 'CExp'
 type ExpScope l = LocScope l (NameOnly Ident) Exp Ident
@@ -125,7 +129,8 @@ type ExpSimpleScope = Scope (NameOnly Ident) Exp Ident
 testSingle :: TestName -> String -> ExpSimpleScope -> TestTree
 testSingle name input expected = testCase name $ do
   namedExp <- runParserIO cexpParser input
-  let namelessExp = nameless namedExp
+  -- Force here just to test that we can
+  let namelessExp = force (nameless namedExp)
   cexpLoc namedExp @?= locScopeLocation namelessExp
   let actual = locScopeForget namelessExp
   expected @?= actual

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Blanks.Located
@@ -8,12 +9,14 @@ module Blanks.Located
   , runColocated
   ) where
 
+import Control.DeepSeq (NFData)
 import Control.Monad (ap)
 import Control.Monad.Reader (MonadReader, Reader, ReaderT (..), ask, reader, runReader)
 import Control.Monad.Writer (MonadWriter (..))
 import Data.Distributive (Distributive (..))
 import Data.Functor.Adjunction (Adjunction (..))
 import Data.Functor.Rep (Representable)
+import GHC.Generics (Generic)
 
 -- | This is basically the 'Env' comonad, but with the env strict.
 -- It's also basically the 'Writer' monad in certain contexts.
@@ -21,12 +24,13 @@ import Data.Functor.Rep (Representable)
 data Located l a = Located
   { _locatedLoc :: !l
   , _locatedVal :: a
-  } deriving (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 -- | Because we defined a unique left adjoint, we have to define the unique right.
 newtype Colocated l a = Colocated
   { unColocated :: Reader l a
-  } deriving (Functor, Applicative, Monad, MonadReader l, Representable)
+  } deriving newtype (Functor, Applicative, Monad, MonadReader l, Representable)
 
 colocated :: (l -> a) -> Colocated l a
 colocated f = Colocated (reader f)

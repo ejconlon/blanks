@@ -13,6 +13,7 @@ import Blanks.NatNewtype (NatNewtype)
 import Blanks.ScopeW (ScopeW (..))
 import Blanks.UnderScope (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
                           pattern UnderScopeFree)
+import Control.DeepSeq (NFData (..))
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
 
@@ -21,7 +22,7 @@ import Control.Monad.Identity (Identity (..))
 -- and inspection.
 newtype Scope n f a = Scope
   { unScope :: ScopeW Identity n f (Scope n f) a
-  } deriving (Functor, Foldable, Traversable)
+  } deriving stock (Functor, Foldable, Traversable)
 
 type instance BlankLeft (Scope n f) = Identity
 type instance BlankRight (Scope n f) = Identity
@@ -30,6 +31,9 @@ type instance BlankFunctor (Scope n f) = f
 
 instance Functor f => Blank (Scope n f)
 instance NatNewtype (ScopeW Identity n f (Scope n f)) (Scope n f)
+
+instance (NFData n, NFData a, NFData (f (Scope n f a))) => NFData (Scope n f a) where
+  rnf = rnf . unScope
 
 pattern ScopeBound :: Int -> Scope n f a
 pattern ScopeBound b = Scope (ScopeW (Identity (UnderScopeBound b)))
