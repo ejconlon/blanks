@@ -16,6 +16,9 @@ import Blanks.UnderScope (pattern UnderScopeBinder, pattern UnderScopeBound, pat
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
 
+-- | A simple wrapper for your expression functor that knows how to name-bind.
+-- See 'Blank' for usage, and see the patterns in this module for easy manipulation
+-- and inspection.
 newtype Scope n f a = Scope
   { unScope :: ScopeW Identity n f (Scope n f) a
   } deriving (Functor, Foldable, Traversable)

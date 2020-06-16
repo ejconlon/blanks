@@ -1,3 +1,4 @@
+-- | Internals. You will probably never need these.
 module Blanks.UnderScope
   ( BinderScope (..)
   , BoundScope (..)

@@ -1,7 +1,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Internals. You'd need to newtype 'ScopeW' to implement your own 'Blank'.
 module Blanks.ScopeW
-  ( ScopeW (..)
+  ( ScopeC
+  , ScopeW (..)
   , ScopeWRawFold
   , ScopeWFold
   , scopeWFree
@@ -12,6 +14,7 @@ module Blanks.ScopeW
   , scopeWApply
   , scopeWBind
   , scopeWBindOpt
+  , scopeWLift
   , scopeWRawFold
   , scopeWFold
   , scopeWLiftAnno
@@ -109,7 +112,10 @@ scopeWBindOptN f = scopeWModOpt . go where
       UnderScopeBinder r x e -> Just (scopeWBinder r x (scopeWBindOptN f (i + r) e))
       UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWBindOptN f i) fe))
 
--- -- * Abstraction
+scopeWLift :: (ScopeC t u n f g, Monad u, Traversable f) => f a -> u (g a)
+scopeWLift fa = traverse scopeWFree fa >>= scopeWEmbed
+
+-- * Abstraction
 
 subScopeWAbstract :: (ScopeC t u n f g, Eq a) => Int -> n -> Seq a -> g a -> u (g a)
 subScopeWAbstract r n ks e =

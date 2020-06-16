@@ -5,8 +5,9 @@ module Blanks.Sub
   ) where
 
 import Control.Exception (Exception, throwIO)
-import Control.Monad.Except (ExceptT, throwError)
 
+-- | Errors that happen in the course of instantiation, thrown by 'blankApply'
+-- and related functions.
 data SubError
   = ApplyError !Int !Int
   | UnboundError !Int
@@ -15,6 +16,9 @@ data SubError
 
 instance Exception SubError
 
+-- | Some monadic context that lets you throw a 'SubError'.
+-- Exists to let you rethrow to a more convenient context rather than
+-- pattern maching.
 class ThrowSub m where
   throwSub :: SubError -> m a
 
@@ -23,9 +27,6 @@ rethrowSub = either throwSub pure
 
 instance ThrowSub (Either SubError) where
   throwSub = Left
-
-instance Monad m => ThrowSub (ExceptT SubError m) where
-  throwSub = throwError
 
 instance ThrowSub IO where
   throwSub = throwIO

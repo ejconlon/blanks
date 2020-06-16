@@ -119,6 +119,7 @@ named e =
         ExpIf a b c -> CExpIf l <$> named a <*> named b <*> named c
         ExpIsZero a -> CExpIsZero l <$> named a
 
+-- An ExpScope without locations
 type ExpSimpleScope = Scope (NameOnly Ident) Exp Ident
 
 testSingle :: TestName -> String -> ExpSimpleScope -> TestTree

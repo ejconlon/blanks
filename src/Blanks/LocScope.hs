@@ -21,6 +21,9 @@ import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.Writer (MonadWriter (..))
 
+-- | A 'Scope' annotated with some information between constructors.
+-- See 'Blank' for usage, and see the patterns in this module for easy manipulation
+-- and inspection.
 newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeW (Located l) n f (LocScope l n f) a
   } deriving (Functor, Foldable, Traversable)
@@ -47,6 +50,7 @@ pattern LocScopeEmbed l fe = LocScope (ScopeW (Located l (UnderScopeEmbed fe)))
 
 {-# COMPLETE LocScopeBound, LocScopeFree, LocScopeBinder, LocScopeEmbed #-}
 
+-- | Extract the location (annotation) from this scope.
 locScopeLocation :: LocScope l n f a -> l
 locScopeLocation s =
   case s of
@@ -76,5 +80,6 @@ instance (Eq (f (LocScope l n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) 
 instance (Show (f (LocScope l n f a)), Show l, Show n, Show a) => Show (LocScope l n f a) where
   showsPrec d (LocScope (ScopeW tu)) = showString "LocScope " . showsPrec (d+1) tu
 
+-- | Forget all the annotations and yield a plain 'Scope'.
 locScopeForget :: Functor f => LocScope l n f a -> Scope n f a
 locScopeForget = blankHoistAnno (\(Located _ a) -> Identity a)
