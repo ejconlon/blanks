@@ -15,6 +15,8 @@ module Blanks.ScopeW
   , scopeWRawFold
   , scopeWFold
   , scopeWLiftAnno
+  , scopeWHoistAnno
+  , scopeWMapAnno
   ) where
 
 import Blanks.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
@@ -22,7 +24,7 @@ import Blanks.Sub (SubError (..))
 import Blanks.UnderScope (UnderScope, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
                           UnderScopeFold, pattern UnderScopeFree, underScopeFold, underScopeShift)
 import Data.Bifoldable (bifoldr)
-import Data.Bifunctor (bimap)
+import Data.Bifunctor (bimap, first)
 import Data.Bitraversable (bitraverse)
 import Data.Functor.Adjunction (Adjunction (..))
 import Data.Maybe (fromMaybe)
@@ -164,3 +166,17 @@ scopeWFold usf = counit . scopeWRawFold usf
 
 scopeWLiftAnno :: (NatNewtype (ScopeW t n f g) g, Functor t) => t a -> g a
 scopeWLiftAnno = natNewtypeTo . ScopeW . fmap UnderScopeFree
+
+scopeWHoistAnno :: (NatNewtype (ScopeW t n f g) g, NatNewtype (ScopeW w n f h) h, Functor t, Functor w, Functor f) => (forall x. t x -> w x) -> g a -> h a
+scopeWHoistAnno nat ga =
+  let ScopeW tu = natNewtypeFrom ga
+      s = ScopeW (nat (fmap (first (scopeWHoistAnno nat)) tu))
+  in natNewtypeTo s
+
+scopeWMapAnno :: ScopeC t u n f g => (t a -> t b) -> g a -> g b
+scopeWMapAnno f = scopeWMod go where
+  go us = case us of
+    UnderScopeBound b -> scopeWBound b
+    UnderScopeFree a -> fmap (natNewtypeTo . ScopeW . fmap UnderScopeFree . f) (unit a)
+    UnderScopeBinder r x e -> scopeWBinder r x (scopeWMapAnno f e)
+    UnderScopeEmbed fe -> scopeWEmbed (fmap (scopeWMapAnno f) fe)

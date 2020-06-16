@@ -23,6 +23,8 @@ module Blanks.Interface
   , blankRawFold
   , blankFold
   , blankLiftAnno
+  , blankHoistAnno
+  , blankMapAnno
   ) where
 
 import Blanks.NatNewtype (NatNewtype)
@@ -50,6 +52,8 @@ type BlankC (g :: Type -> Type) =
   )
 
 class BlankC g => Blank (g :: Type -> Type)
+
+type BlankPair g h = (Blank g, Blank h, BlankInfo g ~ BlankInfo h, BlankFunctor g ~ BlankFunctor h)
 
 -- | "free name"
 blankFree :: Blank g => a -> BlankRight g (g a)
@@ -135,3 +139,13 @@ blankFold = scopeWFold
 blankLiftAnno :: Blank g => BlankLeft g a -> g a
 blankLiftAnno = scopeWLiftAnno
 {-# INLINE blankLiftAnno #-}
+
+-- | Hoist annotation
+blankHoistAnno :: BlankPair g h => (forall x. BlankLeft g x -> BlankLeft h x) -> g a -> h a
+blankHoistAnno = scopeWHoistAnno
+{-# INLINE blankHoistAnno #-}
+
+-- | Map annotation
+blankMapAnno :: Blank g => (BlankLeft g a -> BlankLeft g b) -> g a -> g b
+blankMapAnno = scopeWMapAnno
+{-# INLINE blankMapAnno #-}

@@ -33,7 +33,7 @@ data BinderScope n e =
   BinderScope
     { binderScopeArity :: !Int
     , binderScopeInfo :: !n
-    , binderScopeBody :: !e
+    , binderScopeBody :: e
     }
   deriving (Eq, Show, Functor, Foldable, Traversable)
 

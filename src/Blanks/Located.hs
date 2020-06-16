@@ -8,27 +8,28 @@ module Blanks.Located
   , runColocated
   ) where
 
-import Blanks.RightAdjunct (RightAdjunct)
 import Control.Monad (ap)
-import Control.Monad.Identity (Identity (..))
-import Control.Monad.Reader (MonadReader, Reader, ReaderT (..), ask, runReader)
+import Control.Monad.Reader (MonadReader, Reader, ReaderT (..), ask, reader, runReader)
+import Control.Monad.Writer (MonadWriter (..))
 import Data.Distributive (Distributive (..))
 import Data.Functor.Adjunction (Adjunction (..))
 import Data.Functor.Rep (Representable)
 
+-- | This is basically the 'Env' comonad, but with the env strict.
+-- It's also basically the 'Writer' monad in certain contexts.
+-- We define a new, non-transforming datatype so we can pattern-match.
 data Located l a = Located
   { _locatedLoc :: !l
-  , _locatedVal :: !a
+  , _locatedVal :: a
   } deriving (Eq, Show, Functor, Foldable, Traversable)
 
+-- | Because we defined a unique left adjoint, we have to define the unique right.
 newtype Colocated l a = Colocated
   { unColocated :: Reader l a
   } deriving (Functor, Applicative, Monad, MonadReader l, Representable)
 
-type instance RightAdjunct (Located l) = Colocated l
-
 colocated :: (l -> a) -> Colocated l a
-colocated f = Colocated (ReaderT (Identity . f))
+colocated f = Colocated (reader f)
 
 askColocated :: Colocated l l
 askColocated = Colocated ask
@@ -50,3 +51,9 @@ instance Monoid l => Applicative (Located l) where
 instance Monoid l => Monad (Located l) where
   return = pure
   Located l a >>= f = let Located p b = f a in Located (l <> p) b
+
+instance Monoid l => MonadWriter l (Located l) where
+  writer (a, l) = Located l a
+  tell l = Located l ()
+  listen (Located l a) = Located l (a, l)
+  pass (Located l (a, f)) = Located (f l) a

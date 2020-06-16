@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Blanks.Scope
-  ( Scope
+  ( Scope (..)
   , pattern ScopeBound
   , pattern ScopeFree
   , pattern ScopeBinder

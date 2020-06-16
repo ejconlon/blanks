@@ -60,5 +60,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - blanks
+    - megaparsec
     - tasty
     - tasty-hunit
+    - text

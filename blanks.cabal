@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 004b4b3801fe075c671ff24f771f4e4d14c3ddc61f426bbaf0e5b9fa9eb7ea77
+-- hash: dce6fa2995f08e5b1615eab81bbbbb7339ba49c1db0902125b8495fc24c84bd1
 
 name:           blanks
 version:        0.4.0
@@ -34,7 +34,6 @@ library
       Blanks.LocScope
       Blanks.Name
       Blanks.NatNewtype
-      Blanks.RightAdjunct
       Blanks.Scope
       Blanks.ScopeW
       Blanks.Sub
@@ -58,6 +57,8 @@ test-suite blanks-test
   main-is: Main.hs
   other-modules:
       Test.Blanks.Assertions
+      Test.Blanks.LocScopeTest
+      Test.Blanks.Parsing
       Test.Blanks.ScopeTest
       Paths_blanks
   hs-source-dirs:
@@ -70,7 +71,9 @@ test-suite blanks-test
     , blanks
     , containers >=0.6 && <1
     , distributive >=0.6 && <1
+    , megaparsec
     , mtl >=2.2 && <3
     , tasty
     , tasty-hunit
+    , text
   default-language: Haskell2010
