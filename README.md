@@ -6,7 +6,7 @@ Fill-in-the-blanks - A library factoring out substitution from ASTs.
 
 It's a pain to track de Bruijn indices yourself to implement capture-avoiding subsititution,
 so this library provides some wrappers that help. One of the best libraries for this is
-<https://hackage.haskell.org/package/bound bound>, which uses a clever representation to make
+[bound](https://hackage.haskell.org/package/bound), which uses a clever representation to make
 these operations safe and fast. The tradeoff is that you have to define a 'Monad' instance
 for your expression functor, which in practice can be tricky. (It's even trickier to derive
 'Eq' and 'Show'!)
