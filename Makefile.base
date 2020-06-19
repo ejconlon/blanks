@@ -1,6 +1,5 @@
 .PHONY: cisetup
 cisetup:
-	stack config set system-ghc --global true
 
 .PHONY: citest
 citest: test
@@ -14,30 +13,19 @@ cicompress:
 
 .PHONY: build
 build:
-	stack build
+	stack build --test --no-run-tests
 
 .PHONY: clean
 clean:
 	stack clean --full
 
-.PHONY: buildsplices
-buildsplices:
-	stack build --ghc-options='-ddump-splices'
-
-.PHONY: dumpsplices
-printsplices:
-	find .stack-work -iname "*.dump-splices" | xargs -t -L1 cat
-
-.PHONY: splices
-splices: buildsplices printsplices
-
 .PHONY: test
 test:
-	stack test
+	stack build --test
 
 .PHONY: ghci
 ghci:
-	stack ghci --ghci-options "-ghci-script .ghci-manual"
+	stack ghci --test --ghci-options "-ghci-script .ghci-manual"
 
 .PHONY: docs
 docs:

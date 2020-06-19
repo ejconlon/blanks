@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f04965a3798127c433ad644602e9f2d305aadbcc482644902f31342e2390729c
+-- hash: bce7c1157ad17dfb08bdd82fd1d9cef7f5aead112c1349019b6dbfed38de7959
 
 name:           blanks
-version:        0.4.1
+version:        0.4.2
 synopsis:       Fill-in-the-blanks - A library factoring out substitution from ASTs
 description:    Please see the README on GitHub at <https://github.com/ejconlon/blanks#readme>
 category:       Language

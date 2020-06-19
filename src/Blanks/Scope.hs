@@ -33,7 +33,7 @@ instance Functor f => Blank (Scope n f)
 instance NatNewtype (ScopeW Identity n f (Scope n f)) (Scope n f)
 
 instance (NFData n, NFData a, NFData (f (Scope n f a))) => NFData (Scope n f a) where
-  rnf = rnf . unScope
+  rnf (Scope s) = seq (rnf s) ()
 
 pattern ScopeBound :: Int -> Scope n f a
 pattern ScopeBound b = Scope (ScopeW (Identity (UnderScopeBound b)))

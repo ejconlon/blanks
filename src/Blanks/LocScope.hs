@@ -38,7 +38,7 @@ instance Functor f => Blank (LocScope l n f)
 instance NatNewtype (ScopeW (Located l) n f (LocScope l n f)) (LocScope l n f)
 
 instance (NFData l, NFData n, NFData a, NFData (f (LocScope l n f a))) => NFData (LocScope l n f a) where
-  rnf = rnf . unLocScope
+  rnf (LocScope s) = seq (rnf s) ()
 
 pattern LocScopeBound :: l -> Int -> LocScope l n f a
 pattern LocScopeBound l b = LocScope (ScopeW (Located l (UnderScopeBound b)))

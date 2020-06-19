@@ -42,7 +42,7 @@ newtype ScopeW t n f g a = ScopeW
   }
 
 instance NFData (t (UnderScope n f (g a) a) )=> NFData (ScopeW t n f g a) where
-  rnf = rnf . unScopeW
+  rnf (ScopeW tu) = seq (rnf tu) ()
 
 instance Eq (t (UnderScope n f (g a) a)) => Eq (ScopeW t n f g a) where
   ScopeW tu == ScopeW tv = tu == tv
