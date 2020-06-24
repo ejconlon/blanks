@@ -1,36 +1,80 @@
 version: 2.1
+
+parameters:
+  project:
+    type: string
+    default: "blanks"
+  cache_ver:
+    type: string
+    default: "v1"
+
 jobs:
-  build_and_render:
+  stack_build:
+    parameters:
+      lts_ghc_ver:
+        type: string
     docker:
-      - image: haskell:8.8.3
+      - image: haskell:<< parameters.lts_ghc_ver >>
     steps:
       - checkout
       - restore_cache:
           name: Restore cached dependencies
           keys:
-            - build-cache-v1-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
+            - stack-<< pipeline.parameters.cache_ver >>-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
       - run:
           name: Resolve/update dependencies
           command: make cisetup
       - run:
           name: Run tests
           command: make citest
-      - run:
-          name: Generate docs
-          command: make cidocs
-      - run:
-          name: Compress docs
-          command: make cicompress
       - save_cache:
           name: Cache dependencies
-          key: build-cache-v1-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
+          key: stack-<< pipeline.parameters.cache_ver >>-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
           paths:
             - "/root/.stack"
             - ".stack-work"
-      - store_artifacts:
-          path: /tmp/haddock.tar.gz
+  cabal_build:
+    parameters:
+      ghc_ver:
+        type: string
+    docker:
+      - image: haskell:<< parameters.ghc_ver >>
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore cached dependencies
+          keys:
+            - cabal-<< pipeline.parameters.cache_ver >>-<< parameters.ghc_ver >>-{{ checksum "<< pipeline.parameters.project >>.cabal" }}
+      - run:
+          name: Resolve/update dependencies
+          command: cabal update
+      - run:
+          name: Build project
+          command: cabal build
+      - run:
+          name: Run tests
+          command: cabal test
+      - save_cache:
+          name: Cache dependencies
+          key: cabal-<< pipeline.parameters.cache_ver >>-<< parameters.ghc_ver >>-{{ checksum "<< pipeline.parameters.project >>.cabal" }}
+          paths:
+            - "/root/.cabal"
+            - "dist"
+            - "dist-newstyle"
+
 workflows:
   version: 2
-  build_and_render:
+  build:
     jobs:
-      - build_and_render
+      - stack_build:
+          lts_ghc_ver: 8.8.3
+      - cabal_build:
+          name: cabal_build_8_8
+          ghc_ver: 8.8.3
+          requires:
+            - stack_build
+      - cabal_build:
+          name: cabal_build_8_10
+          ghc_ver: 8.10.1
+          requires:
+            - stack_build
