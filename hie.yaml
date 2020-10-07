@@ -1,0 +1,7 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:blanks"
+
+    - path: "test"
+      component: "blanks:test:blanks-test"

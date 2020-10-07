@@ -8,6 +8,13 @@ parameters:
     type: string
     default: "v1"
 
+commands:
+  install_native_deps:
+    steps:
+    - run:
+        name: Install native deps
+        command: if [ -f docker/packages.txt ]; then apt-get update && apt-get install -y $(cat docker/packages.txt); fi
+
 jobs:
   stack_build:
     parameters:
@@ -17,16 +24,14 @@ jobs:
       - image: haskell:<< parameters.lts_ghc_ver >>
     steps:
       - checkout
+      - install_native_deps
       - restore_cache:
           name: Restore cached dependencies
           keys:
             - stack-<< pipeline.parameters.cache_ver >>-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
       - run:
-          name: Resolve/update dependencies
-          command: make cisetup
-      - run:
           name: Run tests
-          command: make citest
+          command: make test
       - save_cache:
           name: Cache dependencies
           key: stack-<< pipeline.parameters.cache_ver >>-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
@@ -41,6 +46,7 @@ jobs:
       - image: haskell:<< parameters.ghc_ver >>
     steps:
       - checkout
+      - install_native_deps
       - restore_cache:
           name: Restore cached dependencies
           keys:
@@ -67,14 +73,14 @@ workflows:
   build:
     jobs:
       - stack_build:
-          lts_ghc_ver: 8.8.3
+          lts_ghc_ver: 8.8.4
       - cabal_build:
           name: cabal_build_8_8
-          ghc_ver: 8.8.3
+          ghc_ver: 8.8.4
           requires:
             - stack_build
       - cabal_build:
           name: cabal_build_8_10
-          ghc_ver: 8.10.1
+          ghc_ver: 8.10.2
           requires:
             - stack_build

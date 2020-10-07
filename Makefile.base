@@ -1,23 +1,10 @@
-.PHONY: cisetup
-cisetup:
-
-.PHONY: citest
-citest: test
-
-.PHONY: cidocs
-cidocs: docs
-
-.PHONY: cicompress
-cicompress:
-	tar -cvzf /tmp/haddock.tar.gz -C $$(stack path --local-install-root) doc
+.PHONY: clean
+clean:
+	stack clean --full
 
 .PHONY: build
 build:
 	stack build --test --no-run-tests
-
-.PHONY: clean
-clean:
-	stack clean --full
 
 .PHONY: test
 test:
@@ -29,11 +16,11 @@ ghci:
 
 .PHONY: docs
 docs:
-	stack haddock --no-haddock-deps
+	stack haddock --open
 
 .PHONY: deps
 deps:
-	stack build --copy-compiler-tool ghcid hlint hpack stylish-haskell
+	stack build --copy-compiler-tool ghcid hlint stylish-haskell implicit-hie
 
 .PHONY: watch
 watch:
@@ -47,6 +34,6 @@ format:
 lint:
 	stack exec -- hlint -i 'Parse error' -i 'Reduce duplication' src
 
-.PHONY: hpack
-hpack:
-	stack exec -- hpack
+.PHONY: gen-hie
+gen-hie:
+	stack exec -- gen-hie > hie.yaml
