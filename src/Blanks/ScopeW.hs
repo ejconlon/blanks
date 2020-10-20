@@ -4,8 +4,6 @@
 module Blanks.ScopeW
   ( ScopeC
   , ScopeW (..)
-  , ScopeWRawFold
-  , ScopeWFold
   , scopeWFree
   , scopeWEmbed
   , scopeWAbstract
@@ -15,8 +13,6 @@ module Blanks.ScopeW
   , scopeWBind
   , scopeWBindOpt
   , scopeWLift
-  , scopeWRawFold
-  , scopeWFold
   , scopeWLiftAnno
   , scopeWHoistAnno
   , scopeWMapAnno
@@ -25,7 +21,7 @@ module Blanks.ScopeW
 import Blanks.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
 import Blanks.Sub (SubError (..))
 import Blanks.UnderScope (UnderScope, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
-                          UnderScopeFold, pattern UnderScopeFree, underScopeFold, underScopeShift)
+                          pattern UnderScopeFree, underScopeShift)
 import Control.DeepSeq (NFData (..))
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap, first)
@@ -160,17 +156,6 @@ scopeWApply vs = scopeWModM go where
               then Right (pure (scopeWShift (-1) (scopeWInstantiate vs e)))
               else Left (ApplyError len r)
       _ -> Left NonBinderError
-
--- * Folds
-
-type ScopeWRawFold n f g a r = UnderScopeFold n f (g a) a r
-type ScopeWFold u n f g a r = ScopeWRawFold n f g a (u r)
-
-scopeWRawFold :: (NatNewtype (ScopeW t n f g) g, Functor t) => ScopeWRawFold n f g a r -> g a -> t r
-scopeWRawFold usf = fmap (underScopeFold usf) . unScopeW . natNewtypeFrom
-
-scopeWFold :: (NatNewtype (ScopeW t n f g) g, Adjunction t u) => ScopeWFold u n f g a r -> g a -> r
-scopeWFold usf = counit . scopeWRawFold usf
 
 -- * Annotation functions
 

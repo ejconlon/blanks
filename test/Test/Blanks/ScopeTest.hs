@@ -2,18 +2,18 @@ module Test.Blanks.ScopeTest
   ( testScope
   ) where
 
-import Blanks
+import Blanks (Name (..), NameOnly, Scope, pattern ScopeBound, scopeAbstract1, scopeApply1, scopeInstantiate1)
 import Control.Monad.Identity (Identity (..))
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Test.Blanks.Assertions ((@/=))
-import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, (@=?), (@?=))
 
 type BareScope = Scope (NameOnly Char) Identity Char
 
 abst :: Char -> BareScope -> BareScope
-abst a = runIdentity . blankAbstract1 (Name a ()) a
+abst a = scopeAbstract1 (Name a ()) a
 
 bound :: Int -> BareScope
 bound = ScopeBound
@@ -62,17 +62,17 @@ testScope =
 
       testInstantiate =
         testCase "instantiate" $ do
-          blankInstantiate1 (pure svar2) svar @?= svar
-          blankInstantiate1 (pure svar2) sbound @?= svar2
-          blankInstantiate1 (pure svar2) sid @?= sid
-          blankInstantiate1 (pure svar2) swonky @?= swonky2
+          scopeInstantiate1 svar2 svar @?= svar
+          scopeInstantiate1 svar2 sbound @?= svar2
+          scopeInstantiate1 svar2 sid @?= sid
+          scopeInstantiate1 svar2 swonky @?= swonky2
 
       testApply =
         testCase "apply" $ do
-          blankApply1 (pure svar2) sid @?= Right svar2
-          blankApply1 (pure svar2) swonky @?= Right sbound
-          blankApply1 (pure svar2) sconst @?= Right swonky2
-          blankApply1 (pure svar2) sflip @?= Right sid
+          scopeApply1 svar2 sid @?= Right svar2
+          scopeApply1 svar2 swonky @?= Right sbound
+          scopeApply1 svar2 sconst @?= Right swonky2
+          scopeApply1 svar2 sflip @?= Right sid
 
       testVarSub =
         testCase "var sub" $ do

@@ -7,12 +7,10 @@ module Blanks.UnderScope
   , EmbedScope (..)
   , FreeScope (..)
   , UnderScope (..)
-  , UnderScopeFold (..)
   , pattern UnderScopeBound
   , pattern UnderScopeFree
   , pattern UnderScopeBinder
   , pattern UnderScopeEmbed
-  , underScopeFold
   , underScopeShift
   ) where
 
@@ -100,20 +98,3 @@ underScopeShift recShift c d us =
     UnderFreeScope _ -> us
     UnderBinderScope (BinderScope i x e) -> UnderBinderScope (BinderScope i x (recShift (c + i) d e))
     UnderEmbedScope (EmbedScope fe) -> UnderEmbedScope (EmbedScope (fmap (recShift c d) fe))
-
-data UnderScopeFold n f e a r =
-  UnderScopeFold
-    { usfBound :: BoundScope -> r
-    , usfFree :: FreeScope a -> r
-    , usfBinder :: BinderScope n e -> r
-    , usfEmbed :: EmbedScope f e -> r
-    }
-  deriving (Functor)
-
-underScopeFold :: UnderScopeFold n f e a r -> UnderScope n f e a -> r
-underScopeFold (UnderScopeFold bound free binder embed) us =
-  case us of
-    UnderBoundScope x -> bound x
-    UnderFreeScope x -> free x
-    UnderBinderScope x -> binder x
-    UnderEmbedScope x -> embed x

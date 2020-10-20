@@ -4,8 +4,6 @@ module Blanks.Interface
   , BlankRight
   , BlankInfo
   , BlankFunctor
-  , BlankRawFold
-  , BlankFold
   , BlankPair
   , blankFree
   , blankEmbed
@@ -22,8 +20,6 @@ module Blanks.Interface
   , blankBind
   , blankBindOpt
   , blankLift
-  , blankRawFold
-  , blankFold
   , blankLiftAnno
   , blankHoistAnno
   , blankMapAnno
@@ -32,7 +28,6 @@ module Blanks.Interface
 import Blanks.NatNewtype (NatNewtype)
 import Blanks.ScopeW
 import Blanks.Sub (SubError, ThrowSub, rethrowSub)
-import Blanks.UnderScope (UnderScopeFold)
 import Data.Functor.Adjunction (Adjunction)
 import Data.Kind (Type)
 import Data.Sequence (Seq)
@@ -49,9 +44,6 @@ type family BlankInfo (g :: Type -> Type) :: Type
 
 -- | The expression functor used by 'g'.
 type family BlankFunctor (g :: Type -> Type) :: Type -> Type
-
-type BlankRawFold (g :: Type -> Type) (a :: Type) (r :: Type) = UnderScopeFold (BlankInfo g) (BlankFunctor g) (g a) a r
-type BlankFold (g :: Type -> Type) (a :: Type) (r :: Type) = BlankRawFold g a (BlankRight g r)
 
 -- | Indicates that 'g' is a "scope" functor we can use for name-binding. (Behind-the-scenes, 'g' must
 -- be a newtype wrapper over the 'ScopeW' datatype.) Most of the time you will use 'Scope' or 'LocScope'
@@ -179,16 +171,6 @@ blankBindOpt = scopeWBindOpt
 blankLift :: (Blank g, Monad (BlankRight g), Traversable (BlankFunctor g)) => BlankFunctor g a -> BlankRight g (g a)
 blankLift = scopeWLift
 {-# INLINE blankLift #-}
-
--- | Pattern match all cases of the scope functor.
-blankRawFold :: Blank g => BlankRawFold g a r -> g a -> BlankLeft g r
-blankRawFold = scopeWRawFold
-{-# INLINE blankRawFold #-}
-
--- | Pattern match all cases of the scope functor, and eliminate the adjoints.
-blankFold :: Blank g => BlankFold g a r -> g a -> r
-blankFold = scopeWFold
-{-# INLINE blankFold #-}
 
 -- | Lift a value of your left adjoint functor (annotating the tree) into your
 -- scope functor.
