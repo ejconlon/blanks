@@ -6,6 +6,7 @@ module Blanks
   ( module Blanks
   ) where
 
+import Blanks.Conversion as Blanks
 import Blanks.Interface as Blanks
 import Blanks.Located as Blanks
 import Blanks.LocScope as Blanks

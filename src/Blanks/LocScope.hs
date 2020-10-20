@@ -7,19 +7,17 @@ module Blanks.LocScope
   , pattern LocScopeBinder
   , pattern LocScopeEmbed
   , locScopeLocation
-  , locScopeForget
+  , locScopeHoistAnno
   ) where
 
 import Blanks.Interface (Blank, BlankFunctor, BlankInfo, BlankLeft, BlankRight, blankBind, blankHoistAnno, blankMapAnno)
 import Blanks.Located (Colocated, Located (..), askColocated)
 import Blanks.NatNewtype (NatNewtype)
-import Blanks.Scope (Scope (..))
 import Blanks.ScopeW (ScopeW (..))
 import Blanks.UnderScope (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
                           pattern UnderScopeFree)
 import Control.DeepSeq (NFData (..))
 import Control.Monad (ap)
-import Control.Monad.Identity (Identity (..))
 import Control.Monad.Writer (MonadWriter (..))
 
 -- | A 'Scope' annotated with some information between constructors.
@@ -84,6 +82,10 @@ instance (Eq (f (LocScope l n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) 
 instance (Show (f (LocScope l n f a)), Show l, Show n, Show a) => Show (LocScope l n f a) where
   showsPrec d (LocScope (ScopeW tu)) = showString "LocScope " . showsPrec (d+1) tu
 
--- | Forget all the annotations and yield a plain 'Scope'.
-locScopeForget :: Functor f => LocScope l n f a -> Scope n f a
-locScopeForget = blankHoistAnno (\(Located _ a) -> Identity a)
+-- Need an explicit type sig and forall to use this in the hoist below
+mapLocatedForall :: (l -> x) -> (forall z. Located l z -> Located x z)
+mapLocatedForall f (Located l z) = Located (f l) z
+
+-- | Map over locations
+locScopeHoistAnno :: Functor f => (l -> x) -> LocScope l n f a -> LocScope x n f a
+locScopeHoistAnno f = blankHoistAnno (mapLocatedForall f)
