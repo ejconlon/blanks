@@ -10,7 +10,7 @@ module Blanks.Under
   , underScopeShift
   ) where
 
-import Blanks.Core (BoundScope (..), FreeScope (..), BinderScope (..), EmbedScope (..))
+import Blanks.Core (BinderScope (..), BoundScope (..), EmbedScope (..), FreeScope (..))
 import Control.DeepSeq (NFData)
 import Data.Bifoldable (Bifoldable (..))
 import Data.Bifunctor (Bifunctor (..))
