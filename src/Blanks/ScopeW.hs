@@ -7,9 +7,13 @@ module Blanks.ScopeW
   , scopeWFree
   , scopeWEmbed
   , scopeWAbstract
+  , scopeWAbstract1
   , scopeWUnAbstract
+  , scopeWUnAbstract1
   , scopeWInstantiate
+  , scopeWInstantiate1
   , scopeWApply
+  , scopeWApply1
   , scopeWBind
   , scopeWBindOpt
   , scopeWLift
@@ -33,11 +37,16 @@ import qualified Data.Sequence as Seq
 
 -- * ScopeW, patterns, and instances
 
+-- | The core internal scope type. (The "w" comes from "wrapper".)
+-- We wrap up an 'UnderScope' in some functor and demand that we
+-- unwrap it in an adjoint context. In the first case, these functors will be
+-- 'Identity', yielding the 'Scope' newtype. In the second case, these
+-- functors will be 'Located' and 'Colocated', yielding the 'LocScope' newtype.
 newtype ScopeW t n f g a = ScopeW
   { unScopeW :: t (UnderScope n f (g a) a)
   }
 
-instance NFData (t (UnderScope n f (g a) a) )=> NFData (ScopeW t n f g a) where
+instance NFData (t (UnderScope n f (g a) a)) => NFData (ScopeW t n f g a) where
   rnf (ScopeW tu) = seq (rnf tu) ()
 
 instance Eq (t (UnderScope n f (g a) a)) => Eq (ScopeW t n f g a) where
@@ -61,12 +70,15 @@ type ScopeC t u n f g = (Adjunction t u, Applicative u, Functor f, NatNewtype (S
 
 scopeWMod :: ScopeC t u n f g => (UnderScope n f (g a) a -> u x) -> g a -> x
 scopeWMod f = rightAdjunct f . unScopeW . natNewtypeFrom
+{-# INLINE scopeWMod #-}
 
 scopeWModOpt :: ScopeC t u n f g => (UnderScope n f (g a) a -> Maybe (u (g a))) -> g a -> g a
 scopeWModOpt f s = rightAdjunct (fromMaybe (pure s) . f) (unScopeW (natNewtypeFrom s))
+{-# INLINE scopeWModOpt #-}
 
 scopeWModM :: (ScopeC t u n f g, Traversable m) => (UnderScope n f (g a) a -> m (u x)) -> g a -> m x
 scopeWModM f = rightAdjunct (sequenceA . f) . unScopeW . natNewtypeFrom
+{-# INLINE scopeWModM #-}
 
 scopeWBound :: ScopeC t u n f g => Int -> u (g a)
 scopeWBound b = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeBound b))
@@ -76,6 +88,7 @@ scopeWFree a = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeFree a))
 
 scopeWShift :: ScopeC t u n f g => Int -> g a -> g a
 scopeWShift = scopeWShiftN 0
+{-# INLINE scopeWShift #-}
 
 scopeWShiftN :: ScopeC t u n f g => Int -> Int -> g a -> g a
 scopeWShiftN c d e =
@@ -90,6 +103,7 @@ scopeWEmbed fe = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeEmbed fe))
 
 scopeWBind :: ScopeC t u n f g => (a -> u (g b)) -> g a -> g b
 scopeWBind f = scopeWBindN f 0
+{-# INLINE scopeWBind #-}
 
 scopeWBindN :: ScopeC t u n f g => (a -> u (g b)) -> Int -> g a -> g b
 scopeWBindN f = scopeWMod . go where
@@ -102,6 +116,7 @@ scopeWBindN f = scopeWMod . go where
 
 scopeWBindOpt :: ScopeC t u n f g => (a -> Maybe (u (g a))) -> g a -> g a
 scopeWBindOpt f = scopeWBindOptN f 0
+{-# INLINE scopeWBindOpt #-}
 
 scopeWBindOptN :: ScopeC t u n f g => (a -> Maybe (u (g a))) -> Int -> g a -> g a
 scopeWBindOptN f = scopeWModOpt . go where
@@ -117,22 +132,33 @@ scopeWLift fa = traverse scopeWFree fa >>= scopeWEmbed
 
 -- * Abstraction
 
-subScopeWAbstract :: (ScopeC t u n f g, Eq a) => Int -> n -> Seq a -> g a -> u (g a)
-subScopeWAbstract r n ks e =
-  let f = fmap scopeWBound . flip Seq.elemIndexL ks
-      e' = scopeWBindOpt f e
-  in scopeWBinder r n e'
-
 scopeWAbstract :: (ScopeC t u n f g, Eq a) => n -> Seq a -> g a -> u (g a)
-scopeWAbstract n ks =
+scopeWAbstract n ks e =
   let r = Seq.length ks
-  in subScopeWAbstract r n ks . scopeWShift r
+      e' = scopeWShift r e
+      f = fmap scopeWBound . flip Seq.elemIndexL ks
+      e'' = scopeWBindOpt f e'
+  in scopeWBinder r n e''
+
+scopeWAbstract1 :: (ScopeC t u n f g, Eq a) => n -> a -> g a -> u (g a)
+scopeWAbstract1 n = scopeWAbstract n . Seq.singleton
+{-# INLINE scopeWAbstract1 #-}
 
 scopeWUnAbstract :: ScopeC t u n f g => Seq a -> g a -> g a
 scopeWUnAbstract ks = scopeWInstantiate (fmap scopeWFree ks)
+{-# INLINE scopeWUnAbstract #-}
+
+scopeWUnAbstract1 :: ScopeC t u n f g => a -> g a -> g a
+scopeWUnAbstract1 = scopeWUnAbstract . Seq.singleton
+{-# INLINE scopeWUnAbstract1 #-}
 
 scopeWInstantiate :: ScopeC t u n f g => Seq (u (g a)) -> g a -> g a
 scopeWInstantiate = scopeWInstantiateN 0
+{-# INLINE scopeWInstantiate #-}
+
+scopeWInstantiate1 :: ScopeC t u n f g => u (g a) -> g a -> g a
+scopeWInstantiate1 = scopeWInstantiate . Seq.singleton
+{-# INLINE scopeWInstantiate1 #-}
 
 scopeWInstantiateN :: ScopeC t u n f g => Int -> Seq (u (g a)) -> g a -> g a
 scopeWInstantiateN h vs = scopeWModOpt (go h) where
@@ -156,6 +182,10 @@ scopeWApply vs = scopeWModM go where
               then Right (pure (scopeWShift (-1) (scopeWInstantiate vs e)))
               else Left (ApplyError len r)
       _ -> Left NonBinderError
+
+scopeWApply1 :: ScopeC t u n f g => u (g a) -> g a -> Either SubError (g a)
+scopeWApply1 = scopeWApply . Seq.singleton
+{-# INLINE scopeWApply1 #-}
 
 -- * Annotation functions
 

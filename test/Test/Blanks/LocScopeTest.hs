@@ -103,7 +103,7 @@ nameless ce =
     CExpIf l a b c -> LocScopeEmbed l (ExpIf (nameless a) (nameless b) (nameless c))
     CExpIsZero l a -> LocScopeEmbed l (ExpIsZero (nameless a))
     CExpVar l x -> LocScopeFree l x
-    CExpAbs l x a -> runColocated (blankAbstract1 (NameOnly x) x (nameless a)) l
+    CExpAbs l x a -> runColocated (locScopeAbstract1 (NameOnly x) x (nameless a)) l
 
 -- Convert back to named representation. Usually this isn't a necessary operation,
 -- but we want to do round-trip testing
@@ -112,7 +112,7 @@ named e =
   case e of
     LocScopeBound _ _ -> Nothing
     LocScopeFree l a -> pure (CExpVar l a)
-    LocScopeBinder l _ (NameOnly x) b -> CExpAbs l x <$> named (blankUnAbstract1 x b)
+    LocScopeBinder l _ (NameOnly x) b -> CExpAbs l x <$> named (locScopeUnAbstract1 x b)
     LocScopeEmbed l fe ->
       case fe of
         ExpTrue -> pure (CExpTrue l)
