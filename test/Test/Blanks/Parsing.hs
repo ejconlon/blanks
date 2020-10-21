@@ -22,11 +22,11 @@ runParserIO p s =
     Right a -> pure a
 
 data SourceSpan = SourceSpan
-  { _ssName :: !FilePath
-  , _ssStartLine :: !MP.Pos
-  , _ssStartColumn :: !MP.Pos
-  , _ssEndLine :: !MP.Pos
-  , _ssEndColumn :: !MP.Pos
+  { ssName :: !FilePath
+  , ssStartLine :: !MP.Pos
+  , ssStartColumn :: !MP.Pos
+  , ssEndLine :: !MP.Pos
+  , ssEndColumn :: !MP.Pos
   } deriving stock (Eq, Show, Ord, Generic)
     deriving anyclass (NFData)
 
