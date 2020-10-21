@@ -4,6 +4,7 @@ module Test.Blanks.Exp
   ( Ident (..)
   , CExp (..)
   , cexpLoc
+  , cexpKeywords
   , cexpParser
   , Exp (..)
   , ExpScope
@@ -15,6 +16,9 @@ module Test.Blanks.Exp
 import Blanks (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed, pattern LocScopeFree,
                NameOnly, pattern NameOnly, Scope, locScopeAbstract1, locScopeUnAbstract1, runColocated)
 import Control.DeepSeq (NFData)
+import Control.Monad (when)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import GHC.Generics (Generic)
 import Test.Blanks.Parsing
 
@@ -31,6 +35,10 @@ data CExp l =
   | CExpIsZero !l (CExp l)
   | CExpVar !l !Ident
   | CExpAbs !l !Ident (CExp l)
+  | CExpAsc !l (CExp l) (CExp l)
+  | CExpTyInt !l
+  | CExpTyBool !l
+  | CExpTyFun !l (CExp l) (CExp l)
   deriving (Eq, Show)
 
 -- Extracts the location from a concrete expression
@@ -45,6 +53,24 @@ cexpLoc ce =
     CExpIsZero l _ -> l
     CExpVar l _ -> l
     CExpAbs l _ _ -> l
+    CExpAsc l _ _ -> l
+    CExpTyInt l -> l
+    CExpTyBool l -> l
+    CExpTyFun l _ _ -> l
+
+cexpKeywords :: Set Ident
+cexpKeywords = Set.fromList $ fmap Ident
+  [ "#t"
+  , "#f"
+  , "+"
+  , "if"
+  , "zero?"
+  , ":"
+  , "lambda"
+  , "int"
+  , "bool"
+  , "->"
+  ]
 
 -- Parsers a concrete expression from a string
 cexpParser :: Parser (CExp SourceSpan)
@@ -58,6 +84,10 @@ cexpParser = result where
     , isZeroParser
     , absParser
     , appParser
+    , ascParser
+    , tyBoolParser
+    , tyIntParser
+    , tyFunParser
     , varParser
     ]
 
@@ -81,7 +111,19 @@ cexpParser = result where
 
   appParser = around2 CExpApp (parens (double cexpParser))
 
-  varParser = around CExpVar (fmap Ident identifier)
+  ascParser = around2 CExpAsc (parens (symbol ":" >> double cexpParser))
+
+  tyBoolParser = around (const . CExpTyBool) (symbol "bool")
+
+  tyIntParser = around (const . CExpTyInt) (symbol "int")
+
+  tyFunParser = around2 (CExpTyFun) (parens (symbol "->" >> double cexpParser))
+
+  varParser = around CExpVar $ do
+    rawIdent <- identifier
+    let ident = Ident rawIdent
+    when (Set.member ident cexpKeywords) (fail ("Parser error: Unhandled keyword: " <> rawIdent))
+    pure ident
 
 -- Just the expressions of our language that have nothing to do with naming
 data Exp a =
@@ -91,6 +133,10 @@ data Exp a =
   | ExpAdd a a
   | ExpIf a a a
   | ExpIsZero a
+  | ExpAsc a a
+  | ExpTyBool
+  | ExpTyInt
+  | ExpTyFun a a
   deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)
 
@@ -112,6 +158,10 @@ nameless ce =
     CExpIsZero l a -> LocScopeEmbed l (ExpIsZero (nameless a))
     CExpVar l x -> LocScopeFree l x
     CExpAbs l x a -> runColocated (locScopeAbstract1 (NameOnly x) x (nameless a)) l
+    CExpAsc l a b -> LocScopeEmbed l (ExpAsc (nameless a) (nameless b))
+    CExpTyInt l -> LocScopeEmbed l ExpTyInt
+    CExpTyBool l -> LocScopeEmbed l ExpTyBool
+    CExpTyFun l a b -> LocScopeEmbed l (ExpTyFun (nameless a) (nameless b))
 
 -- Convert back to named representation. Usually this isn't a necessary operation,
 -- but we want to do round-trip testing
@@ -129,3 +179,7 @@ named e =
         ExpAdd a b -> CExpAdd l <$> named a <*> named b
         ExpIf a b c -> CExpIf l <$> named a <*> named b <*> named c
         ExpIsZero a -> CExpIsZero l <$> named a
+        ExpAsc a b -> CExpAsc l <$> named a <*> named b
+        ExpTyInt -> pure (CExpTyInt l)
+        ExpTyBool -> pure (CExpTyBool l)
+        ExpTyFun a b -> CExpTyFun l <$> named a <*> named b

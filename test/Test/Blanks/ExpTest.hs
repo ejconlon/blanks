@@ -28,6 +28,8 @@ testExp = testGroup "Exp" cases where
   trueExp = ScopeEmbed (ExpBool True)
   intExp = ScopeEmbed (ExpInt 42)
   negIntExp = ScopeEmbed (ExpInt (-42))
+  boolTyExp = ScopeEmbed ExpTyBool
+  intTyExp = ScopeEmbed ExpTyInt
   cases =
     [ testSingle "var" "x" xExp
     , testSingle "true" "#t" trueExp
@@ -43,4 +45,8 @@ testExp = testGroup "Exp" cases where
     , testSingle "abs xyy" "(lambda (x) (lambda (y) y))" (ScopeBinder 1 (NameOnly xIdent) (ScopeBinder 1 (NameOnly yIdent) (ScopeBound 0)))
     , testSingle "abs xyx" "(lambda (x) (lambda (y) x))" (ScopeBinder 1 (NameOnly xIdent) (ScopeBinder 1 (NameOnly yIdent) (ScopeBound 1)))
     , testSingle "app abs" "((lambda (x) x) 42)" (ScopeEmbed (ExpApp (ScopeBinder 1 (NameOnly xIdent) (ScopeBound 0)) intExp))
+    , testSingle "ty bool" "bool" boolTyExp
+    , testSingle "ty int" "int" intTyExp
+    , testSingle "ty fun" "(-> int bool)" (ScopeEmbed (ExpTyFun intTyExp boolTyExp))
+    , testSingle "asc" "(: 42 int)" (ScopeEmbed (ExpAsc intExp intTyExp))
     ]
