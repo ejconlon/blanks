@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
+-- | Utilities for gathering and caching sets of free variables.
 module Blanks.Tracked
   ( Tracked (..)
   , trackedSet

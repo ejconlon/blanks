@@ -2,7 +2,8 @@ module Test.Blanks.ScopeTest
   ( testScope
   ) where
 
-import Blanks (Name (..), NameOnly, Scope, pattern ScopeBound, locScopeForget, scopeAbstract1, scopeApply1, scopeInstantiate1, trackScope)
+import Blanks (Name (..), NameOnly, Scope, pattern ScopeBound, locScopeForget, scopeAbstract1, scopeApply1,
+               scopeInstantiate1, trackScope)
 import Control.Monad.Identity (Identity (..))
 import Data.Set (Set)
 import qualified Data.Set as Set
