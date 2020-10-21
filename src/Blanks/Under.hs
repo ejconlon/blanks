@@ -1,12 +1,8 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
--- | Internals. You will probably never need these.
-module Blanks.UnderScope
-  ( BinderScope (..)
-  , BoundScope (..)
-  , EmbedScope (..)
-  , FreeScope (..)
-  , UnderScope (..)
+-- | Internals.
+module Blanks.Under
+  ( UnderScope (..)
   , pattern UnderScopeBound
   , pattern UnderScopeFree
   , pattern UnderScopeBinder
@@ -14,39 +10,12 @@ module Blanks.UnderScope
   , underScopeShift
   ) where
 
+import Blanks.Core (BoundScope (..), FreeScope (..), BinderScope (..), EmbedScope (..))
 import Control.DeepSeq (NFData)
 import Data.Bifoldable (Bifoldable (..))
 import Data.Bifunctor (Bifunctor (..))
 import Data.Bitraversable (Bitraversable (..))
 import GHC.Generics (Generic)
-
-newtype BoundScope =
-  BoundScope
-    { unBoundScope :: Int
-    }
-  deriving newtype (Eq, Show, NFData)
-
-newtype FreeScope a =
-  FreeScope
-    { unFreeScope :: a
-    }
-  deriving stock (Eq, Show, Functor, Foldable, Traversable)
-  deriving newtype (NFData)
-
-data BinderScope n e =
-  BinderScope
-    { binderScopeArity :: !Int
-    , binderScopeInfo :: !n
-    , binderScopeBody :: e
-    }
-  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-  deriving anyclass (NFData)
-
-newtype EmbedScope f e =
-  EmbedScope
-    { unEmbedScope :: f e
-    }
-  deriving newtype (Eq, Show, Functor, NFData)
 
 data UnderScope n f e a
   = UnderBoundScope !BoundScope

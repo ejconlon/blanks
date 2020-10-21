@@ -31,8 +31,8 @@ import Blanks.ScopeW (ScopeW (..), scopeWAbstract, scopeWAbstract1, scopeWApply,
                       scopeWBindOpt, scopeWEmbed, scopeWFree, scopeWHoistAnno, scopeWInstantiate, scopeWInstantiate1,
                       scopeWLift, scopeWLiftAnno, scopeWMapAnno, scopeWUnAbstract, scopeWUnAbstract1)
 import Blanks.Sub (SubError)
-import Blanks.UnderScope (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
-                          pattern UnderScopeFree)
+import Blanks.Under (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+                     pattern UnderScopeFree)
 import Control.DeepSeq (NFData (..))
 import Control.Monad (ap)
 import Control.Monad.Writer (MonadWriter (..))
