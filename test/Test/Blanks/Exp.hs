@@ -11,9 +11,11 @@ module Test.Blanks.Exp
   , cdeclParser
   , Exp (..)
   , ExpScope
+  , DeclScope (..)
   , ExpLocScope
-  , nameless
-  , named
+  , DeclLocScope (..)
+  , expToNameless
+  , expToNamed
   ) where
 
 import Blanks (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed, pattern LocScopeFree,
@@ -32,17 +34,18 @@ newtype Ident = Ident { unIdent :: String } deriving newtype (Eq, Show, Ord, NFD
 data CExp l =
     CExpBool !l !Bool
   | CExpInt !l !Int
-  | CExpApp !l (CExp l) (CExp l)
-  | CExpAdd !l (CExp l) (CExp l)
-  | CExpIf !l (CExp l) (CExp l) (CExp l)
-  | CExpIsZero !l (CExp l)
+  | CExpApp !l !(CExp l) !(CExp l)
+  | CExpAdd !l !(CExp l) !(CExp l)
+  | CExpIf !l !(CExp l) !(CExp l) !(CExp l)
+  | CExpIsZero !l !(CExp l)
   | CExpVar !l !Ident
-  | CExpAbs !l !Ident (CExp l)
-  | CExpAsc !l (CExp l) (CExp l)
+  | CExpAbs !l !Ident !(CExp l)
+  | CExpAsc !l !(CExp l) !(CExp l)
   | CExpTyInt !l
   | CExpTyBool !l
-  | CExpTyFun !l (CExp l) (CExp l)
-  deriving (Eq, Show)
+  | CExpTyFun !l !(CExp l) !(CExp l)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
 
 -- Extracts the location from a concrete expression
 cexpLoc :: CExp l -> l
@@ -81,6 +84,14 @@ declKeywords = Set.fromList $ fmap Ident
   , "define"
   ]
 
+nonKeywordParser :: Parser Ident
+nonKeywordParser = do
+  rawIdent <- identifier
+  let ident = Ident rawIdent
+  when (Set.member ident expKeywords) (fail ("Parsed exp keyword: " <> rawIdent))
+  when (Set.member ident declKeywords) (fail ("Parsed decl keyword: " <> rawIdent))
+  pure ident
+
 -- Parses a concrete expression from a string
 cexpParser :: Parser (CExp SourceSpan)
 cexpParser = result where
@@ -106,52 +117,49 @@ cexpParser = result where
 
   intParser = around CExpInt signed
 
-  addParser = around2 CExpAdd (parens (symbol "+" >> double cexpParser))
+  addParser = around2 CExpAdd (parens (symbol "+" *> double cexpParser))
 
-  ifParser = around3 CExpIf (parens (symbol "if" >> triple cexpParser))
+  ifParser = around3 CExpIf (parens (symbol "if" *> triple cexpParser))
 
-  isZeroParser = around CExpIsZero (parens (symbol "zero?" >> cexpParser))
+  isZeroParser = around CExpIsZero (parens (symbol "zero?" *> cexpParser))
 
   absParser = around2 CExpAbs $ parens $ do
     _ <- symbol "lambda"
-    n <- parens (fmap Ident identifier)
+    n <- parens nonKeywordParser
     b <- cexpParser
     pure (n, b)
 
   appParser = around2 CExpApp (parens (double cexpParser))
 
-  ascParser = around2 CExpAsc (parens (symbol ":" >> double cexpParser))
+  ascParser = around2 CExpAsc (parens (symbol ":" *> double cexpParser))
 
   tyBoolParser = around (const . CExpTyBool) (symbol "bool")
 
   tyIntParser = around (const . CExpTyInt) (symbol "int")
 
-  tyFunParser = around2 (CExpTyFun) (parens (symbol "->" >> double cexpParser))
+  tyFunParser = around2 (CExpTyFun) (parens (symbol "->" *> double cexpParser))
 
-  varParser = around CExpVar $ do
-    rawIdent <- identifier
-    let ident = Ident rawIdent
-    when (Set.member ident expKeywords) (fail ("Parser error: Unhandled exp keyword: " <> rawIdent))
-    when (Set.member ident declKeywords) (fail ("Parser error: Decl keyword in expression: " <> rawIdent))
-    pure ident
+  varParser = around CExpVar nonKeywordParser
 
-data CDecl l a =
-    CDeclTm !l a
-  | CDeclTy !l a
+data Level =
+    LevelTerm
+  | LevelType
   deriving stock (Eq, Show, Generic)
   deriving anyclass (NFData)
 
--- Parses a concrete expression from a string
-cdeclParser :: Parser (CDecl SourceSpan (CExp SourceSpan))
+data CDecl l = CDecl !l !Level !Ident !(CExp l)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
+
+-- Parses a concrete declaration from a string
+cdeclParser :: Parser (CDecl SourceSpan)
 cdeclParser = result where
   result = branch
-    [ declTyParser
-    , declTmParser
+    [ parser "declare" LevelType
+    , parser "define" LevelTerm
     ]
 
-  declTyParser = around CDeclTy (parens (symbol "declare" >> cexpParser))
-
-  declTmParser = around CDeclTm (parens (symbol "define" >> cexpParser))
+  parser name lvl = around2 (flip CDecl lvl) (parens (symbol name *> ((,) <$> nonKeywordParser <*> cexpParser)))
 
 -- Just the expressions of our language that have nothing to do with naming
 data Exp a =
@@ -171,43 +179,51 @@ data Exp a =
 -- An ExpScope without locations
 type ExpScope = Scope (NameOnly Ident) Exp Ident
 
+data DeclScope = DeclScope !Ident !ExpScope
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
+
 -- A nameless equivalent to 'CExp'
 type ExpLocScope l = LocScope l (NameOnly Ident) Exp Ident
 
+data DeclLocScope l = DeclLocScope !l !Ident !(ExpLocScope l)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
+
 -- Convert to nameless representation
-nameless :: CExp l -> ExpLocScope l
-nameless ce =
+expToNameless :: CExp l -> ExpLocScope l
+expToNameless ce =
   case ce of
     CExpBool l b -> LocScopeEmbed l (ExpBool b)
     CExpInt l i -> LocScopeEmbed l (ExpInt i)
-    CExpApp l a b -> LocScopeEmbed l (ExpApp (nameless a) (nameless b))
-    CExpAdd l a b -> LocScopeEmbed l (ExpAdd (nameless a) (nameless b))
-    CExpIf l a b c -> LocScopeEmbed l (ExpIf (nameless a) (nameless b) (nameless c))
-    CExpIsZero l a -> LocScopeEmbed l (ExpIsZero (nameless a))
+    CExpApp l a b -> LocScopeEmbed l (ExpApp (expToNameless a) (expToNameless b))
+    CExpAdd l a b -> LocScopeEmbed l (ExpAdd (expToNameless a) (expToNameless b))
+    CExpIf l a b c -> LocScopeEmbed l (ExpIf (expToNameless a) (expToNameless b) (expToNameless c))
+    CExpIsZero l a -> LocScopeEmbed l (ExpIsZero (expToNameless a))
     CExpVar l x -> LocScopeFree l x
-    CExpAbs l x a -> runColocated (locScopeAbstract1 (NameOnly x) x (nameless a)) l
-    CExpAsc l a b -> LocScopeEmbed l (ExpAsc (nameless a) (nameless b))
+    CExpAbs l x a -> runColocated (locScopeAbstract1 (NameOnly x) x (expToNameless a)) l
+    CExpAsc l a b -> LocScopeEmbed l (ExpAsc (expToNameless a) (expToNameless b))
     CExpTyInt l -> LocScopeEmbed l ExpTyInt
     CExpTyBool l -> LocScopeEmbed l ExpTyBool
-    CExpTyFun l a b -> LocScopeEmbed l (ExpTyFun (nameless a) (nameless b))
+    CExpTyFun l a b -> LocScopeEmbed l (ExpTyFun (expToNameless a) (expToNameless b))
 
 -- Convert back to named representation. Usually this isn't a necessary operation,
 -- but we want to do round-trip testing
-named :: ExpLocScope l -> Maybe (CExp l)
-named e =
+expToNamed :: ExpLocScope l -> Maybe (CExp l)
+expToNamed e =
   case e of
     LocScopeBound _ _ -> Nothing
     LocScopeFree l a -> pure (CExpVar l a)
-    LocScopeBinder l _ (NameOnly x) b -> CExpAbs l x <$> named (locScopeUnAbstract1 x b)
+    LocScopeBinder l _ (NameOnly x) b -> CExpAbs l x <$> expToNamed (locScopeUnAbstract1 x b)
     LocScopeEmbed l fe ->
       case fe of
         ExpBool b -> pure (CExpBool l b)
         ExpInt i -> pure (CExpInt l i)
-        ExpApp a b -> CExpApp l <$> named a <*> named b
-        ExpAdd a b -> CExpAdd l <$> named a <*> named b
-        ExpIf a b c -> CExpIf l <$> named a <*> named b <*> named c
-        ExpIsZero a -> CExpIsZero l <$> named a
-        ExpAsc a b -> CExpAsc l <$> named a <*> named b
+        ExpApp a b -> CExpApp l <$> expToNamed a <*> expToNamed b
+        ExpAdd a b -> CExpAdd l <$> expToNamed a <*> expToNamed b
+        ExpIf a b c -> CExpIf l <$> expToNamed a <*> expToNamed b <*> expToNamed c
+        ExpIsZero a -> CExpIsZero l <$> expToNamed a
+        ExpAsc a b -> CExpAsc l <$> expToNamed a <*> expToNamed b
         ExpTyInt -> pure (CExpTyInt l)
         ExpTyBool -> pure (CExpTyBool l)
-        ExpTyFun a b -> CExpTyFun l <$> named a <*> named b
+        ExpTyFun a b -> CExpTyFun l <$> expToNamed a <*> expToNamed b
