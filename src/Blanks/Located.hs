@@ -22,8 +22,8 @@ import GHC.Generics (Generic)
 -- It's also basically the 'Writer' monad in certain contexts.
 -- We define a new, non-transforming datatype so we can pattern-match.
 data Located l a = Located
-  { _locatedLoc :: !l
-  , _locatedVal :: a
+  { locatedLoc :: !l
+  , locatedVal :: a
   } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
     deriving anyclass (NFData)
 

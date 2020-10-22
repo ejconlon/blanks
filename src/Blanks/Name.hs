@@ -14,8 +14,8 @@ import GHC.Generics (Generic)
 -- terms structurally ('Eq') equivalent.
 data Name n a =
   Name
-    { _nameKey :: !n
-    , _nameValue :: !a
+    { nameKey :: !n
+    , nameValue :: !a
     }
   deriving stock (Show, Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)

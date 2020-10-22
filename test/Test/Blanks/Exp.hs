@@ -11,15 +11,20 @@ module Test.Blanks.Exp
   , cdeclParser
   , Exp (..)
   , ExpScope
-  , DeclScope (..)
+  , DeclScope
   , ExpLocScope
-  , DeclLocScope (..)
+  , DeclLocScope
+  , declLocScopeForget
+  , declScopeAnno
   , expToNameless
   , expToNamed
+  , declToNameless
+  , declToNamed
   ) where
 
 import Blanks (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed, pattern LocScopeFree,
-               NameOnly, pattern NameOnly, Scope, locScopeAbstract1, locScopeUnAbstract1, runColocated)
+               Located (..), NameOnly, pattern NameOnly, Scope, locScopeAbstract1, locScopeForget, locScopeUnAbstract1,
+               runColocated, scopeAnno)
 import Control.DeepSeq (NFData)
 import Control.Monad (when)
 import Data.Set (Set)
@@ -176,19 +181,25 @@ data Exp a =
   deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)
 
+data Decl a = Decl !Level !Ident a
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
+
 -- An ExpScope without locations
 type ExpScope = Scope (NameOnly Ident) Exp Ident
 
-data DeclScope = DeclScope !Ident !ExpScope
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (NFData)
+type DeclScope = Decl ExpScope
 
 -- A nameless equivalent to 'CExp'
 type ExpLocScope l = LocScope l (NameOnly Ident) Exp Ident
 
-data DeclLocScope l = DeclLocScope !l !Ident !(ExpLocScope l)
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (NFData)
+type DeclLocScope l = Located l (Decl (ExpLocScope l))
+
+declLocScopeForget :: DeclLocScope l -> DeclScope
+declLocScopeForget = fmap locScopeForget . locatedVal
+
+declScopeAnno :: l -> DeclScope -> DeclLocScope l
+declScopeAnno l = Located l . fmap (scopeAnno l)
 
 -- Convert to nameless representation
 expToNameless :: CExp l -> ExpLocScope l
@@ -227,3 +238,9 @@ expToNamed e =
         ExpTyInt -> pure (CExpTyInt l)
         ExpTyBool -> pure (CExpTyBool l)
         ExpTyFun a b -> CExpTyFun l <$> expToNamed a <*> expToNamed b
+
+declToNameless :: CDecl l -> DeclLocScope l
+declToNameless (CDecl l lvl i e) = Located l (Decl lvl i (expToNameless e))
+
+declToNamed :: DeclLocScope l -> Maybe (CDecl l)
+declToNamed (Located l (Decl lvl i e)) = fmap (CDecl l lvl i) (expToNamed e)
