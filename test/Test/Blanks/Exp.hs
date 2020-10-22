@@ -4,8 +4,11 @@ module Test.Blanks.Exp
   ( Ident (..)
   , CExp (..)
   , cexpLoc
-  , cexpKeywords
+  , CDecl (..)
+  , declKeywords
+  , expKeywords
   , cexpParser
+  , cdeclParser
   , Exp (..)
   , ExpScope
   , ExpLocScope
@@ -58,8 +61,8 @@ cexpLoc ce =
     CExpTyBool l -> l
     CExpTyFun l _ _ -> l
 
-cexpKeywords :: Set Ident
-cexpKeywords = Set.fromList $ fmap Ident
+expKeywords :: Set Ident
+expKeywords = Set.fromList $ fmap Ident
   [ "#t"
   , "#f"
   , "+"
@@ -72,7 +75,13 @@ cexpKeywords = Set.fromList $ fmap Ident
   , "->"
   ]
 
--- Parsers a concrete expression from a string
+declKeywords :: Set Ident
+declKeywords = Set.fromList $ fmap Ident
+  [ "declare"
+  , "define"
+  ]
+
+-- Parses a concrete expression from a string
 cexpParser :: Parser (CExp SourceSpan)
 cexpParser = result where
   result = branch
@@ -122,8 +131,27 @@ cexpParser = result where
   varParser = around CExpVar $ do
     rawIdent <- identifier
     let ident = Ident rawIdent
-    when (Set.member ident cexpKeywords) (fail ("Parser error: Unhandled keyword: " <> rawIdent))
+    when (Set.member ident expKeywords) (fail ("Parser error: Unhandled exp keyword: " <> rawIdent))
+    when (Set.member ident declKeywords) (fail ("Parser error: Decl keyword in expression: " <> rawIdent))
     pure ident
+
+data CDecl l a =
+    CDeclTm !l a
+  | CDeclTy !l a
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
+
+-- Parses a concrete expression from a string
+cdeclParser :: Parser (CDecl SourceSpan (CExp SourceSpan))
+cdeclParser = result where
+  result = branch
+    [ declTyParser
+    , declTmParser
+    ]
+
+  declTyParser = around CDeclTy (parens (symbol "declare" >> cexpParser))
+
+  declTmParser = around CDeclTm (parens (symbol "define" >> cexpParser))
 
 -- Just the expressions of our language that have nothing to do with naming
 data Exp a =
