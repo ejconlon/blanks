@@ -28,7 +28,7 @@ newtype BinderId = BinderId { unBinderId :: Int }
 
 data SplitVar a =
     SplitVarFree !a
-  | SplitVarBinder !BinderId
+  | SplitVarBound !BinderId
   deriving stock (Eq, Show, Ord, Generic)
   deriving anyclass (NFData)
 
@@ -62,5 +62,5 @@ splitLocScope ls =
       e' <- splitLocScope e
       let lb = BinderScope r n e'
       insertBinder bid lb
-      pure (LocScopeFree l (SplitVarBinder bid))
+      pure (LocScopeFree l (SplitVarBound bid))
     LocScopeEmbed l fe -> fmap (LocScopeEmbed l) (traverse splitLocScope fe)

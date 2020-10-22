@@ -8,7 +8,9 @@ module Test.Blanks.Exp
   , declKeywords
   , expKeywords
   , cexpParser
+  , runCExpParser
   , cdeclParser
+  , runCDeclParser
   , Exp (..)
   , ExpScope
   , DeclScope
@@ -146,6 +148,9 @@ cexpParser = result where
 
   varParser = around CExpVar nonKeywordParser
 
+runCExpParser :: String -> IO (CExp SourceSpan)
+runCExpParser = runParserIO cexpParser
+
 data Level =
     LevelTerm
   | LevelType
@@ -165,6 +170,9 @@ cdeclParser = result where
     ]
 
   parser name lvl = around2 (flip CDecl lvl) (parens (symbol name *> ((,) <$> nonKeywordParser <*> cexpParser)))
+
+runCDeclParser :: String -> IO (CExp SourceSpan)
+runCDeclParser = runParserIO cexpParser
 
 -- Just the expressions of our language that have nothing to do with naming
 data Exp a =

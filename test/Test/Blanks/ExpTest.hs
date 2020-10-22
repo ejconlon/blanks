@@ -3,14 +3,13 @@ module Test.Blanks.ExpTest where
 import Blanks (pattern NameOnly, pattern ScopeBinder, pattern ScopeBound, pattern ScopeEmbed, pattern ScopeFree,
                locScopeForget, locScopeLocation)
 import Control.DeepSeq (force)
-import Test.Blanks.Exp (Exp (..), ExpScope, Ident (..), cexpLoc, cexpParser, expToNamed, expToNameless)
-import Test.Blanks.Parsing (runParserIO)
+import Test.Blanks.Exp (Exp (..), ExpScope, Ident (..), cexpLoc, expToNamed, expToNameless, runCExpParser)
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
 testSingle :: TestName -> String -> ExpScope -> TestTree
 testSingle name input expected = testCase name $ do
-  namedExp <- runParserIO cexpParser input
+  namedExp <- runCExpParser input
   -- Force here just to test that we can
   let namelessExp = force (expToNameless namedExp)
   cexpLoc namedExp @?= locScopeLocation namelessExp
