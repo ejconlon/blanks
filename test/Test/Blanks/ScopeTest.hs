@@ -2,14 +2,13 @@ module Test.Blanks.ScopeTest
   ( testScope
   ) where
 
-import Blanks (Name (..), NameOnly, Scope, pattern ScopeBound, locScopeForget, scopeAbstract1, scopeApply1,
-               scopeInstantiate1, trackScope)
+import Blanks (Name (..), NameOnly, Scope, pattern ScopeBound, scopeAbstract1, scopeApply1, scopeInstantiate1)
 import Control.Monad.Identity (Identity (..))
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Test.Blanks.Assertions ((@/=))
 import Test.Tasty (TestTree, testGroup)
-import Test.Tasty.HUnit (Assertion, testCase, (@?=))
+import Test.Tasty.HUnit (testCase, (@?=))
 
 type BareScope = Scope (NameOnly Char) Identity Char
 
@@ -24,15 +23,6 @@ var = pure
 
 freeVars :: BareScope -> Set Char
 freeVars = foldMap Set.singleton
-
-assertFreeVars :: BareScope -> Set Char -> Assertion
-assertFreeVars s expected = do
-  let actual = freeVars s
-  actual @?= expected
-  let (actual', ls) = trackScope s
-  actual' @?= expected
-  let s' = locScopeForget ls
-  s' @?= s
 
 testScope :: TestTree
 testScope =
@@ -59,16 +49,16 @@ testScope =
 
       testFreeVars =
         testCase "free vars" $ do
-          assertFreeVars svar (Set.singleton 'x')
-          assertFreeVars sbound Set.empty
-          assertFreeVars sfree (Set.singleton 'x')
-          assertFreeVars sfree2 (Set.singleton 'x')
-          assertFreeVars sid Set.empty
-          assertFreeVars swonky Set.empty
-          assertFreeVars sconst Set.empty
-          assertFreeVars sflip Set.empty
-          assertFreeVars svar2 (Set.singleton 'e')
-          assertFreeVars swonky2 (Set.singleton 'e')
+          freeVars svar @?= Set.singleton 'x'
+          freeVars sbound @?= Set.empty
+          freeVars sfree @?= Set.singleton 'x'
+          freeVars sfree2 @?= Set.singleton 'x'
+          freeVars sid @?= Set.empty
+          freeVars swonky @?= Set.empty
+          freeVars sconst @?= Set.empty
+          freeVars sflip @?= Set.empty
+          freeVars svar2 @?= Set.singleton 'e'
+          freeVars swonky2 @?= Set.singleton 'e'
 
       testInstantiate =
         testCase "instantiate" $ do

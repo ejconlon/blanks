@@ -19,7 +19,6 @@ dependencies:
 - containers >=0.6 && <1
 - deepseq >=1.4 && <2
 - distributive >=0.6 && <1
-- microlens >= 0.4 && < 1
 - mtl >=2.2 && <3
 
 default-extensions:

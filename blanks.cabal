@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 90874ddb756082fb8b6cb6fcc1a40813861345d8a2229aadd42810ad28dbd8be
+-- hash: 190cc0c2777e649fc879ebedaa1e3e8d2539c14faf61e26f19a40f0f0e08ef85
 
 name:           blanks
 version:        0.5.0
@@ -39,7 +39,6 @@ library
       Blanks.ScopeW
       Blanks.Split
       Blanks.Sub
-      Blanks.Tracked
       Blanks.Under
   other-modules:
       Paths_blanks
@@ -53,7 +52,6 @@ library
     , containers >=0.6 && <1
     , deepseq >=1.4 && <2
     , distributive >=0.6 && <1
-    , microlens >=0.4 && <1
     , mtl >=2.2 && <3
   default-language: Haskell2010
 
@@ -80,7 +78,6 @@ test-suite blanks-test
     , deepseq >=1.4 && <2
     , distributive >=0.6 && <1
     , megaparsec
-    , microlens >=0.4 && <1
     , mtl >=2.2 && <3
     , tasty
     , tasty-hunit

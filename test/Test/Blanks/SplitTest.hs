@@ -2,13 +2,15 @@ module Test.Blanks.SplitTest
   ( testSplit
   ) where
 
-import Blanks (BinderId (..), SplitVar (..), BinderScope (..), locScopeForget, splitLocScope, initSplitState, splitStateBinders, pattern NameOnly, pattern ScopeEmbed, pattern ScopeBinder, pattern ScopeBound, pattern ScopeFree)
+import Blanks (BinderId (..), BinderScope (..), pattern NameOnly, pattern ScopeBinder, pattern ScopeBound,
+               pattern ScopeEmbed, pattern ScopeFree, SplitVar (..), initSplitState, locScopeForget, splitLocScope,
+               splitStateBinders)
 import Control.Monad.State (runState)
 -- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Test.Blanks.Exp (Exp (..), Ident (..), expToNameless, runCExpParser)
 import Test.Tasty (TestTree)
-import Test.Tasty.HUnit ((@?=), testCase)
+import Test.Tasty.HUnit (testCase, (@?=))
 
 testSplit :: TestTree
 testSplit = testCase "Split" $ do
