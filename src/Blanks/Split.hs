@@ -1,27 +1,29 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Blanks.Split where
+module Blanks.Split
+  ( BinderId (..)
+  , SplitFunctor (..)
+  , SplitBinder (..)
+  , SplitResult (..)
+  , splitLocScope
+  ) where
 
 import Blanks.Core (BinderScope (..))
 import Blanks.LocScope (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed,
                         pattern LocScopeFree)
-import Blanks.Tracked (Tracked (..), WithTracked (..), mkTrackedBound, mkTrackedFree, shiftTracked)
+import Blanks.Tracked (Tracked (..), WithTracked (..), mkTrackedBound, mkTrackedFree)
 import Control.DeepSeq (NFData (..))
-import Control.Monad.State (State, gets, modify')
+import Control.Monad.State (State, gets, modify', runState)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
 
-data Stream x = Stream
-  { streamHead :: !x
-  , streamTail :: Stream x
-  }
+data Stream x = Stream !x (Stream x)
 
 enumStreamFrom :: Enum e => e -> Stream e
 enumStreamFrom e = Stream e (enumStreamFrom (succ e))
@@ -93,5 +95,13 @@ splitLocScopeInner r bs ls =
       let ss = Seq.fromList (Set.toList bv)
       pure (Tracked Set.empty bv, LocScopeEmbed l (SplitFunctorClosure bid ss))
 
-splitLocScope :: (Traversable f, Ord a) => LocScope (WithTracked a l) n f a -> State (SplitState l n f a) (Tracked a, LocScope l n (SplitFunctor f) a)
-splitLocScope = splitLocScopeInner 0 Set.empty
+data SplitResult l n f a = SplitResult
+  { splitResultTracked :: !(Tracked a)
+  , splitResultScope :: !(LocScope l n (SplitFunctor f) a)
+  , splitResultBinders :: !(Map BinderId (SplitBinder l n f a))
+  }
+
+splitLocScope :: (Traversable f, Ord a) => LocScope (WithTracked a l) n f a -> SplitResult l n f a
+splitLocScope s =
+  let ((!t, !s'), !ss) = runState (splitLocScopeInner 0 Set.empty s) initSplitState
+  in SplitResult t s' (splitStateBinders ss)
