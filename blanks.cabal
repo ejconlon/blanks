@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 190cc0c2777e649fc879ebedaa1e3e8d2539c14faf61e26f19a40f0f0e08ef85
+-- hash: 5635682e6afbeda5c20d2e9be9075755a1f9f2a5dd681c0adde227d63ddf8d22
 
 name:           blanks
 version:        0.5.0
@@ -39,6 +39,7 @@ library
       Blanks.ScopeW
       Blanks.Split
       Blanks.Sub
+      Blanks.Tracked
       Blanks.Under
   other-modules:
       Paths_blanks
@@ -60,11 +61,15 @@ test-suite blanks-test
   main-is: Main.hs
   other-modules:
       Test.Blanks.Assertions
+      Test.Blanks.Eval
       Test.Blanks.Exp
       Test.Blanks.ExpTest
       Test.Blanks.Parsing
       Test.Blanks.ScopeTest
+      Test.Blanks.SimpleScope
+      Test.Blanks.SplitScope
       Test.Blanks.SplitTest
+      Test.Blanks.TrackedTest
       Paths_blanks
   hs-source-dirs:
       test

@@ -6,9 +6,12 @@ module Blanks.Scope
   , pattern ScopeFree
   , pattern ScopeBinder
   , pattern ScopeEmbed
+  , scopeWFromInnerBinder
   , scopeBind
   , scopeBindOpt
   , scopeLift
+  , scopeInnerBinder
+  , scopeInnerBinder1
   , scopeAbstract
   , scopeAbstract1
   , scopeUnAbstract
@@ -19,10 +22,11 @@ module Blanks.Scope
   , scopeApply1
   ) where
 
+import Blanks.Core (BinderScope)
 import Blanks.NatNewtype (NatNewtype)
 import Blanks.ScopeW (ScopeW (ScopeW), scopeWAbstract, scopeWAbstract1, scopeWApply, scopeWApply1, scopeWBind,
-                      scopeWBindOpt, scopeWInstantiate, scopeWInstantiate1, scopeWLift, scopeWUnAbstract,
-                      scopeWUnAbstract1)
+                      scopeWBindOpt, scopeWFromInnerBinder, scopeWInnerBinder, scopeWInnerBinder1, scopeWInstantiate,
+                      scopeWInstantiate1, scopeWLift, scopeWUnAbstract, scopeWUnAbstract1)
 import Blanks.Sub (SubError)
 import Blanks.Under (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed, pattern UnderScopeFree)
 import Control.DeepSeq (NFData (..))
@@ -72,6 +76,10 @@ instance (Show (f (Scope n f a)), Show n, Show a) => Show (Scope n f a) where
 
 -- * Interface
 
+scopeFromInnerBinder :: Functor f => BinderScope n (Scope n f a) -> Scope n f a
+scopeFromInnerBinder = runIdentity . scopeWFromInnerBinder
+{-# INLINE scopeFromInnerBinder #-}
+
 -- | Substitution as a kind of monadic bind.
 scopeBind :: Functor f => (a -> Scope n f b) -> Scope n f a -> Scope n f b
 scopeBind f = scopeWBind (Identity . f)
@@ -86,6 +94,14 @@ scopeBindOpt f = scopeWBindOpt (fmap Identity . f)
 scopeLift :: Traversable f => f a -> Scope n f a
 scopeLift = runIdentity . scopeWLift
 {-# INLINE scopeLift #-}
+
+scopeInnerBinder :: (Functor f, Eq a) => n -> Seq a -> Scope n f a -> BinderScope n (Scope n f a)
+scopeInnerBinder = scopeWInnerBinder
+{-# INLINE scopeInnerBinder #-}
+
+scopeInnerBinder1 :: (Functor f, Eq a) => n -> a -> Scope n f a -> BinderScope n (Scope n f a)
+scopeInnerBinder1 = scopeWInnerBinder1
+{-# INLINE scopeInnerBinder1 #-}
 
 -- | Binds free variables in an expression and returns a binder.
 scopeAbstract

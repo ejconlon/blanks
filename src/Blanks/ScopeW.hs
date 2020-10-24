@@ -1,11 +1,14 @@
 {-# LANGUAGE UndecidableInstances #-}
 
--- | Internals. You'd need to newtype 'ScopeW' to implement your own 'Blank'.
+-- | Internals.
 module Blanks.ScopeW
   ( ScopeWC
   , ScopeW (..)
   , scopeWFree
   , scopeWEmbed
+  , scopeWFromInnerBinder
+  , scopeWInnerBinder
+  , scopeWInnerBinder1
   , scopeWAbstract
   , scopeWAbstract1
   , scopeWUnAbstract
@@ -22,9 +25,10 @@ module Blanks.ScopeW
   , scopeWMapAnno
   ) where
 
+import Blanks.Core (BinderScope (..))
 import Blanks.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
 import Blanks.Sub (SubError (..))
-import Blanks.Under (UnderScope, pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+import Blanks.Under (UnderScope (..), pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
                      pattern UnderScopeFree, underScopeShift)
 import Control.DeepSeq (NFData (..))
 import Data.Bifoldable (bifoldr)
@@ -98,6 +102,9 @@ scopeWShiftN c d e =
 scopeWBinder :: ScopeWC t u n f g => Int -> n -> g a -> u (g a)
 scopeWBinder r n e = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeBinder r n e))
 
+scopeWFromInnerBinder :: ScopeWC t u n f g => BinderScope n (g a) -> u (g a)
+scopeWFromInnerBinder b = fmap (natNewtypeTo . ScopeW) (unit (UnderBinderScope b))
+
 scopeWEmbed :: ScopeWC t u n f g => f (g a) -> u (g a)
 scopeWEmbed fe = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeEmbed fe))
 
@@ -132,13 +139,21 @@ scopeWLift fa = traverse scopeWFree fa >>= scopeWEmbed
 
 -- * Abstraction
 
-scopeWAbstract :: (ScopeWC t u n f g, Eq a) => n -> Seq a -> g a -> u (g a)
-scopeWAbstract n ks e =
+scopeWInnerBinder :: (ScopeWC t u n f g, Eq a) => n -> Seq a -> g a -> BinderScope n (g a)
+scopeWInnerBinder n ks e =
   let r = Seq.length ks
       e' = scopeWShift r e
       f = fmap scopeWBound . flip Seq.elemIndexL ks
       e'' = scopeWBindOpt f e'
-  in scopeWBinder r n e''
+  in BinderScope r n e''
+
+scopeWInnerBinder1 :: (ScopeWC t u n f g, Eq a) => n -> a -> g a -> BinderScope n (g a)
+scopeWInnerBinder1 n = scopeWInnerBinder n . Seq.singleton
+{-# INLINE scopeWInnerBinder1 #-}
+
+scopeWAbstract :: (ScopeWC t u n f g, Eq a) => n -> Seq a -> g a -> u (g a)
+scopeWAbstract n ks e = scopeWFromInnerBinder (scopeWInnerBinder n ks e)
+{-# INLINE scopeWAbstract #-}
 
 scopeWAbstract1 :: (ScopeWC t u n f g, Eq a) => n -> a -> g a -> u (g a)
 scopeWAbstract1 n = scopeWAbstract n . Seq.singleton

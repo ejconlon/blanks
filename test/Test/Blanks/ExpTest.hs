@@ -7,7 +7,7 @@ import Test.Blanks.Exp (Exp (..), ExpScope, Ident (..), cexpLoc, expToNamed, exp
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
-testSingle :: TestName -> String -> ExpScope -> TestTree
+testSingle :: TestName -> String -> ExpScope Ident -> TestTree
 testSingle name input expected = testCase name $ do
   namedExp <- runCExpParser input
   -- Force here just to test that we can

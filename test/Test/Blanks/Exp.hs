@@ -194,23 +194,23 @@ data Decl a = Decl !Level !Ident a
   deriving anyclass (NFData)
 
 -- An ExpScope without locations
-type ExpScope = Scope (NameOnly Ident) Exp Ident
+type ExpScope a = Scope (NameOnly Ident) Exp a
 
-type DeclScope = Decl ExpScope
+type DeclScope a = Decl (ExpScope a)
 
 -- A nameless equivalent to 'CExp'
-type ExpLocScope l = LocScope l (NameOnly Ident) Exp Ident
+type ExpLocScope l a = LocScope l (NameOnly Ident) Exp a
 
-type DeclLocScope l = Located l (Decl (ExpLocScope l))
+type DeclLocScope l a = Located l (Decl (ExpLocScope l a))
 
-declLocScopeForget :: DeclLocScope l -> DeclScope
+declLocScopeForget :: DeclLocScope l a -> DeclScope a
 declLocScopeForget = fmap locScopeForget . locatedVal
 
-declScopeAnno :: l -> DeclScope -> DeclLocScope l
+declScopeAnno :: l -> DeclScope a -> DeclLocScope l a
 declScopeAnno l = Located l . fmap (scopeAnno l)
 
 -- Convert to nameless representation
-expToNameless :: CExp l -> ExpLocScope l
+expToNameless :: CExp l -> ExpLocScope l Ident
 expToNameless ce =
   case ce of
     CExpBool l b -> LocScopeEmbed l (ExpBool b)
@@ -228,7 +228,7 @@ expToNameless ce =
 
 -- Convert back to named representation. Usually this isn't a necessary operation,
 -- but we want to do round-trip testing
-expToNamed :: ExpLocScope l -> Maybe (CExp l)
+expToNamed :: ExpLocScope l Ident -> Maybe (CExp l)
 expToNamed e =
   case e of
     LocScopeBound _ _ -> Nothing
@@ -247,8 +247,8 @@ expToNamed e =
         ExpTyBool -> pure (CExpTyBool l)
         ExpTyFun a b -> CExpTyFun l <$> expToNamed a <*> expToNamed b
 
-declToNameless :: CDecl l -> DeclLocScope l
+declToNameless :: CDecl l -> DeclLocScope l Ident
 declToNameless (CDecl l lvl i e) = Located l (Decl lvl i (expToNameless e))
 
-declToNamed :: DeclLocScope l -> Maybe (CDecl l)
+declToNamed :: DeclLocScope l Ident -> Maybe (CDecl l)
 declToNamed (Located l (Decl lvl i e)) = fmap (CDecl l lvl i) (expToNamed e)

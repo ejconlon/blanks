@@ -2,42 +2,17 @@ module Test.Blanks.ScopeTest
   ( testScope
   ) where
 
-import Blanks (Name (..), NameOnly, Scope, pattern ScopeBound, scopeAbstract1, scopeApply1, scopeInstantiate1)
-import Control.Monad.Identity (Identity (..))
-import Data.Set (Set)
+import Blanks (SubError (..), scopeApply1, scopeInstantiate1)
 import qualified Data.Set as Set
 import Test.Blanks.Assertions ((@/=))
+import Test.Blanks.SimpleScope (abst, embed, freeVars, sbound, sconst, sflip, sfree, sfree2, sid, spair, svar, svar2,
+                                swonky, swonky2, var)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
-type BareScope = Scope (NameOnly Char) Identity Char
-
-abst :: Char -> BareScope -> BareScope
-abst a = scopeAbstract1 (Name a ()) a
-
-bound :: Int -> BareScope
-bound = ScopeBound
-
-var :: Char -> BareScope
-var = pure
-
-freeVars :: BareScope -> Set Char
-freeVars = foldMap Set.singleton
-
 testScope :: TestTree
 testScope =
-  let svar = var 'x'
-      sbound = bound 0
-      sfree = abst 'y' (var 'x')
-      sfree2 = abst 'z' (abst 'y' (var 'x'))
-      sid = abst 'x' (var 'x')
-      swonky = abst 'x' (bound 0)
-      sconst = abst 'x' (abst 'y' (var 'x'))
-      sflip = abst 'x' (abst 'y' (var 'y'))
-      svar2 = var 'e'
-      swonky2 = abst 'x' svar2
-
-      testEq =
+  let testEq =
         testCase "eq" $ do
           svar @?= svar
           svar @/= svar2
@@ -59,6 +34,7 @@ testScope =
           freeVars sflip @?= Set.empty
           freeVars svar2 @?= Set.singleton 'e'
           freeVars swonky2 @?= Set.singleton 'e'
+          freeVars spair @?= Set.singleton 'x'
 
       testInstantiate =
         testCase "instantiate" $ do
@@ -66,6 +42,7 @@ testScope =
           scopeInstantiate1 svar2 sbound @?= svar2
           scopeInstantiate1 svar2 sid @?= sid
           scopeInstantiate1 svar2 swonky @?= swonky2
+          scopeInstantiate1 svar2 spair @?= embed svar svar2
 
       testApply =
         testCase "apply" $ do
@@ -73,17 +50,20 @@ testScope =
           scopeApply1 svar2 swonky @?= Right sbound
           scopeApply1 svar2 sconst @?= Right swonky2
           scopeApply1 svar2 sflip @?= Right sid
+          scopeApply1 svar2 svar @?= Left NonBinderError
 
       testVarSub =
         testCase "var sub" $ do
           (svar >>= const svar2) @?= svar2
           (sfree >>= const svar2) @?= abst 'y' svar2
           (sfree2 >>= const svar2) @?= abst 'c' (abst 'd' svar2)
+          (spair >>= const svar2) @?= embed svar2 sbound
 
       testIdSub =
         testCase "id sub" $ do
           (svar >>= const sid) @?= sid
           (sfree >>= const sid) @?= abst 'y' sid
           (sfree2 >>= const sid) @?= abst 'c' (abst 'd' sid)
+          (spair >>= const sid) @?= embed sid sbound
 
    in testGroup "Scope" [testEq, testFreeVars, testInstantiate, testApply, testVarSub, testIdSub]

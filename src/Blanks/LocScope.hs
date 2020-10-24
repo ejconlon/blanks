@@ -9,9 +9,12 @@ module Blanks.LocScope
   , locScopeLocation
   , locScopeFree
   , locScopeEmbed
+  , locScopeFromInnerBinder
   , locScopeBind
   , locScopeBindOpt
   , locScopeLift
+  , locScopeInnerBinder
+  , locScopeInnerBinder1
   , locScopeAbstract
   , locScopeAbstract1
   , locScopeUnAbstract
@@ -25,11 +28,13 @@ module Blanks.LocScope
   , locScopeMapAnno
   ) where
 
+import Blanks.Core (BinderScope)
 import Blanks.Located (Colocated, Located (..), askColocated)
 import Blanks.NatNewtype (NatNewtype)
 import Blanks.ScopeW (ScopeW (..), scopeWAbstract, scopeWAbstract1, scopeWApply, scopeWApply1, scopeWBind,
-                      scopeWBindOpt, scopeWEmbed, scopeWFree, scopeWHoistAnno, scopeWInstantiate, scopeWInstantiate1,
-                      scopeWLift, scopeWLiftAnno, scopeWMapAnno, scopeWUnAbstract, scopeWUnAbstract1)
+                      scopeWBindOpt, scopeWEmbed, scopeWFree, scopeWFromInnerBinder, scopeWHoistAnno, scopeWInnerBinder,
+                      scopeWInnerBinder1, scopeWInstantiate, scopeWInstantiate1, scopeWLift, scopeWLiftAnno,
+                      scopeWMapAnno, scopeWUnAbstract, scopeWUnAbstract1)
 import Blanks.Sub (SubError)
 import Blanks.Under (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed, pattern UnderScopeFree)
 import Control.DeepSeq (NFData (..))
@@ -101,6 +106,10 @@ locScopeEmbed :: Functor f => f (LocScope l n f a) -> Colocated l (LocScope l n 
 locScopeEmbed = scopeWEmbed
 {-# INLINE locScopeEmbed #-}
 
+locScopeFromInnerBinder :: Functor f => BinderScope n (LocScope l n f a) -> Colocated l (LocScope l n f a)
+locScopeFromInnerBinder = scopeWFromInnerBinder
+{-# INLINE locScopeFromInnerBinder #-}
+
 locScopeBind :: Functor f => (a -> Colocated l (LocScope l n f b)) -> LocScope l n f a -> LocScope l n f b
 locScopeBind = scopeWBind
 {-# INLINE locScopeBind #-}
@@ -112,6 +121,14 @@ locScopeBindOpt = scopeWBindOpt
 locScopeLift :: Traversable f => f a -> Colocated l (LocScope l n f a)
 locScopeLift = scopeWLift
 {-# INLINE locScopeLift #-}
+
+locScopeInnerBinder :: (Functor f, Eq a) => n -> Seq a -> LocScope l n f a -> BinderScope n (LocScope l n f a)
+locScopeInnerBinder = scopeWInnerBinder
+{-# INLINE locScopeInnerBinder #-}
+
+locScopeInnerBinder1 :: (Functor f, Eq a) => n -> a -> LocScope l n f a -> BinderScope n (LocScope l n f a)
+locScopeInnerBinder1 = scopeWInnerBinder1
+{-# INLINE locScopeInnerBinder1 #-}
 
 locScopeAbstract :: (Functor f, Eq a) => n -> Seq a -> LocScope l n f a -> Colocated l (LocScope l n f a)
 locScopeAbstract = scopeWAbstract
