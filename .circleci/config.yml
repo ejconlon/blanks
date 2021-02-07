@@ -6,7 +6,7 @@ parameters:
     default: "blanks"
   cache_ver:
     type: string
-    default: "v1"
+    default: "v2"
 
 commands:
   install_native_deps:
@@ -73,14 +73,14 @@ workflows:
   build:
     jobs:
       - stack_build:
-          lts_ghc_ver: 8.8.4
+          lts_ghc_ver: 8.10.3
       - cabal_build:
-          name: cabal_build_8_8
-          ghc_ver: 8.8.4
+          name: cabal_build_8_10
+          ghc_ver: 8.10.4
           requires:
             - stack_build
       - cabal_build:
-          name: cabal_build_8_10
-          ghc_ver: 8.10.2
+          name: cabal_build_9_0
+          ghc_ver: 9.0.1
           requires:
             - stack_build
