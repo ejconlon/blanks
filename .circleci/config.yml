@@ -7,6 +7,9 @@ parameters:
   cache_ver:
     type: string
     default: "v2"
+  haskell_image:
+    type: string
+    default: "ejconlon/haskell-custom"
 
 commands:
   install_native_deps:
@@ -21,7 +24,7 @@ jobs:
       lts_ghc_ver:
         type: string
     docker:
-      - image: haskell:<< parameters.lts_ghc_ver >>
+      - image: << pipeline.parameters.haskell_image >>:<< parameters.lts_ghc_ver >>
     steps:
       - checkout
       - install_native_deps
@@ -43,7 +46,7 @@ jobs:
       ghc_ver:
         type: string
     docker:
-      - image: haskell:<< parameters.ghc_ver >>
+      - image: << pipeline.parameters.haskell_image >>:<< parameters.ghc_ver >>
     steps:
       - checkout
       - install_native_deps
