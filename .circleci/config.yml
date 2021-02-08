@@ -82,8 +82,3 @@ workflows:
           ghc_ver: 8.10.4
           requires:
             - stack_build
-      - cabal_build:
-          name: cabal_build_9_0
-          ghc_ver: 9.0.1
-          requires:
-            - stack_build
