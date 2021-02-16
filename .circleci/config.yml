@@ -76,7 +76,7 @@ workflows:
   build:
     jobs:
       - stack_build:
-          lts_ghc_ver: 8.10.3
+          lts_ghc_ver: 8.10.4
       - cabal_build:
           name: cabal_build_8_10
           ghc_ver: 8.10.4
