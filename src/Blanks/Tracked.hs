@@ -48,11 +48,20 @@ instance Ord a => Monoid (Tracked a) where
   mempty = Tracked Set.empty Set.empty
   mappend = (<>)
 
+-- This is a specialized writer monad.
 data WithTracked a l = WithTracked
   { withTrackedState :: !(Tracked a)
   , withTrackedEnv :: !l
   } deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)
     deriving anyclass (NFData)
+
+instance Ord a => Applicative (WithTracked a) where
+  pure = WithTracked mempty
+  WithTracked t1 l1 <*> WithTracked t2 l2 = WithTracked (t1 <> t2) (l1 l2)
+
+instance Ord a => Monad (WithTracked a) where
+  return = pure
+  WithTracked t1 l1 >>= f = let WithTracked t2 l2 = f l1 in WithTracked (t1 <> t2) l2
 
 forgetTrackedScope :: Functor f => LocScope (WithTracked a l) n f z -> LocScope l n f z
 forgetTrackedScope = locScopeHoistAnno withTrackedEnv

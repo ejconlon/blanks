@@ -1,6 +1,7 @@
 module Blanks.Conversion
   ( locScopeForget
   , scopeAnno
+  , asLocScope
   ) where
 
 import Blanks.LocScope (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed,
@@ -25,3 +26,7 @@ scopeAnno l = go where
       ScopeFree a -> LocScopeFree l a
       ScopeBinder r x e -> LocScopeBinder l r x (go e)
       ScopeEmbed fe -> LocScopeEmbed l (fmap go fe)
+
+-- | Apply the function as if the 'Scope' had trivial annotations. Not very efficient, but easy.
+asLocScope :: (Functor f1, Functor f2) => (LocScope () n1 f1 a1 -> LocScope () n2 f2 a2) -> (Scope n1 f1 a1 -> Scope n2 f2 a2)
+asLocScope f = locScopeForget . f . scopeAnno ()

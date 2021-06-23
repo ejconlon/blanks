@@ -8,6 +8,7 @@ module Blanks
 
 import Blanks.Conversion as Blanks
 import Blanks.Core (BinderScope (..))
+import Blanks.Global as Blanks
 import Blanks.LocScope as Blanks
 import Blanks.Located as Blanks
 import Blanks.Name as Blanks

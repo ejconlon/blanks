@@ -1,18 +1,20 @@
 module Test.Blanks.SplitScope where
 
-import Blanks (BinderId, BinderScope, LocScope, NameOnly, SplitBinder (..), SplitFunctor (..), SplitResult, Tracked,
+import Blanks (BinderId, BinderScope, LocScope, NameOnly, SplitBinder (..), SplitFunctor (..), SplitState, Tracked,
                WithTracked (withTrackedState), locScopeAbstract1, locScopeInnerBinder1, locScopeLocation,
                pattern LocScopeBound, pattern LocScopeEmbed, pattern NameOnly, runColocated, scopeAnno, splitLocScope,
                trackScope)
+import Control.Monad.State.Strict (State)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Test.Blanks.SimpleScope (SimpleFunctor (..), SimpleScope)
 
+type SimpleSplitState = State (SplitState () (NameOnly Char) SimpleFunctor Char)
 type SplitScope = LocScope () (NameOnly Char) (SplitFunctor SimpleFunctor) Char
 type SplitInnerBinder = BinderScope (NameOnly Char) SplitScope
 type SplitOuterBinder = SplitBinder () (NameOnly Char) SimpleFunctor Char
-type SplitScopeResult = SplitResult () (NameOnly Char) SimpleFunctor Char
+type SplitScopeResult = WithTracked Char SplitScope
 
 abstSplit :: Char -> SplitScope -> SplitScope
 abstSplit a = flip runColocated () . locScopeAbstract1 (NameOnly a) a
@@ -41,5 +43,5 @@ closureSplit bid vars = LocScopeEmbed () (SplitFunctorClosure bid (Seq.fromList 
 outerBinderSplit :: Int -> [Char] -> SplitInnerBinder -> SplitOuterBinder
 outerBinderSplit a = SplitBinder a . Set.fromList
 
-simpleSplit :: SimpleScope -> SplitScopeResult
+simpleSplit :: SimpleScope -> SimpleSplitState SplitScopeResult
 simpleSplit s = splitLocScope (trackScope (scopeAnno () s))

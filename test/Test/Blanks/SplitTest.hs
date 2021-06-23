@@ -2,7 +2,8 @@ module Test.Blanks.SplitTest
   ( testSplit
   ) where
 
-import Blanks (BinderId, SplitResult (..), Tracked, mkTrackedBound, mkTrackedFree)
+import Blanks (BinderId, SplitState (..), Tracked, WithTracked (..), emptySplitState, mkTrackedBound, mkTrackedFree)
+import Control.Monad.State.Strict (runState)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Test.Blanks.SimpleScope (SimpleScope, sbound, sconst, sflip, sfree, sfree2, sid, spair, svar, swonky, swonky3)
@@ -58,7 +59,7 @@ splitCases =
 
 runSplitCase :: SplitCase -> IO ()
 runSplitCase (SplitCase _ scopeIn trackedOut scopeOut binders) = do
-  let SplitResult actualTrackedOut actualScopeOut actualBinders = simpleSplit scopeIn
+  let (WithTracked actualTrackedOut actualScopeOut, SplitState _ actualBinders) = runState (simpleSplit scopeIn) emptySplitState
   actualTrackedOut @?= trackedOut
   actualScopeOut @?= scopeOut
   actualBinders @?= binders
