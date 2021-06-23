@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3e66404b6e808993a99490ba1327e8e872e5dee4cfb34980b7cd5f84ce47aba6
+-- hash: b49d230e168c22f2cf71d5e1d5da58512200db2105793a64df252a8307bc1d69
 
 name:           blanks
-version:        0.5.0
+version:        0.6.0
 synopsis:       Fill-in-the-blanks - A library factoring out substitution from ASTs
 description:    Please see the README on GitHub at <https://github.com/ejconlon/blanks#readme>
 category:       Language
@@ -45,7 +45,24 @@ library
       Paths_blanks
   hs-source-dirs:
       src
-  default-extensions: BangPatterns ConstraintKinds DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable DerivingStrategies DerivingVia FlexibleContexts FlexibleInstances FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DeriveFunctor
+      DeriveFoldable
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GeneralizedNewtypeDeriving
+      KindSignatures
+      MultiParamTypeClasses
+      PatternSynonyms
+      Rank2Types
+      TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds
   build-depends:
       adjunctions >=4.4 && <5
@@ -72,7 +89,24 @@ test-suite blanks-test
       Paths_blanks
   hs-source-dirs:
       test
-  default-extensions: BangPatterns ConstraintKinds DeriveFunctor DeriveFoldable DeriveGeneric DeriveTraversable DerivingStrategies DerivingVia FlexibleContexts FlexibleInstances FunctionalDependencies GeneralizedNewtypeDeriving KindSignatures MultiParamTypeClasses PatternSynonyms Rank2Types TypeFamilies
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DeriveFunctor
+      DeriveFoldable
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GeneralizedNewtypeDeriving
+      KindSignatures
+      MultiParamTypeClasses
+      PatternSynonyms
+      Rank2Types
+      TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       adjunctions >=4.4 && <5

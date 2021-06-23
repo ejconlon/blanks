@@ -1,9 +1,9 @@
 module Test.Blanks.SplitScope where
 
-import Blanks (BinderId, BinderScope, LocScope, pattern LocScopeBound, pattern LocScopeEmbed, NameOnly,
-               pattern NameOnly, SplitBinder (..), SplitFunctor (..), SplitResult, Tracked,
-               WithTracked (withTrackedState), locScopeAbstract1, locScopeInnerBinder1, locScopeLocation, runColocated,
-               scopeAnno, splitLocScope, trackScope)
+import Blanks (BinderId, BinderScope, LocScope, NameOnly, SplitBinder (..), SplitFunctor (..), SplitResult, Tracked,
+               WithTracked (withTrackedState), locScopeAbstract1, locScopeInnerBinder1, locScopeLocation,
+               pattern LocScopeBound, pattern LocScopeEmbed, pattern NameOnly, runColocated, scopeAnno, splitLocScope,
+               trackScope)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set

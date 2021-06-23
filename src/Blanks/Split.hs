@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Utilities to lambda-lift and closure-conv
 module Blanks.Split
   ( BinderId (..)
   , SplitFunctor (..)
@@ -35,6 +36,7 @@ newtype BinderId = BinderId { unBinderId :: Int }
   deriving stock (Eq, Show, Ord)
   deriving newtype (Enum, NFData, Num)
 
+-- TODO Maybe include `SplitFunctorGlobal !a`
 data SplitFunctor f a =
     SplitFunctorBase !(f a)
   | SplitFunctorClosure !BinderId !(Seq Int)
@@ -101,6 +103,14 @@ data SplitResult l n f a = SplitResult
   , splitResultBinders :: !(Map BinderId (SplitBinder l n f a))
   }
 
+instance (Eq (f (LocScope l n (SplitFunctor f) a)), Eq l, Eq n, Eq a) => Eq (SplitResult l n f a) where
+  SplitResult t1 s1 b1 == SplitResult t2 s2 b2 = t1 == t2 && s1 == s2 && b1 == b2
+
+instance (Show (f (LocScope l n (SplitFunctor f) a)), Show l, Show n, Show a) => Show (SplitResult l n f a) where
+  showsPrec d (SplitResult t s b) = showString "SplitResult " . showsPrec (d+1) t . showsPrec (d+1) s . showsPrec (d+1) b
+
+-- TODO Take predicate on `n` to determine which binders need to be converted.
+-- TODO Take `a -> Maybe a` to resolve globals
 splitLocScope :: (Traversable f, Ord a) => LocScope (WithTracked a l) n f a -> SplitResult l n f a
 splitLocScope s =
   let ((!t, !s'), !ss) = runState (splitLocScopeInner 0 Set.empty s) initSplitState

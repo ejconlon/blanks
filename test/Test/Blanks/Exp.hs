@@ -7,11 +7,14 @@ module Test.Blanks.Exp
   , CDecl (..)
   , declKeywords
   , expKeywords
+  , synSpan
   , cexpParser
   , runCExpParser
   , cdeclParser
   , runCDeclParser
   , Exp (..)
+  , Decl (..)
+  , Info (..)
   , ExpScope
   , DeclScope
   , ExpLocScope
@@ -24,15 +27,17 @@ module Test.Blanks.Exp
   , declToNamed
   ) where
 
-import Blanks (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed, pattern LocScopeFree,
-               Located (..), NameOnly, pattern NameOnly, Scope, locScopeAbstract1, locScopeForget, locScopeUnAbstract1,
-               runColocated, scopeAnno)
+import Blanks (LocScope, Located (..), Scope, locScopeAbstract1, locScopeForget, locScopeUnAbstract1,
+               pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed, pattern LocScopeFree, runColocated,
+               scopeAnno)
 import Control.DeepSeq (NFData)
 import Control.Monad (when)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
-import Test.Blanks.Parsing
+import Test.Blanks.Parsing (Parser, SourceSpan (..), around, around2, around3, branch, double, identifier, parens,
+                            runParserIO, signed, symbol, triple)
+import Text.Megaparsec (mkPos)
 
 -- A newtype indicating an identifier in our language
 newtype Ident = Ident { unIdent :: String } deriving newtype (Eq, Show, Ord, NFData)
@@ -47,6 +52,7 @@ data CExp l =
   | CExpIsZero !l !(CExp l)
   | CExpVar !l !Ident
   | CExpAbs !l !Ident !(CExp l)
+  | CExpLet !l !Ident !(CExp l) !(CExp l)
   | CExpAsc !l !(CExp l) !(CExp l)
   | CExpTyInt !l
   | CExpTyBool !l
@@ -66,6 +72,7 @@ cexpLoc ce =
     CExpIsZero l _ -> l
     CExpVar l _ -> l
     CExpAbs l _ _ -> l
+    CExpLet l _ _ _ -> l
     CExpAsc l _ _ -> l
     CExpTyInt l -> l
     CExpTyBool l -> l
@@ -80,6 +87,7 @@ expKeywords = Set.fromList $ fmap Ident
   , "zero?"
   , ":"
   , "lambda"
+  , "let"
   , "int"
   , "bool"
   , "->"
@@ -99,6 +107,11 @@ nonKeywordParser = do
   when (Set.member ident declKeywords) (fail ("Parsed decl keyword: " <> rawIdent))
   pure ident
 
+synSpan :: SourceSpan
+synSpan =
+  let p = mkPos maxBound
+  in SourceSpan "<<synthetic>>" p p p p
+
 -- Parses a concrete expression from a string
 cexpParser :: Parser (CExp SourceSpan)
 cexpParser = result where
@@ -110,6 +123,7 @@ cexpParser = result where
     , ifParser
     , isZeroParser
     , absParser
+    , letParser
     , appParser
     , ascParser
     , tyBoolParser
@@ -136,6 +150,15 @@ cexpParser = result where
     b <- cexpParser
     pure (n, b)
 
+  letParser = around3 CExpLet $ parens $ do
+    _ <- symbol "let"
+    (n, e) <- parens $ do
+      n <- nonKeywordParser
+      e <- cexpParser
+      pure (n, e)
+    b <- cexpParser
+    pure (n, e, b)
+
   appParser = around2 CExpApp (parens (double cexpParser))
 
   ascParser = around2 CExpAsc (parens (symbol ":" *> double cexpParser))
@@ -144,7 +167,7 @@ cexpParser = result where
 
   tyIntParser = around (const . CExpTyInt) (symbol "int")
 
-  tyFunParser = around2 (CExpTyFun) (parens (symbol "->" *> double cexpParser))
+  tyFunParser = around2 CExpTyFun (parens (symbol "->" *> double cexpParser))
 
   varParser = around CExpVar nonKeywordParser
 
@@ -179,6 +202,7 @@ data Exp a =
     ExpBool !Bool
   | ExpInt !Int
   | ExpApp a a
+  | ExpLet a a
   | ExpAdd a a
   | ExpIf a a a
   | ExpIsZero a
@@ -193,13 +217,25 @@ data Decl a = Decl !Level !Ident a
   deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)
 
+-- Binder info
+data Info =
+    InfoAbs !Ident
+  | InfoLet !Ident
+  deriving stock (Show, Generic)
+  deriving anyclass (NFData)
+
+instance Eq Info where
+  InfoAbs _ == InfoAbs _ = True
+  InfoLet _ == InfoLet _ = True
+  _ == _ = False
+
 -- An ExpScope without locations
-type ExpScope a = Scope (NameOnly Ident) Exp a
+type ExpScope a = Scope Info Exp a
 
 type DeclScope a = Decl (ExpScope a)
 
 -- A nameless equivalent to 'CExp'
-type ExpLocScope l a = LocScope l (NameOnly Ident) Exp a
+type ExpLocScope l a = LocScope l Info Exp a
 
 type DeclLocScope l a = Located l (Decl (ExpLocScope l a))
 
@@ -210,21 +246,28 @@ declScopeAnno :: l -> DeclScope a -> DeclLocScope l a
 declScopeAnno l = Located l . fmap (scopeAnno l)
 
 -- Convert to nameless representation
-expToNameless :: CExp l -> ExpLocScope l Ident
-expToNameless ce =
-  case ce of
-    CExpBool l b -> LocScopeEmbed l (ExpBool b)
-    CExpInt l i -> LocScopeEmbed l (ExpInt i)
-    CExpApp l a b -> LocScopeEmbed l (ExpApp (expToNameless a) (expToNameless b))
-    CExpAdd l a b -> LocScopeEmbed l (ExpAdd (expToNameless a) (expToNameless b))
-    CExpIf l a b c -> LocScopeEmbed l (ExpIf (expToNameless a) (expToNameless b) (expToNameless c))
-    CExpIsZero l a -> LocScopeEmbed l (ExpIsZero (expToNameless a))
-    CExpVar l x -> LocScopeFree l x
-    CExpAbs l x a -> runColocated (locScopeAbstract1 (NameOnly x) x (expToNameless a)) l
-    CExpAsc l a b -> LocScopeEmbed l (ExpAsc (expToNameless a) (expToNameless b))
-    CExpTyInt l -> LocScopeEmbed l ExpTyInt
-    CExpTyBool l -> LocScopeEmbed l ExpTyBool
-    CExpTyFun l a b -> LocScopeEmbed l (ExpTyFun (expToNameless a) (expToNameless b))
+-- First argument is the synthetic (or "fake") location to create new nodes
+-- without source positions.
+expToNameless :: l -> CExp l -> ExpLocScope l Ident
+expToNameless syn = go where
+  go ce =
+    case ce of
+      CExpBool l b -> LocScopeEmbed l (ExpBool b)
+      CExpInt l i -> LocScopeEmbed l (ExpInt i)
+      CExpApp l a b -> LocScopeEmbed l (ExpApp (go a) (go b))
+      CExpAdd l a b -> LocScopeEmbed l (ExpAdd (go a) (go b))
+      CExpIf l a b c -> LocScopeEmbed l (ExpIf (go a) (go b) (go c))
+      CExpIsZero l a -> LocScopeEmbed l (ExpIsZero (go a))
+      CExpVar l x -> LocScopeFree l x
+      CExpAbs l x a -> runColocated (locScopeAbstract1 (InfoAbs x) x (go a)) l
+      CExpLet l x t a ->
+        let targetLess = go t
+            bodyLess = runColocated (locScopeAbstract1 (InfoLet x) x (go a)) syn
+        in LocScopeEmbed l (ExpLet targetLess bodyLess)
+      CExpAsc l a b -> LocScopeEmbed l (ExpAsc (go a) (go b))
+      CExpTyInt l -> LocScopeEmbed l ExpTyInt
+      CExpTyBool l -> LocScopeEmbed l ExpTyBool
+      CExpTyFun l a b -> LocScopeEmbed l (ExpTyFun (go a) (go b))
 
 -- Convert back to named representation. Usually this isn't a necessary operation,
 -- but we want to do round-trip testing
@@ -233,12 +276,20 @@ expToNamed e =
   case e of
     LocScopeBound _ _ -> Nothing
     LocScopeFree l a -> pure (CExpVar l a)
-    LocScopeBinder l _ (NameOnly x) b -> CExpAbs l x <$> expToNamed (locScopeUnAbstract1 x b)
+    LocScopeBinder l _ i b ->
+      case i of
+        InfoAbs x -> CExpAbs l x <$> expToNamed (locScopeUnAbstract1 x b)
+        _ -> Nothing
     LocScopeEmbed l fe ->
       case fe of
         ExpBool b -> pure (CExpBool l b)
         ExpInt i -> pure (CExpInt l i)
         ExpApp a b -> CExpApp l <$> expToNamed a <*> expToNamed b
+        ExpLet t b ->
+          case b of
+            LocScopeBinder _ _ (InfoLet x) c ->
+              CExpLet l x <$> expToNamed t <*> expToNamed (locScopeUnAbstract1 x c)
+            _ -> Nothing
         ExpAdd a b -> CExpAdd l <$> expToNamed a <*> expToNamed b
         ExpIf a b c -> CExpIf l <$> expToNamed a <*> expToNamed b <*> expToNamed c
         ExpIsZero a -> CExpIsZero l <$> expToNamed a
@@ -247,8 +298,8 @@ expToNamed e =
         ExpTyBool -> pure (CExpTyBool l)
         ExpTyFun a b -> CExpTyFun l <$> expToNamed a <*> expToNamed b
 
-declToNameless :: CDecl l -> DeclLocScope l Ident
-declToNameless (CDecl l lvl i e) = Located l (Decl lvl i (expToNameless e))
+declToNameless :: l -> CDecl l -> DeclLocScope l Ident
+declToNameless syn (CDecl l lvl i e) = Located l (Decl lvl i (expToNameless syn e))
 
 declToNamed :: DeclLocScope l Ident -> Maybe (CDecl l)
 declToNamed (Located l (Decl lvl i e)) = fmap (CDecl l lvl i) (expToNamed e)

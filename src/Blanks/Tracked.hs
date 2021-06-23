@@ -13,8 +13,8 @@ module Blanks.Tracked
   ) where
 
 import Blanks.Conversion (scopeAnno)
-import Blanks.LocScope (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed,
-                        pattern LocScopeFree, locScopeHoistAnno)
+import Blanks.LocScope (LocScope, locScopeHoistAnno, pattern LocScopeBinder, pattern LocScopeBound,
+                        pattern LocScopeEmbed, pattern LocScopeFree)
 import Blanks.Scope (Scope)
 import Control.DeepSeq (NFData)
 import Data.Set (Set)

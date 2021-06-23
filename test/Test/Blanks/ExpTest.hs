@@ -1,9 +1,10 @@
 module Test.Blanks.ExpTest where
 
-import Blanks (pattern NameOnly, pattern ScopeBinder, pattern ScopeBound, pattern ScopeEmbed, pattern ScopeFree,
-               locScopeForget, locScopeLocation)
+import Blanks (locScopeForget, locScopeLocation, pattern ScopeBinder, pattern ScopeBound, pattern ScopeEmbed,
+               pattern ScopeFree)
 import Control.DeepSeq (force)
-import Test.Blanks.Exp (Exp (..), ExpScope, Ident (..), cexpLoc, expToNamed, expToNameless, runCExpParser)
+import Test.Blanks.Exp (Exp (..), ExpScope, Ident (..), Info (..), cexpLoc, expToNamed, expToNameless, runCExpParser,
+                        synSpan)
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
@@ -11,7 +12,7 @@ testSingle :: TestName -> String -> ExpScope Ident -> TestTree
 testSingle name input expected = testCase name $ do
   namedExp <- runCExpParser input
   -- Force here just to test that we can
-  let namelessExp = force (expToNameless namedExp)
+  let namelessExp = force (expToNameless synSpan namedExp)
   cexpLoc namedExp @?= locScopeLocation namelessExp
   let actual = locScopeForget namelessExp
   expected @?= actual
@@ -40,12 +41,13 @@ testExp = testGroup "Exp" cases where
     , testSingle "add var" "(+ 42 x)" (ScopeEmbed (ExpAdd intExp xExp))
     , testSingle "iszero" "(zero? 42)" (ScopeEmbed (ExpIsZero intExp))
     , testSingle "app" "(x y)" (ScopeEmbed (ExpApp xExp yExp))
-    , testSingle "abs yy" "(lambda (y) y)" (ScopeBinder 1 (NameOnly yIdent) (ScopeBound 0))
-    , testSingle "abs xyy" "(lambda (x) (lambda (y) y))" (ScopeBinder 1 (NameOnly xIdent) (ScopeBinder 1 (NameOnly yIdent) (ScopeBound 0)))
-    , testSingle "abs xyx" "(lambda (x) (lambda (y) x))" (ScopeBinder 1 (NameOnly xIdent) (ScopeBinder 1 (NameOnly yIdent) (ScopeBound 1)))
-    , testSingle "app abs" "((lambda (x) x) 42)" (ScopeEmbed (ExpApp (ScopeBinder 1 (NameOnly xIdent) (ScopeBound 0)) intExp))
+    , testSingle "abs yy" "(lambda (y) y)" (ScopeBinder 1 (InfoAbs yIdent) (ScopeBound 0))
+    , testSingle "abs xyy" "(lambda (x) (lambda (y) y))" (ScopeBinder 1 (InfoAbs xIdent) (ScopeBinder 1 (InfoAbs yIdent) (ScopeBound 0)))
+    , testSingle "abs xyx" "(lambda (x) (lambda (y) x))" (ScopeBinder 1 (InfoAbs xIdent) (ScopeBinder 1 (InfoAbs yIdent) (ScopeBound 1)))
+    , testSingle "app abs" "((lambda (x) x) 42)" (ScopeEmbed (ExpApp (ScopeBinder 1 (InfoAbs xIdent) (ScopeBound 0)) intExp))
     , testSingle "ty bool" "bool" boolTyExp
     , testSingle "ty int" "int" intTyExp
     , testSingle "ty fun" "(-> int bool)" (ScopeEmbed (ExpTyFun intTyExp boolTyExp))
     , testSingle "asc" "(: 42 int)" (ScopeEmbed (ExpAsc intExp intTyExp))
+    , testSingle "let" "(let (x 42) x)" (ScopeEmbed (ExpLet intExp (ScopeBinder 1 (InfoLet xIdent) (ScopeBound 0))))
     ]

@@ -1,6 +1,6 @@
 module Test.Blanks.SimpleScope where
 
-import Blanks (NameOnly, pattern NameOnly, Scope, pattern ScopeBound, pattern ScopeEmbed, Tracked, locScopeLocation,
+import Blanks (NameOnly, Scope, Tracked, locScopeLocation, pattern NameOnly, pattern ScopeBound, pattern ScopeEmbed,
                scopeAbstract1, trackScopeSimple)
 import Data.Set (Set)
 import qualified Data.Set as Set
