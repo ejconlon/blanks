@@ -2,8 +2,8 @@ module Test.Blanks.SplitTest
   ( testSplit
   ) where
 
-import Blanks (BinderId, SplitState (..), Tracked, WithTracked (..), emptySplitState, mkTrackedBound, mkTrackedFree)
-import Control.Monad.State.Strict (runState)
+import Blanks (BinderId, SplitState (..), Tracked, WithTracked (..), emptySplitState, mkTrackedBound, mkTrackedFree,
+               runState)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Test.Blanks.SimpleScope (SimpleScope, sbound, sconst, sflip, sfree, sfree2, sid, spair, svar, swonky, swonky3)

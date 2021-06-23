@@ -4,6 +4,8 @@
 module Blanks
   ( module Blanks
   , BinderScope (..)
+  , State
+  , runState
   ) where
 
 import Blanks.Conversion as Blanks
@@ -16,3 +18,4 @@ import Blanks.Scope as Blanks
 import Blanks.Split as Blanks
 import Blanks.Sub as Blanks
 import Blanks.Tracked as Blanks
+import Control.Monad.State.Strict (State, runState)
