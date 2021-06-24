@@ -1,4 +1,6 @@
-module Test.Blanks.ExpTest where
+module Test.Blanks.ExpTest
+  ( testExp
+  ) where
 
 import Blanks (locScopeForget, locScopeLocation, pattern ScopeBinder, pattern ScopeBound, pattern ScopeEmbed,
                pattern ScopeFree)

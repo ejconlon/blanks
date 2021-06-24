@@ -110,7 +110,7 @@ nonKeywordParser = do
 synSpan :: SourceSpan
 synSpan =
   let p = mkPos maxBound
-  in SourceSpan "<<synthetic>>" p p p p
+  in SourceSpan "<synthetic>" p p p p
 
 -- Parses a concrete expression from a string
 cexpParser :: Parser (CExp SourceSpan)
@@ -192,10 +192,10 @@ cdeclParser = result where
     , parser "define" LevelTerm
     ]
 
-  parser name lvl = around2 (flip CDecl lvl) (parens (symbol name *> ((,) <$> nonKeywordParser <*> cexpParser)))
+  parser name lvl = around2 (`CDecl` lvl) (parens (symbol name *> ((,) <$> nonKeywordParser <*> cexpParser)))
 
-runCDeclParser :: String -> IO (CExp SourceSpan)
-runCDeclParser = runParserIO cexpParser
+runCDeclParser :: String -> IO (CDecl SourceSpan)
+runCDeclParser = runParserIO cdeclParser
 
 -- Just the expressions of our language that have nothing to do with naming
 data Exp a =

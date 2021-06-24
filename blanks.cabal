@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4cc45ddb71ca32c579ccc212baa48eb74082eb85927e9672931323e0a97a8c9b
+-- hash: 3c8f5c77c30def5f7a3fa71af1edee9f8d6d82adbc017135ffe3488dfebdcc32
 
 name:           blanks
 version:        0.6.0
@@ -79,6 +79,7 @@ test-suite blanks-test
   main-is: Main.hs
   other-modules:
       Test.Blanks.Assertions
+      Test.Blanks.ComplexExpTest
       Test.Blanks.Exp
       Test.Blanks.ExpTest
       Test.Blanks.Parsing
