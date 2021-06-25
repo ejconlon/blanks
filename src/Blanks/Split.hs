@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- | Utilities to lambda-lift and closure-conv
+-- | Utilities to lambda-lift and closure-convert expressions.
 module Blanks.Split
   ( BinderId (..)
   , SplitFunctor (..)

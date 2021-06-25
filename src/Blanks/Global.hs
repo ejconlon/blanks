@@ -7,6 +7,7 @@ module Blanks.Global
   , VarClass (..)
   , VarClassifier
   , nullClassifier
+  , predClassifier
   , globalScope
   , VarUnClassifier
   , nullUnClassifier
@@ -40,6 +41,9 @@ type VarClassifier g a z = a -> VarClass g z
 
 nullClassifier :: VarClassifier g a a
 nullClassifier = VarClassFree
+
+predClassifier :: (a -> Bool) -> VarClassifier a a a
+predClassifier p a = if p a then VarClassGlobal a else VarClassFree a
 
 globalScope :: Functor f => VarClassifier g a z -> LocScope l n f a -> LocScope l n (GlobalFunctor g f) z
 globalScope cfier = go where

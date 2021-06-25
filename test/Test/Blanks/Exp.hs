@@ -4,6 +4,7 @@ module Test.Blanks.Exp
   ( Ident (..)
   , CExp (..)
   , cexpLoc
+  , Level (..)
   , CDecl (..)
   , declKeywords
   , expKeywords
@@ -14,6 +15,8 @@ module Test.Blanks.Exp
   , runCDeclParser
   , Exp (..)
   , Decl (..)
+  , declMapExp
+  , declMapExpM
   , Info (..)
   , ExpScope
   , DeclScope
@@ -180,9 +183,13 @@ data Level =
   deriving stock (Eq, Show, Generic)
   deriving anyclass (NFData)
 
-data CDecl l = CDecl !l !Level !Ident !(CExp l)
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (NFData)
+data CDecl l = CDecl
+  { cdeclPos :: !l
+  , cdeclLvl :: !Level
+  , cdeclName :: !Ident
+  , cdeclExp :: !(CExp l)
+  } deriving stock (Eq, Show, Generic)
+    deriving anyclass (NFData)
 
 -- Parses a concrete declaration from a string
 cdeclParser :: Parser (CDecl SourceSpan)
@@ -213,9 +220,18 @@ data Exp a =
   deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)
 
-data Decl a = Decl !Level !Ident a
-  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-  deriving anyclass (NFData)
+data Decl a = Decl
+  { declLvl :: !Level
+  , declName :: !Ident
+  , declExp :: a
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
+
+declMapExp :: (a -> b) -> Decl a -> Decl b
+declMapExp f (Decl lvl name ex) = Decl lvl name (f ex)
+
+declMapExpM :: Functor m => (a -> m b) -> Decl a -> m (Decl b)
+declMapExpM f (Decl lvl name ex) = fmap (Decl lvl name) (f ex)
 
 -- Binder info
 data Info =

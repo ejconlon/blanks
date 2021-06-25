@@ -3,6 +3,7 @@
 -- | Utilities for gathering and caching sets of free variables.
 module Blanks.Tracked
   ( Tracked (..)
+  , trackedIsEmpty
   , mkTrackedFree
   , mkTrackedBound
   , shiftTracked
@@ -26,6 +27,9 @@ data Tracked a = Tracked
   , trackedBound :: !(Set Int)
   } deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
+
+trackedIsEmpty :: Tracked a -> Bool
+trackedIsEmpty (Tracked f b) = Set.null f && Set.null b
 
 mkTrackedFree :: a -> Tracked a
 mkTrackedFree a = Tracked (Set.singleton a) Set.empty
