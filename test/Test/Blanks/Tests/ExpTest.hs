@@ -1,12 +1,12 @@
-module Test.Blanks.ExpTest
+module Test.Blanks.Tests.ExpTest
   ( testExp
   ) where
 
 import Blanks (locScopeForget, locScopeLocation, pattern ScopeBinder, pattern ScopeBound, pattern ScopeEmbed,
                pattern ScopeFree)
 import Control.DeepSeq (force)
-import Test.Blanks.Exp (Exp (..), ExpScope, Ident (..), Info (..), cexpLoc, expToNamed, expToNameless, runCExpParser,
-                        synSpan)
+import Test.Blanks.Lib.Exp (Exp (..), ExpScope, Ident (..), Info (..), cexpLoc, expToNamed, expToNameless,
+                            runCExpParser, synSpan)
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 

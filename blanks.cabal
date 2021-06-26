@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 210c349dd63e7f2f03f86618b749d8d67e2244c66737b43b240a8487fcd9df05
+-- hash: fd2eb639a1097df5638ec6ed72105e7e15daa5088f437336418818d38f18d9b5
 
 name:           blanks
 version:        0.6.0
@@ -31,14 +31,15 @@ library
       Blanks
       Blanks.Conversion
       Blanks.Core
-      Blanks.Global
       Blanks.Located
       Blanks.LocScope
       Blanks.Name
       Blanks.NatNewtype
+      Blanks.Phases.Global
+      Blanks.Phases.Lift
+      Blanks.ReExports
       Blanks.Scope
       Blanks.ScopeW
-      Blanks.Split
       Blanks.Sub
       Blanks.Tracked
       Blanks.Under
@@ -78,16 +79,16 @@ test-suite blanks-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Test.Blanks.Assertions
-      Test.Blanks.ComplexExpTest
-      Test.Blanks.Exp
-      Test.Blanks.ExpTest
-      Test.Blanks.Parsing
-      Test.Blanks.ScopeTest
-      Test.Blanks.SimpleScope
-      Test.Blanks.SplitScope
-      Test.Blanks.SplitTest
-      Test.Blanks.TrackedTest
+      Test.Blanks.Lib.Assertions
+      Test.Blanks.Lib.Exp
+      Test.Blanks.Lib.LiftScope
+      Test.Blanks.Lib.Parsing
+      Test.Blanks.Lib.SimpleScope
+      Test.Blanks.Tests.ExpTest
+      Test.Blanks.Tests.LiftTest
+      Test.Blanks.Tests.ProgramTest
+      Test.Blanks.Tests.ScopeTest
+      Test.Blanks.Tests.TrackedTest
       Paths_blanks
   hs-source-dirs:
       test

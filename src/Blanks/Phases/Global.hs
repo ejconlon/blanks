@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
 -- | Utilities to bind global references so they're not closed over as free in subsequent operations.
-module Blanks.Global
+module Blanks.Phases.Global
   ( GlobalFunctor (..)
   , MatchGlobal (..)
   , VarClass (..)

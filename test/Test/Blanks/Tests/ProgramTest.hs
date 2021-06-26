@@ -1,23 +1,23 @@
-module Test.Blanks.ComplexExpTest
-  ( testComplexExp
+module Test.Blanks.Tests.ProgramTest
+  ( testProgram
   ) where
 
-import Blanks.Global (globalScope, predClassifier)
 import Blanks.LocScope (locScopeHoistAnno)
 import Blanks.Located (locatedVal)
-import Blanks.Split (emptySplitState, splitLocScope)
+import Blanks.Phases.Global (globalScope, predClassifier)
+import Blanks.Phases.Lift (emptyLiftState, liftLocScope)
 import Blanks.Tracked (trackScope)
 import Control.Monad.State.Strict (runState)
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Test.Blanks.Exp (CDecl (..), Decl (..), Level (..), declMapExp, declMapExpM, declToNameless, infoShouldSplit,
-                        runCDeclParser, synSpan)
+import Test.Blanks.Lib.Exp (CDecl (..), Decl (..), Level (..), declMapExp, declMapExpM, declToNameless, infoShouldLift,
+                            runCDeclParser, synSpan)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 -- import Text.Pretty.Simple (pPrint)
 
 -- TODO
--- type ExpSplitScope l a = LocScope l Info (SplitFunctor (GlobalFunctor Exp))
+-- type ExpLiftScope l a = LocScope l Info (LiftFunctor (GlobalFunctor Exp))
 
 chooseProgram :: [String]
 chooseProgram =
@@ -36,7 +36,7 @@ chooseProgram =
 -- Parse a sequence of definitions
 -- Gather the names
 -- Assign as globals
--- Split functions
+-- Lift functions
 
 testChooseProgram :: TestTree
 testChooseProgram = testCase "choose program" $ do
@@ -51,7 +51,7 @@ testChooseProgram = testCase "choose program" $ do
   Map.size dmap @?= numDefs
   -- putStrLn "*** INIT DECLS ***"
   -- pPrint dmap
-  let (smap, _) = runState (traverse (declMapExpM (splitLocScope infoShouldSplit . trackScope)) dmap) emptySplitState
+  let (smap, _) = runState (traverse (declMapExpM (liftLocScope infoShouldLift . trackScope)) dmap) emptyLiftState
   Map.size smap @?= numDefs
   -- putStrLn "*** SPLIT STATE ***"
   -- pPrint st
@@ -59,5 +59,5 @@ testChooseProgram = testCase "choose program" $ do
   -- pPrint smap
   pure ()
 
-testComplexExp :: TestTree
-testComplexExp = testGroup "Complex Exp" [testChooseProgram]
+testProgram :: TestTree
+testProgram = testGroup "Program" [testChooseProgram]

@@ -1,6 +1,20 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Test.Blanks.Parsing where
+module Test.Blanks.Lib.Parsing
+  ( Parser
+  , runParserIO
+  , SourceSpan (..)
+  , around
+  , around2
+  , around3
+  , double
+  , triple
+  , symbol
+  , parens
+  , identifier
+  , branch
+  , signed
+  ) where
 
 import Control.Applicative (Alternative (..))
 import Control.DeepSeq (NFData)

@@ -4,18 +4,16 @@
 module Blanks
   ( module Blanks
   , BinderScope (..)
-  , State
-  , runState
   ) where
 
 import Blanks.Conversion as Blanks
 import Blanks.Core (BinderScope (..))
-import Blanks.Global as Blanks
 import Blanks.LocScope as Blanks
 import Blanks.Located as Blanks
 import Blanks.Name as Blanks
+import Blanks.Phases.Global as Blanks
+import Blanks.Phases.Lift as Blanks
+import Blanks.ReExports as Blanks
 import Blanks.Scope as Blanks
-import Blanks.Split as Blanks
 import Blanks.Sub as Blanks
 import Blanks.Tracked as Blanks
-import Control.Monad.State.Strict (State, runState)

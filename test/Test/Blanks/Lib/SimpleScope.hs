@@ -1,4 +1,4 @@
-module Test.Blanks.SimpleScope where
+module Test.Blanks.Lib.SimpleScope where
 
 import Blanks (Scope, Tracked, locScopeLocation, pattern ScopeBound, pattern ScopeEmbed, scopeAbstract1,
                trackScopeSimple)

@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Test.Blanks.Exp
+module Test.Blanks.Lib.Exp
   ( Ident (..)
   , CExp (..)
   , cexpLoc
@@ -18,7 +18,7 @@ module Test.Blanks.Exp
   , declMapExp
   , declMapExpM
   , Info (..)
-  , infoShouldSplit
+  , infoShouldLift
   , ExpScope
   , DeclScope
   , ExpLocScope
@@ -39,8 +39,8 @@ import Control.Monad (when)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
-import Test.Blanks.Parsing (Parser, SourceSpan (..), around, around2, around3, branch, double, identifier, parens,
-                            runParserIO, signed, symbol, triple)
+import Test.Blanks.Lib.Parsing (Parser, SourceSpan (..), around, around2, around3, branch, double, identifier, parens,
+                                runParserIO, signed, symbol, triple)
 import Text.Megaparsec (mkPos)
 
 -- A newtype indicating an identifier in our language
@@ -246,8 +246,8 @@ instance Eq Info where
   InfoLet _ == InfoLet _ = True
   _ == _ = False
 
-infoShouldSplit :: Info -> Bool
-infoShouldSplit i =
+infoShouldLift :: Info -> Bool
+infoShouldLift i =
   case i of
     InfoAbs _ -> True
     InfoLet _ -> False

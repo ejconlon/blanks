@@ -1,4 +1,10 @@
-module Test.Blanks.Assertions where
+module Test.Blanks.Lib.Assertions
+  ( assertPredicate
+  , assertNotEqual
+  , assertTrue
+  , assertFalse
+  , (@/=)
+  ) where
 
 import Control.Monad (unless)
 import Test.Tasty.HUnit (Assertion, HasCallStack, assertFailure)

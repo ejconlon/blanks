@@ -1,10 +1,10 @@
-module Test.Blanks.TrackedTest
+module Test.Blanks.Tests.TrackedTest
   ( testTracked
   ) where
 
 import Blanks (mkTrackedBound, mkTrackedFree)
-import Test.Blanks.SimpleScope (sapp, sbound, sconst, sflip, sfree, sfree2, sid, svar, svar2, swonky, swonky2, swonky3,
-                                tracked)
+import Test.Blanks.Lib.SimpleScope (sapp, sbound, sconst, sflip, sfree, sfree2, sid, svar, svar2, swonky, swonky2,
+                                    swonky3, tracked)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
 
