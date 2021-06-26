@@ -10,11 +10,11 @@ import Blanks.Tracked (trackScope)
 import Control.Monad.State.Strict (runState)
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Test.Blanks.Exp (CDecl (..), Decl (..), Ident, Level (..), declMapExp, declMapExpM, declToNameless,
-                        infoShouldSplit, runCDeclParser, synSpan)
+import Test.Blanks.Exp (CDecl (..), Decl (..), Level (..), declMapExp, declMapExpM, declToNameless, infoShouldSplit,
+                        runCDeclParser, synSpan)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
-import Text.Pretty.Simple (pPrint)
+-- import Text.Pretty.Simple (pPrint)
 
 -- TODO
 -- type ExpSplitScope l a = LocScope l Info (SplitFunctor (GlobalFunctor Exp))
@@ -51,7 +51,7 @@ testChooseProgram = testCase "choose program" $ do
   Map.size dmap @?= numDefs
   -- putStrLn "*** INIT DECLS ***"
   -- pPrint dmap
-  let (smap, st) = runState (traverse (declMapExpM (splitLocScope infoShouldSplit . trackScope)) dmap) emptySplitState
+  let (smap, _) = runState (traverse (declMapExpM (splitLocScope infoShouldSplit . trackScope)) dmap) emptySplitState
   Map.size smap @?= numDefs
   -- putStrLn "*** SPLIT STATE ***"
   -- pPrint st

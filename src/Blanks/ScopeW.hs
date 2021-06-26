@@ -57,7 +57,7 @@ instance Eq (t (UnderScope n f (g a) a)) => Eq (ScopeW t n f g a) where
   ScopeW tu == ScopeW tv = tu == tv
 
 instance Show (t (UnderScope n f (g a) a)) => Show (ScopeW t n f g a) where
-  showsPrec d (ScopeW tu) = showString "ScopeW " . showsPrec (d+1) tu
+  showsPrec d (ScopeW tu) = showString "ScopeW " . showParen True (showsPrec (d+1) tu)
 
 instance (Functor t, Functor f, Functor g) => Functor (ScopeW t n f g) where
   fmap f (ScopeW tu) = ScopeW (fmap (bimap (fmap f) f) tu)

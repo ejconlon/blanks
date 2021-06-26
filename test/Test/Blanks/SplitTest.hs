@@ -6,9 +6,10 @@ import Blanks (BinderId, SplitState (..), Tracked, WithTracked (..), emptySplitS
                runState)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Test.Blanks.SimpleScope (SimpleScope, sapp, sbound, sconst, sflip, sfree, sfree2, sid, slamLetBodyConst,
-                                slamLetBodyFree, slamLetBodyId, slet, sletFree, sletFree2, sletLamBodyConst,
-                                sletLamBodyFree, sletLamBodyId, sletWonky, sletWonky2, svar, swonky, swonky3)
+import Test.Blanks.SimpleScope (SimpleScope, sapp, sbound, sconst, sflip, sfree, sfree2, sid, slamLetArgFree,
+                                slamLetArgOuter, slamLetBodyConst, slamLetBodyFree, slamLetBodyId, slet, sletFree,
+                                sletFree2, sletLamArgFree, sletLamArgInner, sletLamBodyConst, sletLamBodyFree,
+                                sletLamBodyId, sletWonky, sletWonky2, svar, swonky, swonky3)
 import Test.Blanks.SplitScope (SplitOuterBinder, SplitScope, appSplit, baseSplit, boundSplit, closureSplit,
                                innerLamBinderSplit, letSplit, outerLamBinderSplit, simpleSplit, varSplit)
 import Test.Tasty (TestTree, testGroup)
@@ -54,6 +55,18 @@ splitCases =
     , let ib = innerLamBinderSplit 'y' (letSplit 'z' xbase (varSplit 'x'))
           ob = outerLamBinderSplit 0 ['x'] ib
       in SplitCase "lamLetBodyFree" slamLetBodyFree mempty (closureSplit 0 []) (Map.singleton 0 ob)
+    , let ib = innerLamBinderSplit 'z' (varSplit 'z')
+          ob = outerLamBinderSplit 0 [] ib
+      in SplitCase "letLamArgInner" sletLamArgInner mempty (letSplit 'y' (closureSplit 0 []) xbase) (Map.singleton 0 ob)
+    , let ib = innerLamBinderSplit 'z' (varSplit 'x')
+          ob = outerLamBinderSplit 0 ['x'] ib
+      in SplitCase "letLamArgFree" sletLamArgFree mempty (letSplit 'y' (closureSplit 0 []) xbase) (Map.singleton 0 ob)
+    , let ib = innerLamBinderSplit 'y' (letSplit 'z' (varSplit 'y') xbase)
+          ob = outerLamBinderSplit 0 [] ib
+      in SplitCase "lamLetArgOuter" slamLetArgOuter mempty (closureSplit 0 []) (Map.singleton 0 ob)
+    , let ib = innerLamBinderSplit 'y' (letSplit 'z' (varSplit 'x') xbase)
+          ob = outerLamBinderSplit 0 ['x'] ib
+      in SplitCase "lamLetArgFree" slamLetArgFree mempty (closureSplit 0 []) (Map.singleton 0 ob)
     , let ib = innerLamBinderSplit 'y' (varSplit 'x')
           ob = outerLamBinderSplit 0 ['x'] ib
       in SplitCase "free" sfree mempty (closureSplit 0 []) (Map.singleton 0 ob)

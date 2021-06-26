@@ -94,7 +94,7 @@ instance (Eq (f (LocScope l n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) 
   LocScope su == LocScope sv = su == sv
 
 instance (Show (f (LocScope l n f a)), Show l, Show n, Show a) => Show (LocScope l n f a) where
-  showsPrec d (LocScope (ScopeW tu)) = showString "LocScope " . showsPrec (d+1) tu
+  showsPrec d (LocScope (ScopeW tu)) = showString "LocScope " . showParen True (showsPrec (d+1) tu)
 
 -- * Interface
 

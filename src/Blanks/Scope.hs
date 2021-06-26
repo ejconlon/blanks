@@ -72,7 +72,7 @@ instance (Eq (f (Scope n f a)), Eq n, Eq a) => Eq (Scope n f a) where
   Scope su == Scope sv = su == sv
 
 instance (Show (f (Scope n f a)), Show n, Show a) => Show (Scope n f a) where
-  showsPrec d (Scope (ScopeW tu)) = showString "Scope " . showsPrec (d+1) tu
+  showsPrec d (Scope (ScopeW tu)) = showString "Scope " . showParen True (showsPrec (d+1) tu)
 
 -- * Interface
 

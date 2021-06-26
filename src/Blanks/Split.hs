@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- | Utilities to lambda-lift and closure-convert expressions.
+-- | Utilities to lambda-lift expressions.
 module Blanks.Split
   ( BinderId (..)
   , SplitFunctor (..)
@@ -56,7 +56,13 @@ instance (Eq l, Eq n, Eq a, Eq (f (LocScope l n (SplitFunctor f) a))) => Eq (Spl
   SplitBinder a1 f1 s1 == SplitBinder a2 f2 s2 = a1 == a2 && f1 == f2 && s1 == s2
 
 instance (Show l, Show n, Show a, Show (f (LocScope l n (SplitFunctor f) a))) => Show (SplitBinder l n f a) where
-  showsPrec d (SplitBinder a f s) = showString "SplitBinder " . showsPrec (d+1) a . showChar ' ' . showsPrec (d+1) f . showChar ' ' . showsPrec (d+1) s
+  showsPrec d (SplitBinder a f s) =
+    showString "SplitBinder " .
+    showParen True (showsPrec (d+1) a) .
+    showChar ' ' .
+    showParen True (showsPrec (d+1) f) .
+    showChar ' ' .
+    showParen True (showsPrec (d+1) s)
 
 instance (NFData l, NFData n, NFData a, NFData (f (LocScope l n (SplitFunctor f) a))) => NFData (SplitBinder l n f a) where
   rnf (SplitBinder a f s) = seq (rnf a) (seq (rnf f) (rnf s))
@@ -72,7 +78,11 @@ instance (Eq l, Eq n, Eq a, Eq (f (LocScope l n (SplitFunctor f) a))) => Eq (Spl
   SplitState n1 m1 == SplitState n2 m2 = n1 == n2 && m1 == m2
 
 instance (Show l, Show n, Show a, Show (f (LocScope l n (SplitFunctor f) a))) => Show (SplitState l n f a) where
-  showsPrec d (SplitState n m) = showString "SplitState " . showsPrec (d+1) n . showChar ' ' . showsPrec (d+1) m
+  showsPrec d (SplitState n m) =
+    showString "SplitState " .
+    showParen True (showsPrec (d+1) n) .
+    showChar ' ' .
+    showParen True (showsPrec (d+1) m)
 
 instance (NFData l, NFData n, NFData a, NFData (f (LocScope l n (SplitFunctor f) a))) => NFData (SplitState l n f a) where
   rnf (SplitState n m) = seq (rnf n) (rnf m)
@@ -119,7 +129,6 @@ splitLocScopeInner r bs p ls =
           let bs' = Set.mapMonotonic (+ r) bv
           WithTracked (Tracked fv' _) e' <- splitLocScopeInner x bs' p e
           pure (WithTracked (Tracked fv' bv) (LocScopeBinder l x n e'))
-
 
 splitLocScope :: (Traversable f, Ord a) => (n -> Bool) -> LocScope (WithTracked a l) n f a -> State (SplitState l n f a) (SplitResult l n f a)
 splitLocScope = splitLocScopeInner 0 Set.empty
