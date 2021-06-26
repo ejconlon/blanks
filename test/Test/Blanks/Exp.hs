@@ -18,6 +18,7 @@ module Test.Blanks.Exp
   , declMapExp
   , declMapExpM
   , Info (..)
+  , infoShouldSplit
   , ExpScope
   , DeclScope
   , ExpLocScope
@@ -244,6 +245,12 @@ instance Eq Info where
   InfoAbs _ == InfoAbs _ = True
   InfoLet _ == InfoLet _ = True
   _ == _ = False
+
+infoShouldSplit :: Info -> Bool
+infoShouldSplit i =
+  case i of
+    InfoAbs _ -> True
+    InfoLet _ -> False
 
 -- An ExpScope without locations
 type ExpScope a = Scope Info Exp a

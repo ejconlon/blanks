@@ -3,7 +3,7 @@ module Test.Blanks.TrackedTest
   ) where
 
 import Blanks (mkTrackedBound, mkTrackedFree)
-import Test.Blanks.SimpleScope (sbound, sconst, sflip, sfree, sfree2, sid, spair, svar, svar2, swonky, swonky2, swonky3,
+import Test.Blanks.SimpleScope (sapp, sbound, sconst, sflip, sfree, sfree2, sid, svar, svar2, swonky, swonky2, swonky3,
                                 tracked)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
@@ -20,5 +20,5 @@ testTracked = testCase "tracked" $ do
   tracked sflip @?= mempty
   tracked svar2 @?= mkTrackedFree 'e'
   tracked swonky2 @?= mkTrackedFree 'e'
-  tracked spair @?= mkTrackedFree 'x' <> mkTrackedBound 0
+  tracked sapp @?= mkTrackedFree 'x' <> mkTrackedBound 0
   tracked swonky3 @?= mkTrackedBound 3

@@ -5,8 +5,9 @@ module Test.Blanks.ScopeTest
 import Blanks (SubError (..), scopeApply1, scopeInstantiate1)
 import qualified Data.Set as Set
 import Test.Blanks.Assertions ((@/=))
-import Test.Blanks.SimpleScope (abst, embed, freeVars, sbound, sconst, sflip, sfree, sfree2, sid, spair, svar, svar2,
-                                swonky, swonky2, var)
+import Test.Blanks.SimpleScope (app, freeVars, lam, lets, sapp, sbase, sbase2, sbound, sconst, sflip, sfree, sfree2,
+                                sid, slet, sletFree, sletFree2, sletWonky, sletWonky2, svar, svar2, swonky, swonky2,
+                                var)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
@@ -16,11 +17,19 @@ testScope =
         testCase "eq" $ do
           svar @?= svar
           svar @/= svar2
-          sid @?= abst 'x' (var 'x')
-          sid @?= abst 'y' (var 'y')
-          sid @/= abst 'x' (var 'y')
-          sid @/= abst 'y' (var 'x')
+          sid @?= lam 'x' (var 'x')
+          sid @?= lam 'y' (var 'y')
+          sid @/= lam 'x' (var 'y')
+          sid @/= lam 'y' (var 'x')
           sid @/= svar
+          sbase @?= sbase
+          sbase @/= sbase2
+          slet @?= lets 'z' sbase (var 'z')
+          slet @?= lets 'y' sbase (var 'y')
+          slet @/= lets 'y' sbase2 (var 'y')
+          slet @/= lets 'y' sbase (var 'z')
+          sletFree @?= lets 'z' sbase svar
+          sletFree2 @?= lets 'z' svar sbase
 
       testFreeVars =
         testCase "free vars" $ do
@@ -34,7 +43,11 @@ testScope =
           freeVars sflip @?= Set.empty
           freeVars svar2 @?= Set.singleton 'e'
           freeVars swonky2 @?= Set.singleton 'e'
-          freeVars spair @?= Set.singleton 'x'
+          freeVars sapp @?= Set.singleton 'x'
+          freeVars sbase @?= Set.empty
+          freeVars slet @?= Set.empty
+          freeVars sletFree @?= Set.singleton 'x'
+          freeVars sletFree2 @?= Set.singleton 'x'
 
       testInstantiate =
         testCase "instantiate" $ do
@@ -42,7 +55,9 @@ testScope =
           scopeInstantiate1 svar2 sbound @?= svar2
           scopeInstantiate1 svar2 sid @?= sid
           scopeInstantiate1 svar2 swonky @?= swonky2
-          scopeInstantiate1 svar2 spair @?= embed svar svar2
+          scopeInstantiate1 svar2 sapp @?= app svar svar2
+          scopeInstantiate1 svar2 sletWonky @?= lets 'y' sbase svar2
+          scopeInstantiate1 svar2 sletWonky2 @?= lets 'y' svar2 sbase
 
       testApply =
         testCase "apply" $ do
@@ -55,15 +70,17 @@ testScope =
       testVarSub =
         testCase "var sub" $ do
           (svar >>= const svar2) @?= svar2
-          (sfree >>= const svar2) @?= abst 'y' svar2
-          (sfree2 >>= const svar2) @?= abst 'c' (abst 'd' svar2)
-          (spair >>= const svar2) @?= embed svar2 sbound
+          (sfree >>= const svar2) @?= lam 'y' svar2
+          (sfree2 >>= const svar2) @?= lam 'c' (lam 'd' svar2)
+          (sapp >>= const svar2) @?= app svar2 sbound
+          (sletFree >>= const svar2) @?= lets 'y' sbase svar2
+          (sletFree2 >>= const svar2) @?= lets 'y' svar2 sbase
 
       testIdSub =
         testCase "id sub" $ do
           (svar >>= const sid) @?= sid
-          (sfree >>= const sid) @?= abst 'y' sid
-          (sfree2 >>= const sid) @?= abst 'c' (abst 'd' sid)
-          (spair >>= const sid) @?= embed sid sbound
+          (sfree >>= const sid) @?= lam 'y' sid
+          (sfree2 >>= const sid) @?= lam 'c' (lam 'd' sid)
+          (sapp >>= const sid) @?= app sid sbound
 
    in testGroup "Scope" [testEq, testFreeVars, testInstantiate, testApply, testVarSub, testIdSub]

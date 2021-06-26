@@ -92,8 +92,8 @@ insertBinder bid lb = modify' (\ss -> ss { splitStateBinders = Map.insert bid lb
 remapBound :: Int -> Set Int -> Int -> Int
 remapBound r bs b = maybe b (+ r) (Set.lookupIndex b bs)
 
-splitLocScopeInner :: (Traversable f, Ord a) => Int -> Set Int -> LocScope (WithTracked a l) n f a -> State (SplitState l n f a) (SplitResult l n f a)
-splitLocScopeInner r bs ls =
+splitLocScopeInner :: (Traversable f, Ord a) => Int -> Set Int -> (n -> Bool) -> LocScope (WithTracked a l) n f a -> State (SplitState l n f a) (SplitResult l n f a)
+splitLocScopeInner r bs p ls =
   case ls of
     LocScopeBound (WithTracked _ l) b ->
       let b' = remapBound r bs b
@@ -101,18 +101,25 @@ splitLocScopeInner r bs ls =
     LocScopeFree (WithTracked _ l) a ->
       pure (WithTracked (mkTrackedFree a) (LocScopeFree l a))
     LocScopeEmbed (WithTracked _ l) fe -> do
-      fx <- traverse (splitLocScopeInner r bs) fe
+      fx <- traverse (splitLocScopeInner r bs p) fe
       let WithTracked t fe' = sequence fx
       pure (WithTracked t (LocScopeEmbed l (SplitFunctorBase fe')))
-    LocScopeBinder (WithTracked (Tracked fv bv) l) x n e -> do
-      bid <- allocBinderId
-      let bs' = Set.mapMonotonic (+ r) bv
-      WithTracked _ e' <- splitLocScopeInner x bs' e
-      let lb = SplitBinder (Set.size bs') fv (BinderScope x n e')
-      insertBinder bid lb
-      let ss = Seq.fromList (Set.toList bv)
-      pure (WithTracked (Tracked Set.empty bv) (LocScopeEmbed l (SplitFunctorClosure bid ss)))
+    LocScopeBinder (WithTracked (Tracked fv bv) l) x n e ->
+      -- Some binders need to be lifted, some don't.
+      if p n
+        then do
+          bid <- allocBinderId
+          let bs' = Set.mapMonotonic (+ r) bv
+          WithTracked _ e' <- splitLocScopeInner x bs' p e
+          let lb = SplitBinder (Set.size bs') fv (BinderScope x n e')
+          insertBinder bid lb
+          let ss = Seq.fromList (Set.toList bv)
+          pure (WithTracked (Tracked Set.empty bv) (LocScopeEmbed l (SplitFunctorClosure bid ss)))
+        else do
+          let bs' = Set.mapMonotonic (+ r) bv
+          WithTracked (Tracked fv' _) e' <- splitLocScopeInner x bs' p e
+          pure (WithTracked (Tracked fv' bv) (LocScopeBinder l x n e'))
 
--- TODO Take predicate on `n` to determine which binders need to be converted.
-splitLocScope :: (Traversable f, Ord a) => LocScope (WithTracked a l) n f a -> State (SplitState l n f a) (SplitResult l n f a)
+
+splitLocScope :: (Traversable f, Ord a) => (n -> Bool) -> LocScope (WithTracked a l) n f a -> State (SplitState l n f a) (SplitResult l n f a)
 splitLocScope = splitLocScopeInner 0 Set.empty
