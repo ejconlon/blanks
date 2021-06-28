@@ -12,9 +12,6 @@ import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 -- import Text.Pretty.Simple (pPrint)
 
--- TODO
--- type ExpLiftScope l a = LocScope l Info (LiftFunctor (GlobalFunctor Exp))
-
 chooseProgram :: [String]
 chooseProgram =
   [ "(declare idInt (-> int int))"
@@ -28,11 +25,6 @@ chooseProgram =
   , "(declare chooseEx2 int)" -- should evaluate to 2
   , "(define chooseEx2 ((choose 2) 3))"
   ]
-
--- Parse a sequence of definitions
--- Gather the names
--- Assign as globals
--- Lift functions
 
 testChooseProgram :: TestTree
 testChooseProgram = testCase "choose program" $ do

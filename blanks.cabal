@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8bd45dd77a4da9c0c9e472f70eea833b689d95163b4604a76d30777a44acd7d2
+-- hash: 66e69a8c9f2d6d5397a97cc282080ded8f99faa8aac26f40acd39be6e1f8e4e3
 
 name:           blanks
 version:        0.6.0
@@ -120,7 +120,6 @@ test-suite blanks-test
     , distributive >=0.6 && <1
     , megaparsec
     , mtl >=2.2 && <3
-    , pretty-simple
     , tasty
     , tasty-hunit
     , text
