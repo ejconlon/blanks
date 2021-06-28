@@ -88,7 +88,7 @@ trackScopeInner s =
           !m = WithTracked t l
       in (t, LocScopeFree m a)
     LocScopeBinder l n i e ->
-      let !(t0, y) = trackScopeInner e
+      let (!t0, !y) = trackScopeInner e
           !t = shiftTracked n t0
           !m = WithTracked t l
       in (t, LocScopeBinder m n i y)
