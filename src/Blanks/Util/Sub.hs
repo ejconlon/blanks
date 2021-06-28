@@ -1,4 +1,4 @@
-module Blanks.Sub
+module Blanks.Util.Sub
   ( SubError (..)
   , ThrowSub (..)
   , rethrowSub

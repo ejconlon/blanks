@@ -2,12 +2,8 @@ module Test.Blanks.Tests.ProgramTest
   ( testProgram
   ) where
 
-import Blanks.LocScope (locScopeHoistAnno)
-import Blanks.Located (locatedVal)
-import Blanks.Phases.Global (globalScope, predClassifier)
-import Blanks.Phases.Lift (emptyLiftState, predLiftLocScope)
-import Blanks.Tracked (trackScope)
-import Control.Monad.State.Strict (runState)
+import Blanks (emptyLiftState, globalScope, locScopeHoistAnno, locatedVal, predClassifier, predLiftLocScope, runState,
+               trackScope)
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Test.Blanks.Lib.Exp (CDecl (..), Decl (..), Level (..), declMapExp, declMapExpM, declToNameless, infoShouldLift,

@@ -1,3 +1,4 @@
+-- | Functions to convert between annotated and un-annotated scopes.
 module Blanks.Conversion
   ( locScopeForget
   , scopeAnno

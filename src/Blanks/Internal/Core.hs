@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
 -- | Internals.
-module Blanks.Core
+module Blanks.Internal.Core
   ( BoundScope (..)
   , FreeScope (..)
   , BinderScope (..)

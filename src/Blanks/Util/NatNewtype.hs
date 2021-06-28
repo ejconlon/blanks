@@ -1,6 +1,6 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 
-module Blanks.NatNewtype
+module Blanks.Util.NatNewtype
   ( NatNewtype
   , natNewtypeFrom
   , natNewtypeTo
@@ -13,10 +13,11 @@ import Data.Kind (Type)
 -- derivably between newtyped functors and their wrapped types.
 -- The functional dependency requires that 'g' be the newtype
 -- and 'm' the wrapped type.
+-- This is used in library internals to coerce recursive parts of datatypes back and forth across newtypes.
 class
   ( forall a. Coercible (m a) (g a)
   , forall a. Coercible (g a) (m a)
-  )=> NatNewtype (m :: Type -> Type) (g :: Type -> Type) | g -> m
+  ) => NatNewtype (m :: Type -> Type) (g :: Type -> Type) | g -> m
 
 -- | Coerce from the wrapped type to the newtype.
 natNewtypeTo :: NatNewtype m g => m a -> g a

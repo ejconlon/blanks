@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
 -- | Utilities for gathering and caching sets of free variables.
-module Blanks.Tracked
+module Blanks.Transform.Track
   ( Tracked (..)
   , trackedIsEmpty
   , mkTrackedFree
@@ -22,6 +22,8 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
 
+-- | Tracked sets of free and bound variables. Works as a 'Semigroup' or 'Monoid'
+-- and can build built from smart constructors 'mkTrackedFree' and 'mkTrackedBound'.
 data Tracked a = Tracked
   { trackedFree :: !(Set a)
   , trackedBound :: !(Set Int)
@@ -31,12 +33,15 @@ data Tracked a = Tracked
 trackedIsEmpty :: Tracked a -> Bool
 trackedIsEmpty (Tracked f b) = Set.null f && Set.null b
 
+-- | Smart constructor for a single free variable.
 mkTrackedFree :: a -> Tracked a
 mkTrackedFree a = Tracked (Set.singleton a) Set.empty
 
+-- | Smart constructor for a single bound variable.
 mkTrackedBound :: Int -> Tracked a
 mkTrackedBound b = Tracked Set.empty (Set.singleton b)
 
+-- | Shifts bound variables DOWN by the given amount.
 shiftTracked :: Int -> Tracked a -> Tracked a
 shiftTracked i t@(Tracked f b) =
   if Set.null b
@@ -52,7 +57,7 @@ instance Ord a => Monoid (Tracked a) where
   mempty = Tracked Set.empty Set.empty
   mappend = (<>)
 
--- This is a specialized writer monad.
+-- | This is a specialized writer monad to maintain 'Tracked' variables while manipulating a structure.
 data WithTracked a l = WithTracked
   { withTrackedState :: !(Tracked a)
   , withTrackedEnv :: !l
@@ -67,6 +72,7 @@ instance Ord a => Monad (WithTracked a) where
   return = pure
   WithTracked t1 l1 >>= f = let WithTracked t2 l2 = f l1 in WithTracked (t1 <> t2) l2
 
+-- | Drop tracked annotations from the scope tree.
 forgetTrackedScope :: Functor f => LocScope (WithTracked a l) n f z -> LocScope l n f z
 forgetTrackedScope = locScopeHoistAnno withTrackedEnv
 
@@ -91,8 +97,10 @@ trackScopeInner s =
           !m = WithTracked t l
       in (t, LocScopeEmbed m fy)
 
+-- | Track variables as bottom-up annotations on the annotated scope tree.
 trackScope :: (Traversable f, Ord a) => LocScope l n f a -> LocScope (WithTracked a l) n f a
 trackScope = snd . trackScopeInner
 
-trackScopeSimple :: (Traversable f, Ord a) => Scope n f a -> LocScope (Tracked a) n f a
-trackScopeSimple = locScopeHoistAnno withTrackedState . trackScope . scopeAnno ()
+-- | Track variables as bottom-up annotations on the given pure scope tree.
+trackScopeSimple :: (Traversable f, Ord a) => Scope n f a -> LocScope (WithTracked a ()) n f a
+trackScopeSimple = trackScope . scopeAnno ()

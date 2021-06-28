@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Blanks.Name
+module Blanks.Util.Name
   ( Name (..)
   , NameOnly
   , pattern NameOnly
@@ -12,6 +12,7 @@ import GHC.Generics (Generic)
 -- | 'Name' is compared on value only, allowing you to define and use
 -- things like 'NameOnly' in your 'BlankInfo' values to make alpha-equivalent
 -- terms structurally ('Eq') equivalent.
+-- If you define your own info type, you may want to define 'Eq' to work in a similar way.
 data Name n a =
   Name
     { nameKey :: !n

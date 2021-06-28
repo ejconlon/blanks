@@ -1,7 +1,7 @@
 module Test.Blanks.Lib.SimpleScope where
 
-import Blanks (Scope, Tracked, locScopeLocation, pattern ScopeBound, pattern ScopeEmbed, scopeAbstract1,
-               trackScopeSimple)
+import Blanks (Scope, Tracked, WithTracked (..), locScopeLocation, pattern ScopeBound, pattern ScopeEmbed,
+               scopeAbstract1, trackScopeSimple)
 import Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -39,7 +39,7 @@ freeVars :: SimpleScope -> Set Char
 freeVars = foldMap Set.singleton
 
 tracked :: SimpleScope -> Tracked Char
-tracked = locScopeLocation . trackScopeSimple
+tracked = withTrackedState . locScopeLocation . trackScopeSimple
 
 app :: SimpleScope -> SimpleScope -> SimpleScope
 app x y = ScopeEmbed (SimpleFunctorApp x y)

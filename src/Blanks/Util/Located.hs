@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Blanks.Located
+module Blanks.Util.Located
   ( Colocated (..)
   , Located (..)
   , askColocated
@@ -32,9 +32,11 @@ newtype Colocated l a = Colocated
   { unColocated :: Reader l a
   } deriving newtype (Functor, Applicative, Monad, MonadReader l, Representable)
 
+-- | The 'Colocated' analogue to 'reader'
 colocated :: (l -> a) -> Colocated l a
 colocated f = Colocated (reader f)
 
+-- | The 'Colocated' analogue to 'ask'
 askColocated :: Colocated l l
 askColocated = Colocated ask
 

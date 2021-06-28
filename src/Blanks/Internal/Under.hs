@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
 -- | Internals.
-module Blanks.Under
+module Blanks.Internal.Under
   ( UnderScope (..)
   , pattern UnderScopeBound
   , pattern UnderScopeFree
@@ -10,7 +10,7 @@ module Blanks.Under
   , underScopeShift
   ) where
 
-import Blanks.Core (BinderScope (..), BoundScope (..), EmbedScope (..), FreeScope (..))
+import Blanks.Internal.Core (BinderScope (..), BoundScope (..), EmbedScope (..), FreeScope (..))
 import Control.DeepSeq (NFData)
 import Data.Bifoldable (Bifoldable (..))
 import Data.Bifunctor (Bifunctor (..))

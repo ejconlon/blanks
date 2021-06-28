@@ -2,7 +2,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Utilities to lambda-lift expressions.
-module Blanks.Phases.Lift
+module Blanks.Transform.Lift
   ( LiftSelection (..)
   , LiftSelector
   , predSelector
@@ -16,10 +16,10 @@ module Blanks.Phases.Lift
   , predLiftLocScope
   ) where
 
-import Blanks.Core (BinderScope (..))
+import Blanks.Internal.Core (BinderScope (..))
 import Blanks.LocScope (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed,
                         pattern LocScopeFree)
-import Blanks.Tracked (Tracked (..), WithTracked (..), mkTrackedBound, mkTrackedFree)
+import Blanks.Transform.Track (Tracked (..), WithTracked (..), mkTrackedBound, mkTrackedFree)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.State.Strict (State, gets, modify')
 import Data.Map.Strict (Map)

@@ -22,13 +22,14 @@ module Blanks.Scope
   , scopeApply1
   ) where
 
-import Blanks.Core (BinderScope)
-import Blanks.NatNewtype (NatNewtype)
-import Blanks.ScopeW (ScopeW (ScopeW), scopeWAbstract, scopeWAbstract1, scopeWApply, scopeWApply1, scopeWBind,
-                      scopeWBindOpt, scopeWFromInnerBinder, scopeWInnerBinder, scopeWInnerBinder1, scopeWInstantiate,
-                      scopeWInstantiate1, scopeWLift, scopeWUnAbstract, scopeWUnAbstract1)
-import Blanks.Sub (SubError)
-import Blanks.Under (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed, pattern UnderScopeFree)
+import Blanks.Internal.Core (BinderScope)
+import Blanks.Internal.ScopeW (ScopeW (ScopeW), scopeWAbstract, scopeWAbstract1, scopeWApply, scopeWApply1, scopeWBind,
+                               scopeWBindOpt, scopeWFromInnerBinder, scopeWInnerBinder, scopeWInnerBinder1,
+                               scopeWInstantiate, scopeWInstantiate1, scopeWLift, scopeWUnAbstract, scopeWUnAbstract1)
+import Blanks.Internal.Under (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+                              pattern UnderScopeFree)
+import Blanks.Util.NatNewtype (NatNewtype)
+import Blanks.Util.Sub (SubError)
 import Control.DeepSeq (NFData (..))
 import Control.Monad (ap)
 import Control.Monad.Identity (Identity (..))
@@ -76,6 +77,7 @@ instance (Show (f (Scope n f a)), Show n, Show a) => Show (Scope n f a) where
 
 -- * Interface
 
+-- | Use the given explicit binder as a 'Scope' constructor.
 scopeFromInnerBinder :: Functor f => BinderScope n (Scope n f a) -> Scope n f a
 scopeFromInnerBinder = runIdentity . scopeWFromInnerBinder
 {-# INLINE scopeFromInnerBinder #-}
@@ -95,10 +97,12 @@ scopeLift :: Traversable f => f a -> Scope n f a
 scopeLift = runIdentity . scopeWLift
 {-# INLINE scopeLift #-}
 
+-- | Construct an explicit binder.
 scopeInnerBinder :: (Functor f, Eq a) => n -> Seq a -> Scope n f a -> BinderScope n (Scope n f a)
 scopeInnerBinder = scopeWInnerBinder
 {-# INLINE scopeInnerBinder #-}
 
+-- | Construct an explicit binder of arity 1.
 scopeInnerBinder1 :: (Functor f, Eq a) => n -> a -> Scope n f a -> BinderScope n (Scope n f a)
 scopeInnerBinder1 = scopeWInnerBinder1
 {-# INLINE scopeInnerBinder1 #-}

@@ -1,4 +1,4 @@
--- | Re-exports for convenience when importing the whole library.
+-- | Re-exports
 module Blanks.ReExports
   ( State
   , runState

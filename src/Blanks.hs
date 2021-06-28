@@ -7,13 +7,13 @@ module Blanks
   ) where
 
 import Blanks.Conversion as Blanks
-import Blanks.Core (BinderScope (..))
+import Blanks.Internal.Core (BinderScope (..))
 import Blanks.LocScope as Blanks
-import Blanks.Located as Blanks
-import Blanks.Name as Blanks
-import Blanks.Phases.Global as Blanks
-import Blanks.Phases.Lift as Blanks
 import Blanks.ReExports as Blanks
 import Blanks.Scope as Blanks
-import Blanks.Sub as Blanks
-import Blanks.Tracked as Blanks
+import Blanks.Transform.Global as Blanks
+import Blanks.Transform.Lift as Blanks
+import Blanks.Transform.Track as Blanks
+import Blanks.Util.Located as Blanks
+import Blanks.Util.Name as Blanks
+import Blanks.Util.Sub as Blanks

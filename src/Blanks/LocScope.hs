@@ -1,5 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Read the docs for 'Scope' first. 'LocScope' adds location annotations to the scope tree.
 module Blanks.LocScope
   ( LocScope (..)
   , pattern LocScopeBound
@@ -28,15 +29,16 @@ module Blanks.LocScope
   , locScopeMapAnno
   ) where
 
-import Blanks.Core (BinderScope)
-import Blanks.Located (Colocated, Located (..), askColocated)
-import Blanks.NatNewtype (NatNewtype)
-import Blanks.ScopeW (ScopeW (..), scopeWAbstract, scopeWAbstract1, scopeWApply, scopeWApply1, scopeWBind,
-                      scopeWBindOpt, scopeWEmbed, scopeWFree, scopeWFromInnerBinder, scopeWHoistAnno, scopeWInnerBinder,
-                      scopeWInnerBinder1, scopeWInstantiate, scopeWInstantiate1, scopeWLift, scopeWLiftAnno,
-                      scopeWMapAnno, scopeWUnAbstract, scopeWUnAbstract1)
-import Blanks.Sub (SubError)
-import Blanks.Under (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed, pattern UnderScopeFree)
+import Blanks.Internal.Core (BinderScope)
+import Blanks.Internal.ScopeW (ScopeW (..), scopeWAbstract, scopeWAbstract1, scopeWApply, scopeWApply1, scopeWBind,
+                               scopeWBindOpt, scopeWEmbed, scopeWFree, scopeWFromInnerBinder, scopeWHoistAnno,
+                               scopeWInnerBinder, scopeWInnerBinder1, scopeWInstantiate, scopeWInstantiate1, scopeWLift,
+                               scopeWLiftAnno, scopeWMapAnno, scopeWUnAbstract, scopeWUnAbstract1)
+import Blanks.Internal.Under (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
+                              pattern UnderScopeFree)
+import Blanks.Util.Located (Colocated, Located (..), askColocated)
+import Blanks.Util.NatNewtype (NatNewtype)
+import Blanks.Util.Sub (SubError)
 import Control.DeepSeq (NFData (..))
 import Control.Monad (ap)
 import Control.Monad.Writer (MonadWriter (..))

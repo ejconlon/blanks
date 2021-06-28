@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Internals.
-module Blanks.ScopeW
+module Blanks.Internal.ScopeW
   ( ScopeWC
   , ScopeW (..)
   , scopeWFree
@@ -25,11 +25,11 @@ module Blanks.ScopeW
   , scopeWMapAnno
   ) where
 
-import Blanks.Core (BinderScope (..))
-import Blanks.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
-import Blanks.Sub (SubError (..))
-import Blanks.Under (UnderScope (..), pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
-                     pattern UnderScopeFree, underScopeShift)
+import Blanks.Internal.Core (BinderScope (..))
+import Blanks.Internal.Under (UnderScope (..), pattern UnderScopeBinder, pattern UnderScopeBound,
+                              pattern UnderScopeEmbed, pattern UnderScopeFree, underScopeShift)
+import Blanks.Util.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
+import Blanks.Util.Sub (SubError (..))
 import Control.DeepSeq (NFData (..))
 import Data.Bifoldable (bifoldr)
 import Data.Bifunctor (bimap, first)
