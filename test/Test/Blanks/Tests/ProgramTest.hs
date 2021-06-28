@@ -5,7 +5,7 @@ module Test.Blanks.Tests.ProgramTest
 import Blanks.LocScope (locScopeHoistAnno)
 import Blanks.Located (locatedVal)
 import Blanks.Phases.Global (globalScope, predClassifier)
-import Blanks.Phases.Lift (emptyLiftState, liftLocScope)
+import Blanks.Phases.Lift (emptyLiftState, predLiftLocScope)
 import Blanks.Tracked (trackScope)
 import Control.Monad.State.Strict (runState)
 import qualified Data.Map.Strict as Map
@@ -51,7 +51,7 @@ testChooseProgram = testCase "choose program" $ do
   Map.size dmap @?= numDefs
   -- putStrLn "*** INIT DECLS ***"
   -- pPrint dmap
-  let (smap, _) = runState (traverse (declMapExpM (liftLocScope infoShouldLift . trackScope)) dmap) emptyLiftState
+  let (smap, _) = runState (traverse (declMapExpM (predLiftLocScope infoShouldLift . trackScope)) dmap) emptyLiftState
   Map.size smap @?= numDefs
   -- putStrLn "*** SPLIT STATE ***"
   -- pPrint st

@@ -1,17 +1,17 @@
 module Test.Blanks.Lib.LiftScope where
 
 import Blanks (BinderId, BinderScope, LiftBinder (..), LiftFunctor (..), LiftState, LocScope, State, Tracked,
-               WithTracked (..), liftLocScope, locScopeAbstract1, locScopeInnerBinder1, locScopeLocation,
-               pattern LocScopeBound, pattern LocScopeEmbed, runColocated, scopeAnno, trackScope)
+               WithTracked (..), locScopeAbstract1, locScopeInnerBinder1, locScopeLocation, pattern LocScopeBound,
+               pattern LocScopeEmbed, predLiftLocScope, runColocated, scopeAnno, trackScope)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Test.Blanks.Lib.SimpleScope (SimpleFunctor (..), SimpleInfo (..), SimpleScope)
 
-type SimpleLiftState = State (LiftState () SimpleInfo SimpleFunctor Char)
+type SimpleLiftState = State (LiftState () SimpleInfo SimpleInfo SimpleFunctor Char)
 type LiftScope = LocScope () SimpleInfo (LiftFunctor SimpleFunctor) Char
 type LiftInnerBinder = BinderScope SimpleInfo LiftScope
-type LiftOuterBinder = LiftBinder () SimpleInfo SimpleFunctor Char
+type LiftOuterBinder = LiftBinder () SimpleInfo SimpleInfo SimpleFunctor Char
 type LiftScopeResult = WithTracked Char LiftScope
 
 lamLift :: Char -> LiftScope -> LiftScope
@@ -56,4 +56,4 @@ shouldLiftSimple i =
     SimpleInfoLet _ -> False
 
 simpleLift :: SimpleScope -> SimpleLiftState LiftScopeResult
-simpleLift s = liftLocScope shouldLiftSimple (trackScope (scopeAnno () s))
+simpleLift s = predLiftLocScope shouldLiftSimple (trackScope (scopeAnno () s))
