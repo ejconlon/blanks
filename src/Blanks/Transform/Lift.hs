@@ -30,30 +30,37 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
 
+-- | Should we select this binder for lifting? (Glorified boolean.)
 data LiftSelection x y =
     LiftSelectionNo !x
   | LiftSelectionYes !y
   deriving stock (Eq, Show)
 
+-- | Function to transform and classify binder info for lifting or not.
 type LiftSelector n x y = n -> LiftSelection x y
 
+-- | Selects the binder for lifting if the predicate is satisfies.
 predSelector :: (n -> Bool) -> LiftSelector n n n
 predSelector p n = if p n then LiftSelectionYes n else LiftSelectionNo n
 
+-- | An anonymous identifier for lifted binders.
 newtype BinderId = BinderId { unBinderId :: Int }
   deriving stock (Eq, Show, Ord)
   deriving newtype (Enum, NFData, Num)
 
+-- | When lifting binders, we rewrite the scope functor with this, embedding the original
+-- functor and adding a constructor to refer to a lifted binder.
 data LiftFunctor f a =
     LiftFunctorBase !(f a)
-  | LiftFunctorClosure !BinderId !(Seq Int)
+  | LiftFunctorBinder !BinderId !(Seq Int)  -- ^ Bound variables - see 'liftBinderClosureArity'.
   deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
 
+-- | A lifted binder.
 data LiftBinder l x y f a = LiftBinder
-  { liftBinderClosureArity :: !Int
-  , liftBinderFree :: !(Set a)
-  , liftBinderScope :: !(BinderScope y (LocScope l x (LiftFunctor f) a))
+  { liftBinderClosureArity :: !Int  -- ^ Number of bound variables from enclosing scope. 'LiftFunctorBinder' binds them.
+  , liftBinderFree :: !(Set a)  -- ^ Tracked free variables in the binder scope
+  , liftBinderScope :: !(BinderScope y (LocScope l x (LiftFunctor f) a))  -- ^ Binder scope
   } deriving stock (Generic)
 
 instance (Eq l, Eq x, Eq y, Eq a, Eq (f (LocScope l x (LiftFunctor f) a))) => Eq (LiftBinder l x y f a) where
@@ -71,8 +78,10 @@ instance (Show l, Show x, Show y, Show a, Show (f (LocScope l x (LiftFunctor f) 
 instance (NFData l, NFData x, NFData y, NFData a, NFData (f (LocScope l x (LiftFunctor f) a))) => NFData (LiftBinder l x y f a) where
   rnf (LiftBinder a f s) = seq (rnf a) (seq (rnf f) (rnf s))
 
+-- | Result for 'liftLocScope'. Contains tracked free variables and the scope tree.
 type LiftResult l n f a = WithTracked a (LocScope l n (LiftFunctor f) a)
 
+-- | State for 'liftLocScope'. Contains next binder ID and map of all lifted binders.
 data LiftState l x y f a = LiftState
   { liftStateNextId :: !BinderId
   , liftStateBinders :: !(Map BinderId (LiftBinder l x y f a))
@@ -91,6 +100,7 @@ instance (Show l, Show x, Show y, Show a, Show (f (LocScope l x (LiftFunctor f) 
 instance (NFData l, NFData x, NFData y, NFData a, NFData (f (LocScope l x (LiftFunctor f) a))) => NFData (LiftState l x y f a) where
   rnf (LiftState n m) = seq (rnf n) (rnf m)
 
+-- | Empty lift state
 emptyLiftState :: LiftState l x y f a
 emptyLiftState = LiftState (toEnum 0) Map.empty
 
@@ -128,14 +138,17 @@ liftLocScopeInner r bs sel ls =
           let lb = LiftBinder (Set.size bs') fv (BinderScope a y e')
           insertBinder bid lb
           let ss = Seq.fromList (Set.toList bv)
-          pure (WithTracked (Tracked Set.empty bv) (LocScopeEmbed l (LiftFunctorClosure bid ss)))
+          pure (WithTracked (Tracked Set.empty bv) (LocScopeEmbed l (LiftFunctorBinder bid ss)))
         LiftSelectionNo x -> do
           let bs' = Set.mapMonotonic (+ r) bv
           WithTracked (Tracked fv' _) e' <- liftLocScopeInner a bs' sel e
           pure (WithTracked (Tracked fv' bv) (LocScopeBinder l a x e'))
 
+-- | Lifts selected binders. To maintain binder ID state across invocations, compose in the 'State' monad and project out once at the end
+-- with 'runState'. (Note that you will have to accurately annotate with tracked variables using 'trackScope' before using this.)
 liftLocScope :: (Traversable f, Ord a) => LiftSelector n x y -> LocScope (WithTracked a l) n f a -> State (LiftState l x y f a) (LiftResult l x f a)
 liftLocScope = liftLocScopeInner 0 Set.empty
 
+-- | Lifts binders without transforming them. Selects according to the given predicate (see 'predSelector').
 predLiftLocScope :: (Traversable f, Ord a) => (n -> Bool) -> LocScope (WithTracked a l) n f a -> State (LiftState l n n f a) (LiftResult l n f a)
 predLiftLocScope = liftLocScope . predSelector

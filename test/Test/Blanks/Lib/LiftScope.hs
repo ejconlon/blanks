@@ -39,7 +39,7 @@ appLift :: LiftScope -> LiftScope -> LiftScope
 appLift x y = LocScopeEmbed () (LiftFunctorBase (SimpleFunctorApp x y))
 
 closureLift :: BinderId -> [Int] -> LiftScope
-closureLift bid vars = LocScopeEmbed () (LiftFunctorClosure bid (Seq.fromList vars))
+closureLift bid vars = LocScopeEmbed () (LiftFunctorBinder bid (Seq.fromList vars))
 
 letLift :: Char -> LiftScope -> LiftScope -> LiftScope
 letLift a x y =
