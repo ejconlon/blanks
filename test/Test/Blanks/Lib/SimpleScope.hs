@@ -1,7 +1,9 @@
 module Test.Blanks.Lib.SimpleScope where
 
-import Blanks (Scope, Tracked, WithTracked (..), locScopeLocation, pattern ScopeBound, pattern ScopeEmbed,
-               scopeAbstract1, trackScopeSimple)
+import Blanks (Located (..), Scope, Tracked, locScopeLocation, pattern ScopeBound, pattern ScopeEmbed, scopeAbstract1,
+               trackScopeSimple)
+import Data.Sequence (Seq)
+import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -12,19 +14,19 @@ data SimpleFunctor a =
   deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
 data SimpleInfo =
-    SimpleInfoLam !Char
+    SimpleInfoLam !(Seq Char)
   | SimpleInfoLet !Char
   deriving stock (Show)
 
 instance Eq SimpleInfo where
-  SimpleInfoLam _ == SimpleInfoLam _ = True
+  SimpleInfoLam s1 == SimpleInfoLam s2 = Seq.length s1 == Seq.length s2
   SimpleInfoLet _ == SimpleInfoLet _ = True
   _ == _ = False
 
 type SimpleScope = Scope SimpleInfo SimpleFunctor Char
 
 lam :: Char -> SimpleScope -> SimpleScope
-lam a = scopeAbstract1 (SimpleInfoLam a) a
+lam a = scopeAbstract1 (SimpleInfoLam (Seq.singleton a)) a
 
 base :: Char -> SimpleScope
 base = ScopeEmbed . SimpleFunctorBase
@@ -39,7 +41,7 @@ freeVars :: SimpleScope -> Set Char
 freeVars = foldMap Set.singleton
 
 tracked :: SimpleScope -> Tracked Char
-tracked = withTrackedState . locScopeLocation . trackScopeSimple
+tracked = locatedLoc . locScopeLocation . trackScopeSimple
 
 app :: SimpleScope -> SimpleScope -> SimpleScope
 app x y = ScopeEmbed (SimpleFunctorApp x y)

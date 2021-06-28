@@ -19,7 +19,8 @@ module Blanks.Transform.Lift
 import Blanks.Internal.Core (BinderScope (..))
 import Blanks.LocScope (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed,
                         pattern LocScopeFree)
-import Blanks.Transform.Track (Tracked (..), WithTracked (..), mkTrackedBound, mkTrackedFree)
+import Blanks.Transform.Track (Tracked (..), WithTracked, mkTrackedBound, mkTrackedFree)
+import Blanks.Util.Located (Located (..))
 import Control.DeepSeq (NFData (..))
 import Control.Monad.State.Strict (State, gets, modify')
 import Data.Map.Strict (Map)
@@ -119,30 +120,30 @@ remapBound r bs b = maybe b (+ r) (Set.lookupIndex b bs)
 liftLocScopeInner :: (Traversable f, Ord a) => Int -> Set Int -> LiftSelector n x y -> LocScope (WithTracked a l) n f a -> State (LiftState l x y f a) (LiftResult l x f a)
 liftLocScopeInner r bs sel ls =
   case ls of
-    LocScopeBound (WithTracked _ l) b ->
+    LocScopeBound (Located _ l) b ->
       let b' = remapBound r bs b
-      in pure (WithTracked (mkTrackedBound b') (LocScopeBound l b'))
-    LocScopeFree (WithTracked _ l) a ->
-      pure (WithTracked (mkTrackedFree a) (LocScopeFree l a))
-    LocScopeEmbed (WithTracked _ l) fe -> do
+      in pure (Located (mkTrackedBound b') (LocScopeBound l b'))
+    LocScopeFree (Located _ l) a ->
+      pure (Located (mkTrackedFree a) (LocScopeFree l a))
+    LocScopeEmbed (Located _ l) fe -> do
       fx <- traverse (liftLocScopeInner r bs sel) fe
-      let WithTracked t fe' = sequence fx
-      pure (WithTracked t (LocScopeEmbed l (LiftFunctorBase fe')))
-    LocScopeBinder (WithTracked (Tracked fv bv) l) a n e ->
+      let Located t fe' = sequence fx
+      pure (Located t (LocScopeEmbed l (LiftFunctorBase fe')))
+    LocScopeBinder (Located(Tracked fv bv) l) a n e ->
       -- Some binders need to be lifted, some don't.
       case sel n of
         LiftSelectionYes y -> do
           bid <- allocBinderId
           let bs' = Set.mapMonotonic (+ r) bv
-          WithTracked _ e' <- liftLocScopeInner a bs' sel e
+          Located _ e' <- liftLocScopeInner a bs' sel e
           let lb = LiftBinder (Set.size bs') fv (BinderScope a y e')
           insertBinder bid lb
           let ss = Seq.fromList (Set.toList bv)
-          pure (WithTracked (Tracked Set.empty bv) (LocScopeEmbed l (LiftFunctorBinder bid ss)))
+          pure (Located (Tracked Set.empty bv) (LocScopeEmbed l (LiftFunctorBinder bid ss)))
         LiftSelectionNo x -> do
           let bs' = Set.mapMonotonic (+ r) bv
-          WithTracked (Tracked fv' _) e' <- liftLocScopeInner a bs' sel e
-          pure (WithTracked (Tracked fv' bv) (LocScopeBinder l a x e'))
+          Located (Tracked fv' _) e' <- liftLocScopeInner a bs' sel e
+          pure (Located (Tracked fv' bv) (LocScopeBinder l a x e'))
 
 -- | Lifts selected binders. To maintain binder ID state across invocations, compose in the 'State' monad and project out once at the end
 -- with 'runState'. (Note that you will have to accurately annotate with tracked variables using 'trackScope' before using this.)

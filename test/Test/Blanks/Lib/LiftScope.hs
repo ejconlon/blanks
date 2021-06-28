@@ -1,7 +1,7 @@
 module Test.Blanks.Lib.LiftScope where
 
-import Blanks (BinderId, BinderScope, LiftBinder (..), LiftFunctor (..), LiftState, LocScope, State, Tracked,
-               WithTracked (..), locScopeAbstract1, locScopeInnerBinder1, locScopeLocation, pattern LocScopeBound,
+import Blanks (BinderId, BinderScope, LiftBinder (..), LiftFunctor (..), LiftState, LocScope, Located (..), State,
+               Tracked, WithTracked, locScopeAbstract1, locScopeInnerBinder1, locScopeLocation, pattern LocScopeBound,
                pattern LocScopeEmbed, predLiftLocScope, runColocated, scopeAnno, trackScope)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
@@ -15,10 +15,10 @@ type LiftOuterBinder = LiftBinder () SimpleInfo SimpleInfo SimpleFunctor Char
 type LiftScopeResult = WithTracked Char LiftScope
 
 lamLift :: Char -> LiftScope -> LiftScope
-lamLift a = flip runColocated () . locScopeAbstract1 (SimpleInfoLam a) a
+lamLift a = flip runColocated () . locScopeAbstract1 (SimpleInfoLam (Seq.singleton a)) a
 
 innerLamBinderLift :: Char -> LiftScope -> LiftInnerBinder
-innerLamBinderLift a = locScopeInnerBinder1 (SimpleInfoLam a) a
+innerLamBinderLift a = locScopeInnerBinder1 (SimpleInfoLam (Seq.singleton a)) a
 
 boundLift :: Int -> LiftScope
 boundLift = LocScopeBound ()
@@ -33,7 +33,7 @@ freeVarsLift :: LiftScope -> Set Char
 freeVarsLift = foldMap Set.singleton
 
 trackedLift :: LiftScope -> Tracked Char
-trackedLift = withTrackedState . locScopeLocation . trackScope
+trackedLift = locatedLoc . locScopeLocation . trackScope
 
 appLift :: LiftScope -> LiftScope -> LiftScope
 appLift x y = LocScopeEmbed () (LiftFunctorBase (SimpleFunctorApp x y))

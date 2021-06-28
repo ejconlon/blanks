@@ -2,8 +2,7 @@ module Test.Blanks.Tests.LiftTest
   ( testLift
   ) where
 
-import Blanks (BinderId, LiftState (..), Tracked, WithTracked (..), emptyLiftState, mkTrackedBound, mkTrackedFree,
-               runState)
+import Blanks (BinderId, LiftState (..), Located (..), Tracked, emptyLiftState, mkTrackedBound, mkTrackedFree, runState)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Test.Blanks.Lib.LiftScope (LiftOuterBinder, LiftScope, appLift, baseLift, boundLift, closureLift,
@@ -98,7 +97,7 @@ liftCases =
 
 runLiftCase :: LiftCase -> IO ()
 runLiftCase (LiftCase _ scopeIn trackedOut scopeOut binders) = do
-  let (WithTracked actualTrackedOut actualScopeOut, LiftState _ actualBinders) = runState (simpleLift scopeIn) emptyLiftState
+  let (Located actualTrackedOut actualScopeOut, LiftState _ actualBinders) = runState (simpleLift scopeIn) emptyLiftState
   actualTrackedOut @?= trackedOut
   actualScopeOut @?= scopeOut
   actualBinders @?= binders
