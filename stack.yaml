@@ -1,4 +1,8 @@
-resolver: lts-18.2
+# HACK for M1
+system-ghc: true
+install-ghc: false
+
+resolver: lts-18.10
 
 ghc-options:
   "$everything": -haddock
