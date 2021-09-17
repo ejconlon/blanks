@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 66e69a8c9f2d6d5397a97cc282080ded8f99faa8aac26f40acd39be6e1f8e4e3
+-- hash: 62c45d78219c3b6b1dd43de860bf1e33e782f258974b18ffdd7777f03e97a057
 
 name:           blanks
 version:        0.6.0
@@ -31,6 +31,8 @@ library
       Blanks
       Blanks.Conversion
       Blanks.Internal.Core
+      Blanks.Internal.Info
+      Blanks.Internal.Placed
       Blanks.Internal.ScopeW
       Blanks.Internal.Under
       Blanks.LocScope
@@ -64,6 +66,7 @@ library
       MultiParamTypeClasses
       PatternSynonyms
       Rank2Types
+      StandaloneDeriving
       TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds
   build-depends:
@@ -109,6 +112,7 @@ test-suite blanks-test
       MultiParamTypeClasses
       PatternSynonyms
       Rank2Types
+      StandaloneDeriving
       TypeFamilies
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -fno-warn-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
   build-depends:

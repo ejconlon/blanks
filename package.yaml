@@ -38,6 +38,7 @@ default-extensions:
 - MultiParamTypeClasses
 - PatternSynonyms
 - Rank2Types
+- StandaloneDeriving
 - TypeFamilies
 
 ghc-options:
