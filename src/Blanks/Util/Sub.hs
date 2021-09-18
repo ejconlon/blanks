@@ -6,11 +6,9 @@ module Blanks.Util.Sub
 
 import Control.Exception (Exception, throwIO)
 
--- | Errors that happen in the course of instantiation, thrown by 'blankApply'
--- and related functions.
+-- | Errors that happen in the course of instantiation
 data SubError
   = ApplyError !Int !Int
-  | UnboundError !Int
   | NonBinderError
   deriving (Eq, Show)
 

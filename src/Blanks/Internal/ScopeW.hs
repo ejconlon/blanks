@@ -5,18 +5,16 @@ module Blanks.Internal.ScopeW
   ( ScopeWC
   , ScopeW (..)
   , scopeWFree
-  , scopeWEmbed
   , scopeWAbstract
-  -- , scopeWFromInnerBinder
-  -- , scopeWInnerBinder
-  -- , scopeWInnerBinder1
-  -- , scopeWAbstract1
-  -- , scopeWUnAbstract
-  -- , scopeWUnAbstract1
-  -- , scopeWInstantiate
-  -- , scopeWInstantiate1
-  -- , scopeWApply
-  -- , scopeWApply1
+  , scopeWEmbed
+  , scopeWBindFree
+  , scopeWBindFree1
+  , scopeWFillBound
+  , scopeWFillBound1
+  , scopeWUnBindFree
+  , scopeWUnBindFree1
+  , scopeWApply
+  , scopeWApply1
   , scopeWBind
   , scopeWBindOpt
   , scopeWLift
@@ -25,7 +23,7 @@ module Blanks.Internal.ScopeW
   , scopeWMapAnno
   ) where
 
-import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..), abstractArity)
+import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..), abstractArity)
 import Blanks.Internal.Under (UnderScope (..), underScopeShift)
 import Blanks.Util.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
 import Blanks.Util.Sub (SubError (..))
@@ -36,8 +34,10 @@ import Data.Bitraversable (bitraverse)
 import Data.Functor.Adjunction (Adjunction (..))
 import Data.Kind (Type)
 import Data.Maybe (fromMaybe)
-import Data.Sequence (Seq)
+import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
+-- import Data.Sequence (Seq)
+-- import qualified Data.Sequence as Seq
 
 -- * ScopeW, patterns, and instances
 
@@ -138,70 +138,70 @@ scopeWBindOptN f = scopeWModOpt . go where
 scopeWLift :: (ScopeWC t u n f g, Monad u, Traversable f) => f a -> u (g a)
 scopeWLift fa = traverse scopeWFree fa >>= scopeWEmbed
 
--- * Abstraction
+-- * Abstraction and instantiation
 
--- scopeWAbstractNames :: (ScopeWC t u n f g, Eq a) => n (g a) -> Seq a -> g a -> BinderScope n (g a)
--- scopeWAbstractNames n ks e =
---   let r = Seq.length ks
---       e' = scopeWShift r e
---       f = fmap scopeWBound . flip Seq.elemIndexL ks
---       e'' = scopeWBindOpt f e'
---   in BinderScope r n e''
+scopeWBindFree :: (ScopeWC t u n f g, Eq a) => Seq a -> g a -> g a
+scopeWBindFree ks e =
+  let r = Seq.length ks
+      e' = scopeWShift r e
+      f = fmap scopeWBound . flip Seq.elemIndexL ks
+  in scopeWBindOpt f e'
 
--- scopeWInnerBinder1 :: (ScopeWC t u n f g, Eq a) => n (g a) -> a -> g a -> BinderScope n (g a)
--- scopeWInnerBinder1 n = scopeWInnerBinder n . Seq.singleton
--- {-# INLINE scopeWInnerBinder1 #-}
+scopeWBindFree1 :: (ScopeWC t u n f g, Eq a) => a -> g a -> g a
+scopeWBindFree1 = scopeWBindFree . Seq.singleton
+{-# INLINE scopeWBindFree1 #-}
 
--- scopeWAbstract :: (ScopeWC t u n f g, Eq a) => n -> Seq a -> g a -> u (g a)
--- scopeWAbstract n ks e = scopeWFromInnerBinder (scopeWInnerBinder n ks e)
--- {-# INLINE scopeWAbstract #-}
+type FillC u n f =  (Functor u, IsAbstractInfo n, Functor f)
 
--- scopeWAbstract1 :: (ScopeWC t u n f g, Eq a) => n -> a -> g a -> u (g a)
--- scopeWAbstract1 n = scopeWAbstract n . Seq.singleton
--- {-# INLINE scopeWAbstract1 #-}
+scopeWFillBound :: (ScopeWC t u n f g, FillC u n f) => Seq (u (g a)) -> g a -> g a
+scopeWFillBound = scopeWFillBoundH 0
+{-# INLINE scopeWFillBound #-}
 
--- scopeWUnAbstract :: ScopeWC t u n f g => Seq a -> g a -> g a
--- scopeWUnAbstract ks = scopeWInstantiate (fmap scopeWFree ks)
--- {-# INLINE scopeWUnAbstract #-}
+scopeWFillBound1 :: (ScopeWC t u n f g, FillC u n f) => u (g a) -> g a -> g a
+scopeWFillBound1 = scopeWFillBound . Seq.singleton
+{-# INLINE scopeWFillBound1 #-}
 
--- scopeWUnAbstract1 :: ScopeWC t u n f g => a -> g a -> g a
--- scopeWUnAbstract1 = scopeWUnAbstract . Seq.singleton
--- {-# INLINE scopeWUnAbstract1 #-}
+scopeWFillBoundH :: (ScopeWC t u n f g, FillC u n f) => Int -> Seq (u (g a)) -> g a -> g a
+scopeWFillBoundH h vs = scopeWModOpt (go h) where
+  go i us =
+    case us of
+      UnderScopeBound b -> vs Seq.!? (b - i)
+      UnderScopeFree _ -> Nothing
+      UnderScopeAbstract (Abstract info body) ->
+        let r = abstractInfoArity info
+            vs' = fmap (fmap (scopeWShift r)) vs
+            -- sub in info with original vars
+            info' = fmap (scopeWFillBoundH i vs) info
+            -- sub in body with shifted vars
+            body' = scopeWFillBoundH (r + i) vs' body
+            -- package it back up
+            ab' = Abstract info' body'
+        in Just (scopeWAbstract ab')
+      UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWFillBoundH i vs) fe))
 
--- scopeWInstantiate :: ScopeWC t u n f g => Seq (u (g a)) -> g a -> g a
--- scopeWInstantiate = scopeWInstantiateN 0
--- {-# INLINE scopeWInstantiate #-}
+scopeWUnBindFree :: (ScopeWC t u n f g, FillC u n f) => Seq a -> g a -> g a
+scopeWUnBindFree = scopeWFillBound . fmap scopeWFree
+{-# INLINE scopeWUnBindFree #-}
 
--- scopeWInstantiate1 :: ScopeWC t u n f g => u (g a) -> g a -> g a
--- scopeWInstantiate1 = scopeWInstantiate . Seq.singleton
--- {-# INLINE scopeWInstantiate1 #-}
+scopeWUnBindFree1 :: (ScopeWC t u n f g, FillC u n f) => a -> g a -> g a
+scopeWUnBindFree1 = scopeWUnBindFree . Seq.singleton
+{-# INLINE scopeWUnBindFree1 #-}
 
--- scopeWInstantiateN :: ScopeWC t u n f g => Int -> Seq (u (g a)) -> g a -> g a
--- scopeWInstantiateN h vs = scopeWModOpt (go h) where
---   go i us =
---     case us of
---       UnderScopeBound b -> vs Seq.!? (b - i)
---       UnderScopeFree _ -> Nothing
---       UnderScopeAbstract ab ->
---         let vs' = fmap (fmap (scopeWShift r)) vs
---             e' = scopeWInstantiateN (r + i) vs' e
---         in Just (scopeWBinder r n e')
---       UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWInstantiateN i vs) fe))
+scopeWApply :: ScopeWC t u n f g => Seq (u (g a)) -> g a -> Either SubError (g a)
+scopeWApply vs = scopeWModM go where
+  go us =
+    case us of
+      UnderScopeAbstract ab ->
+        let r = abstractArity ab
+            len = Seq.length vs
+        in if len == r
+              then Right (pure (scopeWShift (-1) (scopeWFillBound vs (abstractBody ab))))
+              else Left (ApplyError len r)
+      _ -> Left NonBinderError
 
--- scopeWApply :: ScopeWC t u n f g => Seq (u (g a)) -> g a -> Either SubError (g a)
--- scopeWApply vs = scopeWModM go where
---   go us =
---     case us of
---       UnderScopeAbstract r _ e ->
---         let len = Seq.length vs
---         in if len == r
---               then Right (pure (scopeWShift (-1) (scopeWInstantiate vs e)))
---               else Left (ApplyError len r)
---       _ -> Left NonBinderError
-
--- scopeWApply1 :: ScopeWC t u n f g => u (g a) -> g a -> Either SubError (g a)
--- scopeWApply1 = scopeWApply . Seq.singleton
--- {-# INLINE scopeWApply1 #-}
+scopeWApply1 :: ScopeWC t u n f g => u (g a) -> g a -> Either SubError (g a)
+scopeWApply1 = scopeWApply . Seq.singleton
+{-# INLINE scopeWApply1 #-}
 
 -- * Annotation functions
 

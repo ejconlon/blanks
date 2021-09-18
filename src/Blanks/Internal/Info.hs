@@ -4,14 +4,12 @@ module Blanks.Internal.Info where
 
 import Blanks.Internal.Abstract (IsAbstractInfo (..))
 import Blanks.Internal.Placed (Placed (..))
-import Blanks.Internal.ScopeW
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData)
 import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
 import Data.Void (Void)
 import GHC.Generics (Generic)
-import Blanks.Util.Sub (SubError)
 
 -- * SimpleLam
 
