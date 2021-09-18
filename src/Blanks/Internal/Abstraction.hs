@@ -3,8 +3,6 @@
 module Blanks.Internal.Abstraction where
 
 import Control.Applicative (liftA2)
--- import Data.Kind (Type)
-import Data.Proxy (Proxy)
 import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
 import Data.Void (Void)
@@ -16,18 +14,10 @@ import Blanks.Internal.Placed (Placed (..))
 class HasArity n where
   whatArity :: n -> Int
 
--- class Placed g => HasFnArgs g where
---   arityFnArgs :: g a -> Int
---   filterFnArgs :: Proxy g -> Place g -> Bool
---   itraverseFnArgs :: Applicative m => Proxy g -> (Place g -> a -> m a) -> g a -> m (g a)
---   itraverseFnArgs p f = traversePlaced (\x a -> if filterArg p x then f x a else pure a)
---   gatherFnArgs :: g a -> [Place g]
---   gatherFnArgs = filter filterFnArgs Proxy . gatherPlaced
-
 -- * Abstraction
 
 data AbstractionPlace g =
-    AbstractionPlaceInfo (Place g)
+    AbstractionPlaceInfo !(Place g)
   | AbstractionPlaceBody
 
 deriving stock instance Eq (Place g) => Eq (AbstractionPlace g)
@@ -52,20 +42,40 @@ instance Placed g => Placed (Abstraction g) where
 instance HasArity (g e) => HasArity (Abstraction g e) where
   whatArity = whatArity . abstractionInfo
 
+-- * Anno
+
+data AnnoPlace g x = AnnoPlace !(Place g) !x
+
+deriving stock instance (Eq (Place g), Eq x) => Eq (AnnoPlace g x)
+deriving stock instance (Ord (Place g), Ord x) => Ord (AnnoPlace g x)
+deriving stock instance (Show (Place g), Show x) => Show (AnnoPlace g x)
+
+data AnnoInfo g x e = AnnoInfo
+  { annoInfoInfo :: !(g e)
+  , annoInfoAnno :: !x
+  } deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable)
+
+instance Placed g => Placed (AnnoInfo g x) where
+  type Place (AnnoInfo g x) = AnnoPlace g x
+  traversePlaced f (AnnoInfo info anno) = fmap (`AnnoInfo` anno) (traversePlaced (f . (`AnnoPlace` anno)) info)
+
+instance HasArity (g e) => HasArity (AnnoInfo g x e) where
+  whatArity = whatArity . annoInfoInfo
+
 -- * SimpleLam
 
 -- | Info for lambdas without type annotations
-newtype SimpleLam e = SimpleLam
-  { simpleLamArity :: Int
+newtype SimpleLamInfo e = SimpleLamInfo
+  { simpleLamInfoArity :: Int
     -- ^ The arity of the lambda
   } deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
-instance Placed SimpleLam where
-  type Place SimpleLam = Void
-  traversePlaced _ (SimpleLam arity) = pure (SimpleLam arity)
+instance Placed SimpleLamInfo where
+  type Place SimpleLamInfo = Void
+  traversePlaced _ (SimpleLamInfo arity) = pure (SimpleLamInfo arity)
 
-instance HasArity (SimpleLam e) where
-  whatArity = simpleLamArity
+instance HasArity (SimpleLamInfo e) where
+  whatArity = simpleLamInfoArity
 
 -- * TyLam
 
@@ -75,32 +85,32 @@ data TyLamPlace =
   deriving stock (Eq, Ord, Show)
 
 -- | Info for lambdas with type annotations on arguments and a return type
-data TyLam e = TyLam
-  { tyLamArgs :: !(Seq e)
-  , tyLamRet :: e
+data TyLamInfo e = TyLamInfo
+  { tyLamInfoArgs :: !(Seq e)
+  , tyLamInfoRet :: e
    } deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
-instance Placed TyLam where
-  type Place TyLam = TyLamPlace
-  traversePlaced f (TyLam args ret) = liftA2 TyLam argsM retM where
+instance Placed TyLamInfo where
+  type Place TyLamInfo = TyLamPlace
+  traversePlaced f (TyLamInfo args ret) = liftA2 TyLamInfo argsM retM where
     argsM = traversePlaced (f . TyLamPlaceArg) args
     retM = f TyLamPlaceRet ret
 
-instance HasArity (TyLam e) where
-  whatArity = Seq.length . tyLamArgs
+instance HasArity (TyLamInfo e) where
+  whatArity = Seq.length . tyLamInfoArgs
 
 -- * SimpleLetOne
 
 -- | Info for a single (non-recursive) let without type annotation
-newtype SimpleLetOne e = SimpleLetOne
-  { simpleLetOneArg :: e
+newtype SimpleLetOneInfo e = SimpleLetOneInfo
+  { simpleLetOneInfoArg :: e
   } deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
-instance Placed SimpleLetOne where
-  type Place SimpleLetOne = ()
-  traversePlaced f (SimpleLetOne arg) = fmap SimpleLetOne (f () arg)
+instance Placed SimpleLetOneInfo where
+  type Place SimpleLetOneInfo = ()
+  traversePlaced f (SimpleLetOneInfo arg) = fmap SimpleLetOneInfo (f () arg)
 
-instance HasArity (SimpleLetOne e) where
+instance HasArity (SimpleLetOneInfo e) where
   whatArity = const 1
 
 -- * TyLetOne
@@ -111,33 +121,33 @@ data TyLetOnePlace =
   deriving stock (Eq, Ord, Show)
 
 -- | Info for a single (non-recursive) let with argument type and body type
-data TyLetOne e = TyLetOne
-  { tyLetOneArg :: e
-  , tyLetOneTy :: e
+data TyLetOneInfo e = TyLetOneInfo
+  { tyLetOneInfoArg :: e
+  , tyLetOneInfoTy :: e
   } deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
-instance Placed TyLetOne where
-  type Place TyLetOne = TyLetOnePlace
-  traversePlaced f (TyLetOne arg ty) = liftA2 TyLetOne argM tyM where
+instance Placed TyLetOneInfo where
+  type Place TyLetOneInfo = TyLetOnePlace
+  traversePlaced f (TyLetOneInfo arg ty) = liftA2 TyLetOneInfo argM tyM where
     argM = f TyLetOnePlaceArg arg
     tyM = f TyLetOnePlaceTy ty
 
-instance HasArity (TyLetOne e) where
+instance HasArity (TyLetOneInfo e) where
   whatArity = const 1
 
 -- * SimpleLetRec
 
 -- | Info for a recursive let with no type annotations
-newtype SimpleLetRec e = SimpleLetRec
-  { simpleLetRecArgs :: Seq e
+newtype SimpleLetRecInfo e = SimpleLetRecInfo
+  { simpleLetRecInfoArgs :: Seq e
   } deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
-instance Placed SimpleLetRec where
-  type Place SimpleLetRec = Int
-  traversePlaced f = fmap SimpleLetRec . traversePlaced f . simpleLetRecArgs
+instance Placed SimpleLetRecInfo where
+  type Place SimpleLetRecInfo = Int
+  traversePlaced f = fmap SimpleLetRecInfo . traversePlaced f . simpleLetRecInfoArgs
 
-instance HasArity (SimpleLetRec e) where
-  whatArity = Seq.length . simpleLetRecArgs
+instance HasArity (SimpleLetRecInfo e) where
+  whatArity = Seq.length . simpleLetRecInfoArgs
 
 -- * TyLetRec
 
@@ -153,14 +163,16 @@ data TyLetRecArg e = TyLetRecArg
   } deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
 -- | Info for a recursive let with argument types and body type
-data TyLetRec e = TyLetRec
-  { tyLetRecArgs :: !(Seq (TyLetRecArg e))
-  , tyLetRecRet :: e
+data TyLetRecInfo e = TyLetRecInfo
+  { tyLetRecInfoArgs :: !(Seq (TyLetRecArg e))
+  , tyLetRecInfoRet :: e
   } deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
-instance Placed TyLetRec where
-  type Place TyLetRec = TyLetRecPlace
-  traversePlaced = undefined
+instance Placed TyLetRecInfo where
+  type Place TyLetRecInfo = TyLetRecPlace
+  traversePlaced f (TyLetRecInfo args ret) = liftA2 TyLetRecInfo argsM retM where
+    argsM = traversePlaced (\i (TyLetRecArg ex ty) -> liftA2 TyLetRecArg (f (TyLetRecPlaceArgExp i) ex) (f (TyLetRecPlaceArgTy i) ty)) args
+    retM = f TyLetRecPlaceRet ret
 
-instance HasArity (TyLetRec e) where
-  whatArity = Seq.length . tyLetRecArgs
+instance HasArity (TyLetRecInfo e) where
+  whatArity = Seq.length . tyLetRecInfoArgs

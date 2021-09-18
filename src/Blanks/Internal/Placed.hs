@@ -22,7 +22,10 @@ class Traversable g => Placed g where
   type Place g :: Type
   traversePlaced :: Applicative m => (Place g -> a -> m b) -> g a -> m (g b)
   gatherPlaced :: g a -> [Place g]
-  gatherPlaced = execWriter . traversePlaced (\x _ -> tell [x])
+  gatherPlaced = defaultGatherPlaced
+
+defaultGatherPlaced :: Placed g => g a -> [Place g]
+defaultGatherPlaced = execWriter . traversePlaced (\x _ -> tell [x])
 
 instance Placed [] where
   type Place [] = Int
