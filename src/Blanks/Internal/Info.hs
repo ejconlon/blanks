@@ -1,75 +1,17 @@
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE UndecidableInstances #-}
 
-module Blanks.Internal.Abstraction where
+module Blanks.Internal.Info where
 
+import Blanks.Internal.Abstract (IsAbstractInfo (..))
 import Blanks.Internal.Placed (Placed (..))
+import Blanks.Internal.ScopeW
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData)
 import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
 import Data.Void (Void)
 import GHC.Generics (Generic)
-
--- * HasArity
-
--- | Ad-hoc class that helps us count the arity of an 'Abstraction'.
-class HasArity n where
-  whatArity :: n -> Int
-
--- * Abstraction
-
-data AbstractionPlace g =
-    AbstractionPlaceInfo !(Place g)
-  | AbstractionPlaceBody
-
-deriving stock instance Eq (Place g) => Eq (AbstractionPlace g)
-deriving stock instance Ord (Place g) => Ord (AbstractionPlace g)
-deriving stock instance Show (Place g) => Show (AbstractionPlace g)
-deriving stock instance Generic (AbstractionPlace g)
-deriving anyclass instance NFData (Place g) => NFData (AbstractionPlace g)
-
--- | An abstraction is a pair (info, body) where info describes the parts of body we can substitute into.
-data Abstraction g e = Abstraction
-  { abstractionInfo :: !(g e)
-    -- ^ "Info" about the abstraction - might be just arity as in 'SimpleLam', or typed recursive let info as in 'TyLetRec'.
-    -- Should have an arity.
-  , abstractionBody :: e
-    -- ^ Body expression to substitute into
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
-
-instance Placed g => Placed (Abstraction g) where
-  type Place (Abstraction g) = AbstractionPlace g
-  traversePlaced f (Abstraction info body) = liftA2 Abstraction infoM bodyM where
-    infoM = traversePlaced (f . AbstractionPlaceInfo) info
-    bodyM = f AbstractionPlaceBody body
-
-instance HasArity (g e) => HasArity (Abstraction g e) where
-  whatArity = whatArity . abstractionInfo
-
--- * Anno
-
-data AnnoPlace g x = AnnoPlace !(Place g) !x
-
-deriving stock instance (Eq (Place g), Eq x) => Eq (AnnoPlace g x)
-deriving stock instance (Ord (Place g), Ord x) => Ord (AnnoPlace g x)
-deriving stock instance (Show (Place g), Show x) => Show (AnnoPlace g x)
-deriving stock instance Generic (AnnoPlace g x)
-deriving anyclass instance (NFData (Place g), NFData x) => NFData (AnnoPlace g x)
-
-data AnnoInfo g x e = AnnoInfo
-  { annoInfoInfo :: !(g e)
-  , annoInfoAnno :: !x
-  } deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
-
-instance Placed g => Placed (AnnoInfo g x) where
-  type Place (AnnoInfo g x) = AnnoPlace g x
-  traversePlaced f (AnnoInfo info anno) = fmap (`AnnoInfo` anno) (traversePlaced (f . (`AnnoPlace` anno)) info)
-
-instance HasArity (g e) => HasArity (AnnoInfo g x e) where
-  whatArity = whatArity . annoInfoInfo
+import Blanks.Util.Sub (SubError)
 
 -- * SimpleLam
 
@@ -84,8 +26,9 @@ instance Placed SimpleLamInfo where
   type Place SimpleLamInfo = Void
   traversePlaced _ (SimpleLamInfo arity) = pure (SimpleLamInfo arity)
 
-instance HasArity (SimpleLamInfo e) where
-  whatArity = simpleLamInfoArity
+instance IsAbstractInfo SimpleLamInfo where
+  abstractInfoArity = simpleLamInfoArity
+  abstractInfoFilterArg _ _ = False
 
 -- * TyLam
 
@@ -108,8 +51,12 @@ instance Placed TyLamInfo where
     argsM = traversePlaced (f . TyLamPlaceArg) args
     retM = f TyLamPlaceRet ret
 
-instance HasArity (TyLamInfo e) where
-  whatArity = Seq.length . tyLamInfoArgs
+instance IsAbstractInfo TyLamInfo where
+  abstractInfoArity = Seq.length . tyLamInfoArgs
+  abstractInfoFilterArg _ pl =
+    case pl of
+      TyLamPlaceArg _ -> True
+      _ -> False
 
 -- * SimpleLetOne
 
@@ -123,8 +70,9 @@ instance Placed SimpleLetOneInfo where
   type Place SimpleLetOneInfo = ()
   traversePlaced f (SimpleLetOneInfo arg) = fmap SimpleLetOneInfo (f () arg)
 
-instance HasArity (SimpleLetOneInfo e) where
-  whatArity = const 1
+instance IsAbstractInfo SimpleLetOneInfo where
+  abstractInfoArity _ = 1
+  abstractInfoFilterArg _ _ = True
 
 -- * TyLetOne
 
@@ -147,8 +95,12 @@ instance Placed TyLetOneInfo where
     argM = f TyLetOnePlaceArg arg
     tyM = f TyLetOnePlaceTy ty
 
-instance HasArity (TyLetOneInfo e) where
-  whatArity = const 1
+instance IsAbstractInfo TyLetOneInfo where
+  abstractInfoArity _ = 1
+  abstractInfoFilterArg _ pl =
+    case pl of
+      TyLetOnePlaceArg -> True
+      _ -> False
 
 -- * SimpleLetRec
 
@@ -162,8 +114,9 @@ instance Placed SimpleLetRecInfo where
   type Place SimpleLetRecInfo = Int
   traversePlaced f = fmap SimpleLetRecInfo . traversePlaced f . simpleLetRecInfoArgs
 
-instance HasArity (SimpleLetRecInfo e) where
-  whatArity = Seq.length . simpleLetRecInfoArgs
+instance IsAbstractInfo SimpleLetRecInfo where
+  abstractInfoArity = Seq.length . simpleLetRecInfoArgs
+  abstractInfoFilterArg _ _ = True
 
 -- * TyLetRec
 
@@ -193,5 +146,9 @@ instance Placed TyLetRecInfo where
     argsM = traversePlaced (\i (TyLetRecArg ex ty) -> liftA2 TyLetRecArg (f (TyLetRecPlaceArgExp i) ex) (f (TyLetRecPlaceArgTy i) ty)) args
     retM = f TyLetRecPlaceRet ret
 
-instance HasArity (TyLetRecInfo e) where
-  whatArity = Seq.length . tyLetRecInfoArgs
+instance IsAbstractInfo TyLetRecInfo where
+  abstractInfoArity = Seq.length . tyLetRecInfoArgs
+  abstractInfoFilterArg _ pl =
+    case pl of
+      TyLetRecPlaceArgExp _ -> True
+      _ -> False

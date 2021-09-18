@@ -18,14 +18,19 @@ import Data.Void (Void)
 
 -- | 'Traversable' but allows you to observe your 'Place' as you go.
 -- Similar to https://hackage.haskell.org/package/keys-3.12.3/docs/Data-Key.html#t:TraversableWithKey
-class Traversable g => Placed g where
-  type Place g :: Type
-  traversePlaced :: Applicative m => (Place g -> a -> m b) -> g a -> m (g b)
-  gatherPlaced :: g a -> [Place g]
+class Traversable n => Placed n where
+  type Place n :: Type
+  traversePlaced :: Applicative m => (Place n -> a -> m b) -> n a -> m (n b)
+  -- mapPlaced :: (Place n -> a -> b) -> n a -> n b
+  -- lookupPlaced :: Place n -> n a -> Maybe a
+  -- updatedPlaced :: Place n -> a -> n a -> Maybe (n a)
+  -- modifyPlaced :: Place n -> (a -> a) -> n a -> Maybe (n a)
+  gatherPlaced :: n a -> [Place n]
   gatherPlaced = defaultGatherPlaced
 
-defaultGatherPlaced :: Placed g => g a -> [Place g]
+defaultGatherPlaced :: Placed n => n a -> [Place n]
 defaultGatherPlaced = execWriter . traversePlaced (\x _ -> tell [x])
+{-# INLINE defaultGatherPlaced #-}
 
 instance Placed [] where
   type Place [] = Int
