@@ -1,6 +1,17 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Blanks.Internal.Info where
+module Blanks.Internal.Info
+  ( SimpleLamInfo (..)
+  , TyLamPlace (..)
+  , TyLamInfo (..)
+  , SimpleLetOneInfo (..)
+  , TyLetOnePlace (..)
+  , TyLetOneInfo (..)
+  , SimpleLetRecInfo (..)
+  , TyLetRecPlace (..)
+  , TyLetRecArg (..)
+  , TyLetRecInfo (..)
+  ) where
 
 import Blanks.Internal.Abstract (IsAbstractInfo (..))
 import Blanks.Internal.Placed (Placed (..))

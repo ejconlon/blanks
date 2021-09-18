@@ -5,23 +5,21 @@ module Blanks.LocScope
   ( LocScope (..)
   , pattern LocScopeBound
   , pattern LocScopeFree
-  , pattern LocScopeBinder
+  , pattern LocScopeAbstract
   , pattern LocScopeEmbed
   , locScopeLocation
   , locScopeFree
+  , locScopeAbstract
   , locScopeEmbed
-  , locScopeFromInnerBinder
   , locScopeBind
   , locScopeBindOpt
   , locScopeLift
-  , locScopeInnerBinder
-  , locScopeInnerBinder1
-  , locScopeAbstract
-  , locScopeAbstract1
-  , locScopeUnAbstract
-  , locScopeUnAbstract1
-  , locScopeInstantiate
-  , locScopeInstantiate1
+  , locScopeBindFree
+  , locScopeBindFree1
+  , locScopeFillBound
+  , locScopeFillBound1
+  , locScopeUnBindFree
+  , locScopeUnBindFree1
   , locScopeApply
   , locScopeApply1
   , locScopeLiftAnno
@@ -29,13 +27,9 @@ module Blanks.LocScope
   , locScopeMapAnno
   ) where
 
-import Blanks.Internal.Core (BinderScope)
-import Blanks.Internal.ScopeW (ScopeW (..), scopeWAbstract, scopeWAbstract1, scopeWApply, scopeWApply1, scopeWBind,
-                               scopeWBindOpt, scopeWEmbed, scopeWFree, scopeWFromInnerBinder, scopeWHoistAnno,
-                               scopeWInnerBinder, scopeWInnerBinder1, scopeWInstantiate, scopeWInstantiate1, scopeWLift,
-                               scopeWLiftAnno, scopeWMapAnno, scopeWUnAbstract, scopeWUnAbstract1)
-import Blanks.Internal.Under (pattern UnderScopeBinder, pattern UnderScopeBound, pattern UnderScopeEmbed,
-                              pattern UnderScopeFree)
+import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..))
+import Blanks.Internal.ScopeW
+import Blanks.Internal.Under (UnderScope (..))
 import Blanks.Util.Located (Colocated, Located (..), askColocated)
 import Blanks.Util.NatNewtype (NatNewtype)
 import Blanks.Util.Sub (SubError)
@@ -51,7 +45,7 @@ newtype LocScope l n f a = LocScope
 
 instance NatNewtype (ScopeW (Located l) n f (LocScope l n f)) (LocScope l n f)
 
-instance (NFData l, NFData n, NFData a, NFData (f (LocScope l n f a))) => NFData (LocScope l n f a) where
+instance (NFData l, NFData (n (LocScope l n f a)), NFData a, NFData (f (LocScope l n f a))) => NFData (LocScope l n f a) where
   rnf (LocScope s) = seq (rnf s) ()
 
 pattern LocScopeBound :: l -> Int -> LocScope l n f a
@@ -60,13 +54,13 @@ pattern LocScopeBound l b = LocScope (ScopeW (Located l (UnderScopeBound b)))
 pattern LocScopeFree :: l -> a -> LocScope l n f a
 pattern LocScopeFree l a = LocScope (ScopeW (Located l (UnderScopeFree a)))
 
-pattern LocScopeBinder :: l -> Int -> n -> LocScope l n f a -> LocScope l n f a
-pattern LocScopeBinder l i n e = LocScope (ScopeW (Located l (UnderScopeBinder i n e)))
+pattern LocScopeAbstract :: l -> Abstract n (LocScope l n f a) -> LocScope l n f a
+pattern LocScopeAbstract l ab = LocScope (ScopeW (Located l (UnderScopeAbstract ab)))
 
 pattern LocScopeEmbed :: l -> f (LocScope l n f a) -> LocScope l n f a
 pattern LocScopeEmbed l fe = LocScope (ScopeW (Located l (UnderScopeEmbed fe)))
 
-{-# COMPLETE LocScopeBound, LocScopeFree, LocScopeBinder, LocScopeEmbed #-}
+{-# COMPLETE LocScopeBound, LocScopeFree, LocScopeAbstract, LocScopeEmbed #-}
 
 -- | Extract the location (annotation) from this scope.
 locScopeLocation :: LocScope l n f a -> l
@@ -74,93 +68,85 @@ locScopeLocation s =
   case s of
     LocScopeBound l _ -> l
     LocScopeFree l _ -> l
-    LocScopeBinder l _ _ _ -> l
+    LocScopeAbstract l _ -> l
     LocScopeEmbed l _ -> l
 
-instance (Monoid l, Functor f) => Applicative (LocScope l n f) where
+instance (Monoid l, IsAbstractInfo n, Functor f) => Applicative (LocScope l n f) where
   pure = LocScopeFree mempty
   (<*>) = ap
 
-instance (Monoid l, Functor f) => Monad (LocScope l n f) where
+instance (Monoid l, IsAbstractInfo n, Functor f) => Monad (LocScope l n f) where
   return = pure
   s >>= f = locScopeBind go s where
     go a = fmap (\l1 -> let LocScope (ScopeW (Located l2 b)) = f a in LocScope (ScopeW (Located (l1 <> l2) b))) askColocated
 
-instance (Monoid l, Functor f) => MonadWriter l (LocScope l n f) where
+instance (Monoid l, IsAbstractInfo n, Functor f) => MonadWriter l (LocScope l n f) where
   writer (a, l) = LocScopeFree l a
   tell l = LocScopeFree l ()
   listen = locScopeMapAnno (\(Located l a) -> Located l (a, l))
   pass = locScopeMapAnno (\(Located l (a, f)) -> Located (f l) a)
 
-instance (Eq (f (LocScope l n f a)), Eq l, Eq n, Eq a) => Eq (LocScope l n f a) where
+instance (Eq (f (LocScope l n f a)), Eq l, Eq (n (LocScope l n f a)), Eq a) => Eq (LocScope l n f a) where
   LocScope su == LocScope sv = su == sv
 
-instance (Show (f (LocScope l n f a)), Show l, Show n, Show a) => Show (LocScope l n f a) where
+instance (Show (f (LocScope l n f a)), Show l, Show (n (LocScope l n f a)), Show a) => Show (LocScope l n f a) where
   showsPrec d (LocScope (ScopeW tu)) = showString "LocScope " . showParen True (showsPrec (d+1) tu)
 
 -- * Interface
 
-locScopeFree :: Functor f => a -> Colocated l (LocScope l n f a)
+locScopeFree :: (IsAbstractInfo n, Functor f) => a -> Colocated l (LocScope l n f a)
 locScopeFree = scopeWFree
 {-# INLINE locScopeFree #-}
 
-locScopeEmbed :: Functor f => f (LocScope l n f a) -> Colocated l (LocScope l n f a)
+locScopeAbstract :: Functor f => Abstract n (LocScope l n f a) -> Colocated l (LocScope l n f a)
+locScopeAbstract = locScopeAbstract
+{-# INLINE locScopeAbstract #-}
+
+locScopeEmbed :: (IsAbstractInfo n, Functor f) => f (LocScope l n f a) -> Colocated l (LocScope l n f a)
 locScopeEmbed = scopeWEmbed
 {-# INLINE locScopeEmbed #-}
 
-locScopeFromInnerBinder :: Functor f => BinderScope n (LocScope l n f a) -> Colocated l (LocScope l n f a)
-locScopeFromInnerBinder = scopeWFromInnerBinder
-{-# INLINE locScopeFromInnerBinder #-}
-
-locScopeBind :: Functor f => (a -> Colocated l (LocScope l n f b)) -> LocScope l n f a -> LocScope l n f b
+locScopeBind :: (IsAbstractInfo n, Functor f) => (a -> Colocated l (LocScope l n f b)) -> LocScope l n f a -> LocScope l n f b
 locScopeBind = scopeWBind
 {-# INLINE locScopeBind #-}
 
-locScopeBindOpt :: Functor f => (a -> Maybe (Colocated l (LocScope l n f a))) -> LocScope l n f a -> LocScope l n f a
+locScopeBindOpt :: (IsAbstractInfo n, Functor f) => (a -> Maybe (Colocated l (LocScope l n f a))) -> LocScope l n f a -> LocScope l n f a
 locScopeBindOpt = scopeWBindOpt
 {-# INLINE locScopeBindOpt #-}
 
-locScopeLift :: Traversable f => f a -> Colocated l (LocScope l n f a)
+locScopeLift :: (IsAbstractInfo n, Traversable f) => f a -> Colocated l (LocScope l n f a)
 locScopeLift = scopeWLift
 {-# INLINE locScopeLift #-}
 
-locScopeInnerBinder :: (Functor f, Eq a) => n -> Seq a -> LocScope l n f a -> BinderScope n (LocScope l n f a)
-locScopeInnerBinder = scopeWInnerBinder
-{-# INLINE locScopeInnerBinder #-}
+locScopeBindFree :: (IsAbstractInfo n, Functor f, Eq a) => Seq a -> LocScope l n f a -> LocScope l n f a
+locScopeBindFree = scopeWBindFree
+{-# INLINE locScopeBindFree #-}
 
-locScopeInnerBinder1 :: (Functor f, Eq a) => n -> a -> LocScope l n f a -> BinderScope n (LocScope l n f a)
-locScopeInnerBinder1 = scopeWInnerBinder1
-{-# INLINE locScopeInnerBinder1 #-}
+locScopeBindFree1 :: (IsAbstractInfo n, Functor f, Eq a) => a -> LocScope l n f a -> LocScope l n f a
+locScopeBindFree1 = scopeWBindFree1
+{-# INLINE locScopeBindFree1 #-}
 
-locScopeAbstract :: (Functor f, Eq a) => n -> Seq a -> LocScope l n f a -> Colocated l (LocScope l n f a)
-locScopeAbstract = scopeWAbstract
-{-# INLINE locScopeAbstract #-}
+locScopeFillBound :: (IsAbstractInfo n, Functor f) => Seq (Colocated l (LocScope l n f a)) -> LocScope l n f a -> LocScope l n f a
+locScopeFillBound = scopeWFillBound
+{-# INLINE locScopeFillBound #-}
 
-locScopeAbstract1 :: (Functor f, Eq a) => n -> a -> LocScope l n f a -> Colocated l (LocScope l n f a)
-locScopeAbstract1 = scopeWAbstract1
-{-# INLINE locScopeAbstract1 #-}
+locScopeFillBound1 :: (IsAbstractInfo n, Functor f) => Colocated l (LocScope l n f a) -> LocScope l n f a -> LocScope l n f a
+locScopeFillBound1 = scopeWFillBound1
+{-# INLINE locScopeFillBound1 #-}
 
-locScopeUnAbstract :: Functor f => Seq a -> LocScope l n f a -> LocScope l n f a
-locScopeUnAbstract = scopeWUnAbstract
-{-# INLINE locScopeUnAbstract #-}
+locScopeUnBindFree :: (IsAbstractInfo n, Functor f) => Seq a -> LocScope l n f a -> LocScope l n f a
+locScopeUnBindFree = scopeWUnBindFree
+{-# INLINE locScopeUnBindFree #-}
 
-locScopeUnAbstract1 :: Functor f => a -> LocScope l n f a -> LocScope l n f a
-locScopeUnAbstract1 = scopeWUnAbstract1
-{-# INLINE locScopeUnAbstract1 #-}
+locScopeUnBindFree1 :: (IsAbstractInfo n, Functor f) => a -> LocScope l n f a -> LocScope l n f a
+locScopeUnBindFree1 = scopeWUnBindFree1
+{-# INLINE locScopeUnBindFree1 #-}
 
-locScopeInstantiate :: Functor f => Seq (Colocated l (LocScope l n f a)) -> LocScope l n f a -> LocScope l n f a
-locScopeInstantiate = scopeWInstantiate
-{-# INLINE locScopeInstantiate #-}
-
-locScopeInstantiate1 :: Functor f => Colocated l (LocScope l n f a) -> LocScope l n f a -> LocScope l n f a
-locScopeInstantiate1 = scopeWInstantiate1
-{-# INLINE locScopeInstantiate1 #-}
-
-locScopeApply :: Functor f => Seq (Colocated l (LocScope l n f a)) -> LocScope l n f a -> Either SubError (LocScope l n f a)
+locScopeApply :: (IsAbstractInfo n, Functor f) => Seq (Colocated l (LocScope l n f a)) -> LocScope l n f a -> Either SubError (LocScope l n f a)
 locScopeApply = scopeWApply
 {-# INLINE locScopeApply #-}
 
-locScopeApply1 :: Functor f => Colocated l (LocScope l n f a) -> LocScope l n f a -> Either SubError (LocScope l n f a)
+locScopeApply1 :: (IsAbstractInfo n, Functor f) => Colocated l (LocScope l n f a) -> LocScope l n f a -> Either SubError (LocScope l n f a)
 locScopeApply1 = scopeWApply1
 {-# INLINE locScopeApply1 #-}
 
@@ -172,10 +158,10 @@ locScopeLiftAnno = scopeWLiftAnno
 mapLocatedForall :: (l -> x) -> (forall z. Located l z -> Located x z)
 mapLocatedForall f (Located l z) = Located (f l) z
 
-locScopeHoistAnno :: Functor f => (l -> x) -> LocScope l n f a -> LocScope x n f a
+locScopeHoistAnno :: (Functor n, Functor f) => (l -> x) -> LocScope l n f a -> LocScope x n f a
 locScopeHoistAnno f = scopeWHoistAnno (mapLocatedForall f)
 {-# INLINE locScopeHoistAnno #-}
 
-locScopeMapAnno :: Functor f => (Located l a -> Located l b) -> LocScope l n f a -> LocScope l n f b
+locScopeMapAnno :: (IsAbstractInfo n, Functor f) => (Located l a -> Located l b) -> LocScope l n f a -> LocScope l n f b
 locScopeMapAnno = scopeWMapAnno
 {-# INLINE locScopeMapAnno #-}

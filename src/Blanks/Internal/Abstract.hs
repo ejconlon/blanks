@@ -1,7 +1,15 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Blanks.Internal.Abstract where
+module Blanks.Internal.Abstract
+  ( IsAbstractInfo (..)
+  , defaultAbstractInfoGatherArgs
+  , AbstractPlace (..)
+  , Abstract (..)
+  , abstractArity
+  , AnnoPlace (..)
+  , AnnoInfo (..)
+  ) where
 
 import Blanks.Internal.Placed (Placed (..))
 import Control.Applicative (liftA2)
@@ -9,7 +17,7 @@ import Control.DeepSeq (NFData)
 import Data.Proxy (Proxy (..))
 import GHC.Generics (Generic)
 
--- * HasArity
+-- * IsAbstractInfo
 
 -- | Ad-hoc class that helps us count the arity of an 'Abstract'.
 -- arity is _upper bound_ of gathered args - there may not be expressions attached
@@ -18,6 +26,7 @@ class Placed n => IsAbstractInfo n where
   abstractInfoFilterArg :: Proxy n -> Place n -> Bool
   abstractInfoGatherArgs :: n a -> [Place n]
   abstractInfoGatherArgs = defaultAbstractInfoGatherArgs
+  {-# INLINE abstractInfoGatherArgs #-}
 
 nProxy :: n a -> Proxy n
 nProxy _ = Proxy
