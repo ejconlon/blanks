@@ -3,6 +3,7 @@ module Blanks.Internal.Placed
   ) where
 
 import Control.Applicative (liftA2)
+import Control.Monad.Writer.Strict (execWriter, tell)
 import Data.Functor.Compose (Compose (..))
 import Data.Functor.Const (Const (..))
 import Data.Functor.Identity (Identity (..))
@@ -15,10 +16,13 @@ import Data.Sequence (Seq (..))
 import Data.Tree (Tree (..))
 import Data.Void (Void)
 
+-- | 'Traversable' but allows you to observe your 'Place' as you go.
 -- Similar to https://hackage.haskell.org/package/keys-3.12.3/docs/Data-Key.html#t:TraversableWithKey
 class Traversable g => Placed g where
   type Place g :: Type
   traversePlaced :: Applicative m => (Place g -> a -> m b) -> g a -> m (g b)
+  gatherPlaced :: g a -> [Place g]
+  gatherPlaced = execWriter . traversePlaced (\x _ -> tell [x])
 
 instance Placed [] where
   type Place [] = Int
