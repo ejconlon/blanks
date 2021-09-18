@@ -1,12 +1,15 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Blanks.Internal.Abstraction where
 
+import Blanks.Internal.Placed (Placed (..))
 import Control.Applicative (liftA2)
+import Control.DeepSeq (NFData)
 import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
 import Data.Void (Void)
-import Blanks.Internal.Placed (Placed (..))
+import GHC.Generics (Generic)
 
 -- * HasArity
 
@@ -23,6 +26,8 @@ data AbstractionPlace g =
 deriving stock instance Eq (Place g) => Eq (AbstractionPlace g)
 deriving stock instance Ord (Place g) => Ord (AbstractionPlace g)
 deriving stock instance Show (Place g) => Show (AbstractionPlace g)
+deriving stock instance Generic (AbstractionPlace g)
+deriving anyclass instance NFData (Place g) => NFData (AbstractionPlace g)
 
 -- | An abstraction is a pair (info, body) where info describes the parts of body we can substitute into.
 data Abstraction g e = Abstraction
@@ -31,7 +36,8 @@ data Abstraction g e = Abstraction
     -- Should have an arity.
   , abstractionBody :: e
     -- ^ Body expression to substitute into
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 instance Placed g => Placed (Abstraction g) where
   type Place (Abstraction g) = AbstractionPlace g
@@ -49,11 +55,14 @@ data AnnoPlace g x = AnnoPlace !(Place g) !x
 deriving stock instance (Eq (Place g), Eq x) => Eq (AnnoPlace g x)
 deriving stock instance (Ord (Place g), Ord x) => Ord (AnnoPlace g x)
 deriving stock instance (Show (Place g), Show x) => Show (AnnoPlace g x)
+deriving stock instance Generic (AnnoPlace g x)
+deriving anyclass instance (NFData (Place g), NFData x) => NFData (AnnoPlace g x)
 
 data AnnoInfo g x e = AnnoInfo
   { annoInfoInfo :: !(g e)
   , annoInfoAnno :: !x
-  } deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 instance Placed g => Placed (AnnoInfo g x) where
   type Place (AnnoInfo g x) = AnnoPlace g x
@@ -68,7 +77,8 @@ instance HasArity (g e) => HasArity (AnnoInfo g x e) where
 newtype SimpleLamInfo e = SimpleLamInfo
   { simpleLamInfoArity :: Int
     -- ^ The arity of the lambda
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 instance Placed SimpleLamInfo where
   type Place SimpleLamInfo = Void
@@ -82,13 +92,15 @@ instance HasArity (SimpleLamInfo e) where
 data TyLamPlace =
     TyLamPlaceArg !Int
   | TyLamPlaceRet
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
 
 -- | Info for lambdas with type annotations on arguments and a return type
 data TyLamInfo e = TyLamInfo
   { tyLamInfoArgs :: !(Seq e)
   , tyLamInfoRet :: e
-   } deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 instance Placed TyLamInfo where
   type Place TyLamInfo = TyLamPlace
@@ -104,7 +116,8 @@ instance HasArity (TyLamInfo e) where
 -- | Info for a single (non-recursive) let without type annotation
 newtype SimpleLetOneInfo e = SimpleLetOneInfo
   { simpleLetOneInfoArg :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 instance Placed SimpleLetOneInfo where
   type Place SimpleLetOneInfo = ()
@@ -118,13 +131,15 @@ instance HasArity (SimpleLetOneInfo e) where
 data TyLetOnePlace =
     TyLetOnePlaceArg
   | TyLetOnePlaceTy
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
 
 -- | Info for a single (non-recursive) let with argument type and body type
 data TyLetOneInfo e = TyLetOneInfo
   { tyLetOneInfoArg :: e
   , tyLetOneInfoTy :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 instance Placed TyLetOneInfo where
   type Place TyLetOneInfo = TyLetOnePlace
@@ -140,7 +155,8 @@ instance HasArity (TyLetOneInfo e) where
 -- | Info for a recursive let with no type annotations
 newtype SimpleLetRecInfo e = SimpleLetRecInfo
   { simpleLetRecInfoArgs :: Seq e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 instance Placed SimpleLetRecInfo where
   type Place SimpleLetRecInfo = Int
@@ -155,18 +171,21 @@ data TyLetRecPlace =
     TyLetRecPlaceArgExp !Int
   | TyLetRecPlaceArgTy !Int
   | TyLetRecPlaceRet
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
 
 data TyLetRecArg e = TyLetRecArg
   { tyLetRecArgExp :: e
   , tyLetRecArgTy :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 -- | Info for a recursive let with argument types and body type
 data TyLetRecInfo e = TyLetRecInfo
   { tyLetRecInfoArgs :: !(Seq (TyLetRecArg e))
   , tyLetRecInfoRet :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 instance Placed TyLetRecInfo where
   type Place TyLetRecInfo = TyLetRecPlace
