@@ -2,7 +2,7 @@ module Test.Blanks.Tests.ScopeTest
   ( testScope
   ) where
 
-import Blanks (SubError (..), scopeApply1, scopeInstantiate1)
+import Blanks (SubError (..), scopeApply1, scopeFillBound1)
 import qualified Data.Set as Set
 import Test.Blanks.Lib.Assertions ((@/=))
 import Test.Blanks.Lib.SimpleScope (app, freeVars, lam, lets, sapp, sbase, sbase2, sbound, sconst, sflip, sfree, sfree2,
@@ -51,13 +51,13 @@ testScope =
 
       testInstantiate =
         testCase "instantiate" $ do
-          scopeInstantiate1 svar2 svar @?= svar
-          scopeInstantiate1 svar2 sbound @?= svar2
-          scopeInstantiate1 svar2 sid @?= sid
-          scopeInstantiate1 svar2 swonky @?= swonky2
-          scopeInstantiate1 svar2 sapp @?= app svar svar2
-          scopeInstantiate1 svar2 sletWonky @?= lets 'y' sbase svar2
-          scopeInstantiate1 svar2 sletWonky2 @?= lets 'y' svar2 sbase
+          scopeFillBound1 svar2 svar @?= svar
+          scopeFillBound1 svar2 sbound @?= svar2
+          scopeFillBound1 svar2 sid @?= sid
+          scopeFillBound1 svar2 swonky @?= swonky2
+          scopeFillBound1 svar2 sapp @?= app svar svar2
+          scopeFillBound1 svar2 sletWonky @?= lets 'y' sbase svar2
+          scopeFillBound1 svar2 sletWonky2 @?= lets 'y' svar2 sbase
 
       testApply =
         testCase "apply" $ do

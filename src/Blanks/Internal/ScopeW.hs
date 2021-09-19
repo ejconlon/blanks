@@ -100,7 +100,7 @@ scopeWShiftN c d e =
   in natNewtypeTo (ScopeW (fmap (underScopeShift scopeWShiftN c d) tu))
 
 scopeWAbstract :: ScopeWC t u n f g => Abstract n (g a) -> u (g a)
-scopeWAbstract b = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeAbstract b))
+scopeWAbstract ab = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeAbstract ab))
 
 scopeWEmbed :: ScopeWC t u n f g => f (g a) -> u (g a)
 scopeWEmbed fe = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeEmbed fe))

@@ -31,9 +31,9 @@ module Test.Blanks.Lib.Exp
   , declToNamed
   ) where
 
-import Blanks (LocScope, Located (..), Scope, locScopeAbstract1, locScopeForget, locScopeUnAbstract1,
-               pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed, pattern LocScopeFree, runColocated,
-               scopeAnno)
+import Blanks (Abstract (..), IsAbstractInfo (..), LocScope, Located (..), Scope
+              , pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed, pattern LocScopeFree
+              , locScopeBindFree1, locScopeForget, locScopeUnBindFree1, scopeAnno)
 import Control.DeepSeq (NFData)
 import Control.Monad (when)
 import Data.Set (Set)
@@ -235,18 +235,21 @@ declMapExpM :: Functor m => (a -> m b) -> Decl a -> m (Decl b)
 declMapExpM f (Decl lvl name ex) = fmap (Decl lvl name) (f ex)
 
 -- Binder info
-data Info =
+data Info e =
     InfoAbs !Ident
   | InfoLet !Ident
-  deriving stock (Show, Generic)
+  deriving stock (Show, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
 
-instance Eq Info where
+instance IsAbstractInfo Info where
+  abstractInfoArity _ = 1
+
+instance Eq (Info e) where
   InfoAbs _ == InfoAbs _ = True
   InfoLet _ == InfoLet _ = True
   _ == _ = False
 
-infoShouldLift :: Info -> Bool
+infoShouldLift :: Info e -> Bool
 infoShouldLift i =
   case i of
     InfoAbs _ -> True
@@ -282,10 +285,10 @@ expToNameless syn = go where
       CExpIf l a b c -> LocScopeEmbed l (ExpIf (go a) (go b) (go c))
       CExpIsZero l a -> LocScopeEmbed l (ExpIsZero (go a))
       CExpVar l x -> LocScopeFree l x
-      CExpAbs l x a -> runColocated (locScopeAbstract1 (InfoAbs x) x (go a)) l
+      CExpAbs l x a -> LocScopeAbstract l (Abstract (InfoAbs x) (locScopeBindFree1 x (go a)))
       CExpLet l x t a ->
         let targetLess = go t
-            bodyLess = runColocated (locScopeAbstract1 (InfoLet x) x (go a)) syn
+            bodyLess = LocScopeAbstract syn (Abstract (InfoLet x) (locScopeBindFree1 x (go a)))
         in LocScopeEmbed l (ExpLet targetLess bodyLess)
       CExpAsc l a b -> LocScopeEmbed l (ExpAsc (go a) (go b))
       CExpTyInt l -> LocScopeEmbed l ExpTyInt
@@ -299,9 +302,9 @@ expToNamed e =
   case e of
     LocScopeBound _ _ -> Nothing
     LocScopeFree l a -> pure (CExpVar l a)
-    LocScopeBinder l _ i b ->
+    LocScopeAbstract l (Abstract i b) ->
       case i of
-        InfoAbs x -> CExpAbs l x <$> expToNamed (locScopeUnAbstract1 x b)
+        InfoAbs x -> CExpAbs l x <$> expToNamed (locScopeUnBindFree1 x b)
         _ -> Nothing
     LocScopeEmbed l fe ->
       case fe of
@@ -310,8 +313,8 @@ expToNamed e =
         ExpApp a b -> CExpApp l <$> expToNamed a <*> expToNamed b
         ExpLet t b ->
           case b of
-            LocScopeBinder _ _ (InfoLet x) c ->
-              CExpLet l x <$> expToNamed t <*> expToNamed (locScopeUnAbstract1 x c)
+            LocScopeAbstract _ (Abstract (InfoLet x) c) ->
+              CExpLet l x <$> expToNamed t <*> expToNamed (locScopeUnBindFree1 x c)
             _ -> Nothing
         ExpAdd a b -> CExpAdd l <$> expToNamed a <*> expToNamed b
         ExpIf a b c -> CExpIf l <$> expToNamed a <*> expToNamed b <*> expToNamed c

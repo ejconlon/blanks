@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e3a81633838676e0596cb81961492f252b5d86707fdb1633d74b5ad832d23b86
+-- hash: 6fc294e415c7c2ad18a11d6074eb20bd6f635b27f98012706588c6ed63b22ad6
 
 name:           blanks
 version:        0.6.0
@@ -33,7 +33,6 @@ library
       Blanks.Internal.Abstract
       Blanks.Internal.Info
       Blanks.Internal.Placed
-      Blanks.Internal.ScopeK
       Blanks.Internal.ScopeW
       Blanks.Internal.Under
       Blanks.LocScope

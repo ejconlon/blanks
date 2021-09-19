@@ -1,7 +1,8 @@
 module Test.Blanks.Lib.SimpleScope where
 
-import Blanks (Located (..), Scope, Tracked, locScopeLocation, pattern ScopeBound, pattern ScopeEmbed, scopeAbstract1,
-               trackScopeSimple)
+import Blanks (Abstract (..), IsAbstractInfo (..), Located (..), Scope, Tracked
+              , pattern ScopeAbstract, pattern ScopeBound, pattern ScopeEmbed
+              , locScopeLocation, scopeBindFree1, trackScopeSimple)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
@@ -13,20 +14,26 @@ data SimpleFunctor a =
   | SimpleFunctorBase !Char
   deriving stock (Eq, Show, Functor, Foldable, Traversable)
 
-data SimpleInfo =
+data SimpleInfo e =
     SimpleInfoLam !(Seq Char)
   | SimpleInfoLet !Char
-  deriving stock (Show)
+  deriving stock (Show, Functor, Foldable, Traversable)
 
-instance Eq SimpleInfo where
+instance Eq (SimpleInfo e) where
   SimpleInfoLam s1 == SimpleInfoLam s2 = Seq.length s1 == Seq.length s2
   SimpleInfoLet _ == SimpleInfoLet _ = True
   _ == _ = False
 
+instance IsAbstractInfo SimpleInfo where
+  abstractInfoArity s =
+    case s of
+      SimpleInfoLam cs -> Seq.length cs
+      SimpleInfoLet _ -> 1
+
 type SimpleScope = Scope SimpleInfo SimpleFunctor Char
 
 lam :: Char -> SimpleScope -> SimpleScope
-lam a = scopeAbstract1 (SimpleInfoLam (Seq.singleton a)) a
+lam a e = ScopeAbstract (Abstract (SimpleInfoLam (Seq.singleton a)) (scopeBindFree1 a e))
 
 base :: Char -> SimpleScope
 base = ScopeEmbed . SimpleFunctorBase
@@ -47,7 +54,7 @@ app :: SimpleScope -> SimpleScope -> SimpleScope
 app x y = ScopeEmbed (SimpleFunctorApp x y)
 
 lets :: Char -> SimpleScope -> SimpleScope -> SimpleScope
-lets a x y = ScopeEmbed (SimpleFunctorLet x (scopeAbstract1 (SimpleInfoLet a) a y))
+lets a x y = ScopeEmbed (SimpleFunctorLet x (ScopeAbstract (Abstract (SimpleInfoLet a) (scopeBindFree1 a y))))
 
 svar, sbound, sfree, sfree2, sid, swonky, sconst, sflip, svar2, swonky2, sapp,
   swonky3, sbase, sbase2, slet, sletFree, sletFree2, sletWonky, sletWonky2,

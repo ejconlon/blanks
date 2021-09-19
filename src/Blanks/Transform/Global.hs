@@ -14,7 +14,7 @@ module Blanks.Transform.Global
   , unGlobalScope
   ) where
 
-import Blanks.LocScope (LocScope, pattern LocScopeBinder, pattern LocScopeBound, pattern LocScopeEmbed,
+import Blanks.LocScope (LocScope, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
                         pattern LocScopeFree)
 import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
@@ -52,7 +52,7 @@ predClassifier :: (a -> Bool) -> VarClassifier a a a
 predClassifier p a = if p a then VarClassGlobal a else VarClassFree a
 
 -- | Rewrites the scope tree with the given classification of global vs free vars.
-globalScope :: Functor f => VarClassifier g a z -> LocScope l n f a -> LocScope l n (GlobalFunctor g f) z
+globalScope :: (Functor n, Functor f) => VarClassifier g a z -> LocScope l n f a -> LocScope l n (GlobalFunctor g f) z
 globalScope cfier = go where
   go s =
     case s of
@@ -61,7 +61,7 @@ globalScope cfier = go where
         case cfier a of
           VarClassGlobal g -> LocScopeEmbed l (GlobalFunctorGlobal g)
           VarClassFree z -> LocScopeFree l z
-      LocScopeBinder l n i e -> LocScopeBinder l n i (go e)
+      LocScopeAbstract l ab -> LocScopeAbstract l (fmap go ab)
       LocScopeEmbed l fe -> LocScopeEmbed l (GlobalFunctorBase (fmap go fe))
 
 -- | The inverse of 'VarClassifier' - unifies global and free vars.
@@ -75,13 +75,13 @@ nullUnClassifier c =
     VarClassFree a -> a
 
 -- | Un-rewrites the scope tree to unify global and free vars as free.
-unGlobalScope :: (Functor h, MatchGlobal f g h) => VarUnClassifier g z a -> LocScope l n f z -> LocScope l n h a
+unGlobalScope :: (Functor n, Functor h, MatchGlobal f g h) => VarUnClassifier g z a -> LocScope l n f z -> LocScope l n h a
 unGlobalScope unCfier = go where
   go s =
     case s of
       LocScopeBound l b -> LocScopeBound l b
       LocScopeFree l a -> LocScopeFree l (unCfier (VarClassFree a))
-      LocScopeBinder l n i e -> LocScopeBinder l n i (go e)
+      LocScopeAbstract l ab -> LocScopeAbstract l (fmap go ab)
       LocScopeEmbed l fe ->
         case matchGlobal fe of
           GlobalFunctorGlobal g -> LocScopeFree l (unCfier (VarClassGlobal g))

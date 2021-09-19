@@ -13,8 +13,9 @@ module Blanks.Transform.Track
   , trackScopeSimple
   ) where
 
+import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
 import Blanks.Conversion (scopeAnno)
-import Blanks.LocScope (LocScope, locScopeHoistAnno, pattern LocScopeBinder, pattern LocScopeBound,
+import Blanks.LocScope (LocScope, locScopeHoistAnno, pattern LocScopeAbstract, pattern LocScopeBound,
                         pattern LocScopeEmbed, pattern LocScopeFree)
 import Blanks.Scope (Scope)
 import Blanks.Util.Located (Located (..))
@@ -61,10 +62,10 @@ instance Ord a => Monoid (Tracked a) where
 type WithTracked a = Located (Tracked a)
 
 -- | Drop tracked annotations from the scope tree.
-forgetTrackedScope :: Functor f => LocScope (WithTracked a l) n f z -> LocScope l n f z
+forgetTrackedScope :: (Functor n, Functor f) => LocScope (WithTracked a l) n f z -> LocScope l n f z
 forgetTrackedScope = locScopeHoistAnno locatedVal
 
-trackScopeInner :: (Traversable f, Ord a) => LocScope l n f a -> (Tracked a, LocScope (WithTracked a l) n f a)
+trackScopeInner :: (IsAbstractInfo n, Traversable f, Ord a) => LocScope l n f a -> (Tracked a, LocScope (WithTracked a l) n f a)
 trackScopeInner s =
   case s of
     LocScopeBound l b ->
@@ -75,20 +76,21 @@ trackScopeInner s =
       let !t = Tracked (Set.singleton a) Set.empty
           !m = Located t l
       in (t, LocScopeFree m a)
-    LocScopeBinder l n i e ->
-      let (!t0, !y) = trackScopeInner e
-          !t = shiftTracked n t0
+    LocScopeAbstract l (Abstract info body) ->
+      let (!t0, !body') = trackScopeInner body
+          (!t1, !info') = traverse trackScopeInner info
+          !t = shiftTracked (abstractInfoArity info) (t1 <> t0)
           !m = Located t l
-      in (t, LocScopeBinder m n i y)
+      in (t, LocScopeAbstract m (Abstract info' body'))
     LocScopeEmbed l fe ->
       let (!t, !fy) = traverse trackScopeInner fe
           !m = Located t l
       in (t, LocScopeEmbed m fy)
 
 -- | Track variables as bottom-up annotations on the annotated scope tree.
-trackScope :: (Traversable f, Ord a) => LocScope l n f a -> LocScope (WithTracked a l) n f a
+trackScope :: (IsAbstractInfo n, Traversable f, Ord a) => LocScope l n f a -> LocScope (WithTracked a l) n f a
 trackScope = snd . trackScopeInner
 
 -- | Track variables as bottom-up annotations on the given pure scope tree.
-trackScopeSimple :: (Traversable f, Ord a) => Scope n f a -> LocScope (WithTracked a ()) n f a
+trackScopeSimple :: (IsAbstractInfo n, Traversable f, Ord a) => Scope n f a -> LocScope (WithTracked a ()) n f a
 trackScopeSimple = trackScope . scopeAnno ()

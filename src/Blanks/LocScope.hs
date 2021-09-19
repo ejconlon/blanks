@@ -98,8 +98,8 @@ locScopeFree :: (IsAbstractInfo n, Functor f) => a -> Colocated l (LocScope l n 
 locScopeFree = scopeWFree
 {-# INLINE locScopeFree #-}
 
-locScopeAbstract :: Functor f => Abstract n (LocScope l n f a) -> Colocated l (LocScope l n f a)
-locScopeAbstract = locScopeAbstract
+locScopeAbstract :: (IsAbstractInfo n, Functor f) => Abstract n (LocScope l n f a) -> Colocated l (LocScope l n f a)
+locScopeAbstract = scopeWAbstract
 {-# INLINE locScopeAbstract #-}
 
 locScopeEmbed :: (IsAbstractInfo n, Functor f) => f (LocScope l n f a) -> Colocated l (LocScope l n f a)
@@ -157,6 +157,7 @@ locScopeLiftAnno = scopeWLiftAnno
 -- Need an explicit type sig and forall to use this in the hoist below
 mapLocatedForall :: (l -> x) -> (forall z. Located l z -> Located x z)
 mapLocatedForall f (Located l z) = Located (f l) z
+{-# INLINE mapLocatedForall #-}
 
 locScopeHoistAnno :: (Functor n, Functor f) => (l -> x) -> LocScope l n f a -> LocScope x n f a
 locScopeHoistAnno f = scopeWHoistAnno (mapLocatedForall f)

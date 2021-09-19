@@ -13,7 +13,7 @@ module Blanks.Internal.Info
   , TyLetRecInfo (..)
   ) where
 
-import Blanks.Internal.Abstract (IsAbstractInfo (..))
+import Blanks.Internal.Abstract (IsAbstractInfo (..), IsPlacedAbstractInfo (..))
 import Blanks.Internal.Placed (Placed (..))
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData)
@@ -37,6 +37,8 @@ instance Placed SimpleLamInfo where
 
 instance IsAbstractInfo SimpleLamInfo where
   abstractInfoArity = simpleLamInfoArity
+
+instance IsPlacedAbstractInfo SimpleLamInfo where
   abstractInfoFilterArg _ _ = False
 
 -- * TyLam
@@ -62,6 +64,8 @@ instance Placed TyLamInfo where
 
 instance IsAbstractInfo TyLamInfo where
   abstractInfoArity = Seq.length . tyLamInfoArgs
+
+instance IsPlacedAbstractInfo TyLamInfo where
   abstractInfoFilterArg _ pl =
     case pl of
       TyLamPlaceArg _ -> True
@@ -81,6 +85,8 @@ instance Placed SimpleLetOneInfo where
 
 instance IsAbstractInfo SimpleLetOneInfo where
   abstractInfoArity _ = 1
+
+instance IsPlacedAbstractInfo SimpleLetOneInfo where
   abstractInfoFilterArg _ _ = True
 
 -- * TyLetOne
@@ -106,6 +112,8 @@ instance Placed TyLetOneInfo where
 
 instance IsAbstractInfo TyLetOneInfo where
   abstractInfoArity _ = 1
+
+instance IsPlacedAbstractInfo TyLetOneInfo where
   abstractInfoFilterArg _ pl =
     case pl of
       TyLetOnePlaceArg -> True
@@ -125,6 +133,8 @@ instance Placed SimpleLetRecInfo where
 
 instance IsAbstractInfo SimpleLetRecInfo where
   abstractInfoArity = Seq.length . simpleLetRecInfoArgs
+
+instance IsPlacedAbstractInfo SimpleLetRecInfo where
   abstractInfoFilterArg _ _ = True
 
 -- * TyLetRec
@@ -157,6 +167,8 @@ instance Placed TyLetRecInfo where
 
 instance IsAbstractInfo TyLetRecInfo where
   abstractInfoArity = Seq.length . tyLetRecInfoArgs
+
+instance IsPlacedAbstractInfo TyLetRecInfo where
   abstractInfoFilterArg _ pl =
     case pl of
       TyLetRecPlaceArgExp _ -> True

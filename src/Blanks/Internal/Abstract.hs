@@ -3,6 +3,7 @@
 
 module Blanks.Internal.Abstract
   ( IsAbstractInfo (..)
+  , IsPlacedAbstractInfo (..)
   , defaultAbstractInfoGatherArgs
   , AbstractPlace (..)
   , Abstract (..)
@@ -21,8 +22,10 @@ import GHC.Generics (Generic)
 
 -- | Ad-hoc class that helps us count the arity of an 'Abstract'.
 -- arity is _upper bound_ of gathered args - there may not be expressions attached
-class Placed n => IsAbstractInfo n where
+class Traversable n => IsAbstractInfo n where
   abstractInfoArity :: n a -> Int
+
+class (Placed n, IsAbstractInfo n) => IsPlacedAbstractInfo n where
   abstractInfoFilterArg :: Proxy n -> Place n -> Bool
   abstractInfoGatherArgs :: n a -> [Place n]
   abstractInfoGatherArgs = defaultAbstractInfoGatherArgs
@@ -32,7 +35,7 @@ nProxy :: n a -> Proxy n
 nProxy _ = Proxy
 {-# INLINE nProxy #-}
 
-defaultAbstractInfoGatherArgs :: IsAbstractInfo n => n a -> [Place n]
+defaultAbstractInfoGatherArgs :: IsPlacedAbstractInfo n => n a -> [Place n]
 defaultAbstractInfoGatherArgs na = filter (abstractInfoFilterArg (nProxy na)) (gatherPlaced na)
 {-# INLINE defaultAbstractInfoGatherArgs #-}
 
@@ -96,4 +99,6 @@ annoProxy Proxy = Proxy
 
 instance IsAbstractInfo n => IsAbstractInfo (AnnoInfo n x) where
   abstractInfoArity = abstractInfoArity . annoInfoInfo
+
+instance (IsPlacedAbstractInfo n) => IsPlacedAbstractInfo (AnnoInfo n x) where
   abstractInfoFilterArg p = abstractInfoFilterArg (annoProxy p) . annoPlacePlace
