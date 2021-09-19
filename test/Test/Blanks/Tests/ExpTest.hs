@@ -4,7 +4,6 @@ module Test.Blanks.Tests.ExpTest
 
 import Blanks (Abstract (..), locScopeForget, locScopeLocation, pattern ScopeAbstract, pattern ScopeBound, pattern ScopeEmbed,
                pattern ScopeFree)
-import Control.DeepSeq (force)
 import Test.Blanks.Lib.Exp (Exp (..), ExpScope, Ident (..), Info (..), cexpLoc, expToNamed, expToNameless,
                             runCExpParser, synSpan)
 import Test.Tasty (TestName, TestTree, testGroup)
