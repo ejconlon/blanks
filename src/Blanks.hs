@@ -5,10 +5,10 @@ module Blanks
   ( module Blanks
   ) where
 
+import Blanks.Conversion as Blanks
 import Blanks.Internal.Abstract as Blanks
 import Blanks.Internal.Info as Blanks
 import Blanks.Internal.Placed as Blanks
-import Blanks.Conversion as Blanks
 import Blanks.LocScope as Blanks
 import Blanks.ReExports as Blanks
 import Blanks.Scope as Blanks

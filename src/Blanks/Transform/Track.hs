@@ -13,8 +13,8 @@ module Blanks.Transform.Track
   , trackScopeSimple
   ) where
 
-import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
 import Blanks.Conversion (scopeAnno)
+import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
 import Blanks.LocScope (LocScope, locScopeHoistAnno, pattern LocScopeAbstract, pattern LocScopeBound,
                         pattern LocScopeEmbed, pattern LocScopeFree)
 import Blanks.Scope (Scope)

@@ -2,7 +2,8 @@ module Test.Blanks.Tests.LiftTest
   ( testLift
   ) where
 
-import Blanks (AbstractId, LiftState (..), Located (..), Tracked, emptyLiftState, mkTrackedBound, mkTrackedFree, runState)
+import Blanks (AbstractId, LiftState (..), Located (..), Tracked, emptyLiftState, mkTrackedBound, mkTrackedFree,
+               runState)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Test.Blanks.Lib.LiftScope (LiftOuterAbstract, LiftScope, appLift, baseLift, boundLift, closureLift,

@@ -20,9 +20,9 @@ module Blanks.Scope
   ) where
 
 import Blanks.Internal.Abstract (Abstract, IsAbstractInfo)
-import Blanks.Internal.ScopeW (
-  ScopeW (..), scopeWBind, scopeWBindOpt, scopeWLift, scopeWApply1, scopeWApply, scopeWBindFree, scopeWBindFree1,
-  scopeWFillBound, scopeWFillBound1, scopeWUnBindFree, scopeWUnBindFree1)
+import Blanks.Internal.ScopeW (ScopeW (..), scopeWApply, scopeWApply1, scopeWBind, scopeWBindFree, scopeWBindFree1,
+                               scopeWBindOpt, scopeWFillBound, scopeWFillBound1, scopeWLift, scopeWUnBindFree,
+                               scopeWUnBindFree1)
 import Blanks.Internal.Under (UnderScope (..))
 import Blanks.Util.NatNewtype (NatNewtype)
 import Blanks.Util.Sub (SubError)

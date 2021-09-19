@@ -1,8 +1,8 @@
 module Test.Blanks.Lib.LiftScope where
 
-import Blanks (AbstractId, Abstract (..), LiftAbstract (..), LiftFunctor (..), LiftState, LocScope, Located (..), State,
-               Tracked, WithTracked, locScopeBindFree1, locScopeLocation, pattern LocScopeAbstract, pattern LocScopeBound,
-               pattern LocScopeEmbed, predLiftLocScope, scopeAnno, trackScope)
+import Blanks (Abstract (..), AbstractId, LiftAbstract (..), LiftFunctor (..), LiftState, LocScope, Located (..), State,
+               Tracked, WithTracked, locScopeBindFree1, locScopeLocation, pattern LocScopeAbstract,
+               pattern LocScopeBound, pattern LocScopeEmbed, predLiftLocScope, scopeAnno, trackScope)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set

@@ -6,13 +6,13 @@ module Blanks.Internal.Under
   , underScopeShift
   ) where
 
+import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..), abstractArity)
 import Control.DeepSeq (NFData)
 import Data.Bifoldable (Bifoldable (..))
 import Data.Bifunctor (Bifunctor (..))
 import Data.Bitraversable (Bitraversable (..))
 import Data.Kind (Type)
 import GHC.Generics (Generic)
-import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..), abstractArity)
 
 data UnderScope (n :: Type -> Type) (f :: Type -> Type) (e :: Type) (a :: Type)
   = UnderScopeBound !Int

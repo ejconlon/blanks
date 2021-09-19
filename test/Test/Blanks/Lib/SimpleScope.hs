@@ -1,8 +1,7 @@
 module Test.Blanks.Lib.SimpleScope where
 
-import Blanks (Abstract (..), IsAbstractInfo (..), Located (..), Scope, Tracked
-              , pattern ScopeAbstract, pattern ScopeBound, pattern ScopeEmbed
-              , locScopeLocation, scopeBindFree1, trackScopeSimple)
+import Blanks (Abstract (..), IsAbstractInfo (..), Located (..), Scope, Tracked, locScopeLocation,
+               pattern ScopeAbstract, pattern ScopeBound, pattern ScopeEmbed, scopeBindFree1, trackScopeSimple)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)

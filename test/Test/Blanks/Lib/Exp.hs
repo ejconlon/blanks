@@ -31,9 +31,9 @@ module Test.Blanks.Lib.Exp
   , declToNamed
   ) where
 
-import Blanks (Abstract (..), IsAbstractInfo (..), LocScope, Located (..), Scope
-              , pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed, pattern LocScopeFree
-              , locScopeBindFree1, locScopeForget, locScopeUnBindFree1, scopeAnno)
+import Blanks (Abstract (..), IsAbstractInfo (..), LocScope, Located (..), Scope, locScopeBindFree1, locScopeForget,
+               locScopeUnBindFree1, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
+               pattern LocScopeFree, scopeAnno)
 import Control.DeepSeq (NFData)
 import Control.Monad (when)
 import Data.Set (Set)
