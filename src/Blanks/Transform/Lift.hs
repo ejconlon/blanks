@@ -16,7 +16,7 @@ module Blanks.Transform.Lift
   , predLiftLocScope
   ) where
 
-import Blanks.Internal.Abstract (Abstract (..))
+import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
 import Blanks.LocScope (LocScope, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
                         pattern LocScopeFree)
 import Blanks.Transform.Track (Tracked (..), WithTracked, mkTrackedBound, mkTrackedFree)
@@ -26,7 +26,7 @@ import Control.Monad.State.Strict (State, gets, modify')
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Sequence (Seq)
--- import qualified Data.Sequence as Seq
+import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
@@ -97,6 +97,9 @@ instance
 -- | Result for 'liftLocScope'. Contains tracked free variables and the scope tree.
 type LiftResult l n f a = WithTracked a (LocScope l n (LiftFunctor f) a)
 
+seqLiftResult :: (Traversable d, Ord a) => d (LiftResult l c f a) -> WithTracked a (d (LocScope l c (LiftFunctor f) a))
+seqLiftResult = sequence
+
 -- | State for 'liftLocScope'. Contains next abstract id and map of all lifted abstractions.
 data LiftState l x y f a = LiftState
   { liftStateNextId :: !AbstractId
@@ -147,7 +150,9 @@ insertAbstract bid lb = modify' (\ss -> ss { liftStateAbstracts = Map.insert bid
 remapBound :: Int -> Set Int -> Int -> Int
 remapBound r bs b = maybe b (+ r) (Set.lookupIndex b bs)
 
-liftLocScopeInner :: (Traversable f, Ord a) => Int -> Set Int -> LiftSelector n c d -> LocScope (WithTracked a l) n f a -> State (LiftState l c d f a) (LiftResult l c f a)
+liftLocScopeInner ::
+  (Traversable c, Traversable d, IsAbstractInfo n, Traversable f, Ord a)
+  => Int -> Set Int -> LiftSelector n c d -> LocScope (WithTracked a l) n f a -> State (LiftState l c d f a) (LiftResult l c f a)
 liftLocScopeInner r bs sel ls =
   case ls of
     LocScopeBound (Located _ l) b ->
@@ -159,28 +164,40 @@ liftLocScopeInner r bs sel ls =
       fx <- traverse (liftLocScopeInner r bs sel) fe
       let Located t fe' = sequence fx
       pure (Located t (LocScopeEmbed l (LiftFunctorBase fe')))
-    LocScopeAbstract (Located (Tracked fv bv) l) (Abstract info body) -> -- a n e ->
+    LocScopeAbstract (Located (Tracked fv bv) l) (Abstract n e) ->
       -- Some abstractions need to be lifted, some don't.
-      error "TODO"
-      -- case sel info of
-      --   LiftSelectionYes y -> do
-      --     bid <- allocAbstractId
-      --     let bs' = Set.mapMonotonic (+ r) bv
-      --     Located _ e' <- liftLocScopeInner a bs' sel e
-      --     let lb = LiftAbstract (Set.size bs') fv (AbstractScope a y e')
-      --     insertAbstract bid lb
-      --     let ss = Seq.fromList (Set.toList bv)
-      --     pure (Located (Tracked Set.empty bv) (LocScopeEmbed l (LiftFunctorAbstract bid ss)))
-      --   LiftSelectionNo x -> do
-      --     let bs' = Set.mapMonotonic (+ r) bv
-      --     Located (Tracked fv' _) e' <- liftLocScopeInner a bs' sel e
-      --     pure (Located (Tracked fv' bv) (LocScopeAbstract l a x e'))
+      let a = abstractInfoArity n
+      in case sel n of
+        LiftSelectionYes y -> do
+          -- First process recursive parts of the info function
+          y' <- traverse (liftLocScopeInner r bs sel) y
+          let Located _ y'' = seqLiftResult y'
+          -- Now allocate an id for this abstraction and process the body
+          bid <- allocAbstractId
+          let bs' = Set.mapMonotonic (+ r) bv
+          Located _ e' <- liftLocScopeInner a bs' sel e
+          let lb = LiftAbstract (Set.size bs') fv (Abstract y'' e')
+          insertAbstract bid lb
+          let ss = Seq.fromList (Set.toList bv)
+          pure (Located (Tracked Set.empty bv) (LocScopeEmbed l (LiftFunctorAbstract bid ss)))
+        LiftSelectionNo x -> do
+          -- First process recursive parts of the info function
+          x' <- traverse (liftLocScopeInner r bs sel) x
+          let Located _ x'' = seqLiftResult x'
+          -- Now just process the recursive parts of the body
+          let bs' = Set.mapMonotonic (+ r) bv
+          Located (Tracked fv' _) e' <- liftLocScopeInner a bs' sel e
+          pure (Located (Tracked fv' bv) (LocScopeAbstract l (Abstract x'' e')))
 
 -- | Lifts selected abstractions. To maintain abstract id state across invocations, compose in the 'State' monad and project out once at the end
 -- with 'runState'. (Note that you will have to accurately annotate with tracked variables using 'trackScope' before using this.)
-liftLocScope :: (Traversable f, Ord a) => LiftSelector n c d -> LocScope (WithTracked a l) n f a -> State (LiftState l c d f a) (LiftResult l c f a)
+liftLocScope ::
+  (IsAbstractInfo n, Traversable c, Traversable d, Traversable f, Ord a)
+  => LiftSelector n c d -> LocScope (WithTracked a l) n f a -> State (LiftState l c d f a) (LiftResult l c f a)
 liftLocScope = liftLocScopeInner 0 Set.empty
 
 -- | Lifts abstractions without transforming them. Selects according to the given predicate (see 'predSelector').
-predLiftLocScope :: (Traversable f, Ord a) => (forall x. n x -> Bool) -> LocScope (WithTracked a l) n f a -> State (LiftState l n n f a) (LiftResult l n f a)
+predLiftLocScope ::
+  (IsAbstractInfo n, Traversable f, Ord a)
+  => (forall x. n x -> Bool) -> LocScope (WithTracked a l) n f a -> State (LiftState l n n f a) (LiftResult l n f a)
 predLiftLocScope p = liftLocScope (predSelector p)
