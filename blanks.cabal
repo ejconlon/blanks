@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6fc294e415c7c2ad18a11d6074eb20bd6f635b27f98012706588c6ed63b22ad6
+-- hash: 1883a9e21182af1f3a1d3ff64b601b64f73f4bbb93944a1bdf13d742aa1980b4
 
 name:           blanks
 version:        0.6.0
@@ -38,6 +38,7 @@ library
       Blanks.LocScope
       Blanks.ReExports
       Blanks.Scope
+      Blanks.Transform.Abstract
       Blanks.Transform.Global
       Blanks.Transform.Lift
       Blanks.Transform.Track

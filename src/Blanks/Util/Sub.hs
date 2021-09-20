@@ -1,16 +1,21 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Blanks.Util.Sub
   ( SubError (..)
   , ThrowSub (..)
   , rethrowSub
   ) where
 
+import Control.DeepSeq (NFData)
 import Control.Exception (Exception, throwIO)
+import GHC.Generics (Generic)
 
 -- | Errors that happen in the course of instantiation
 data SubError
   = ApplyError !Int !Int
   | NonBinderError
-  deriving (Eq, Show)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
 
 instance Exception SubError
 
