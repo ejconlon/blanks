@@ -3,9 +3,11 @@
 
 module Blanks.Transform.Abstract where
 
+import Blanks.Conversion (locScopeForget, scopeAnno)
 import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
 import Blanks.LocScope (LocScope, locScopeBindFree, pattern LocScopeAbstract, pattern LocScopeBound,
                         pattern LocScopeEmbed, pattern LocScopeFree)
+import Blanks.Scope (Scope)
 import Control.DeepSeq (NFData)
 import Control.Exception (Exception)
 import Data.Sequence (Seq)
@@ -20,12 +22,20 @@ deriving anyclass instance NFData (j (Fix j)) => NFData (Fix j)
 
 data LocFix l j = LocFix
   { locFixLoc :: !l
-  , locFixRec :: !(j (LocFix l j))
+  , locFixRec :: j (LocFix l j)
   } deriving stock (Generic)
 
 deriving stock instance (Eq l, Eq (f (LocFix l f))) => Eq (LocFix l f)
 deriving stock instance (Show l, Show (f (LocFix l f))) => Show (LocFix l f)
 deriving anyclass instance (NFData l, NFData (f (LocFix l f))) => NFData (LocFix l f)
+
+fixAnno :: Functor j => l -> Fix j -> LocFix l j
+fixAnno l = go where
+  go (Fix f) = LocFix l (fmap go f)
+
+locFixForget :: Functor j => LocFix l j -> Fix j
+locFixForget = go where
+  go (LocFix _ f) = Fix (fmap go f)
 
 data AbstractSelection n f a x =
     AbstractSelectionFree !a
@@ -37,6 +47,9 @@ data AbstractSelection n f a x =
 type AbstractSelector j n f a = forall x. j x -> AbstractSelection n f a x
 
 type UnAbstractSelector j n f a = forall x. AbstractSelection n f a x -> j x
+
+abstractFix :: (Functor j, IsAbstractInfo n, Functor f, Eq a) => AbstractSelector j n f a -> Fix j -> Scope n f a
+abstractFix sel = locScopeForget . abstractLocFix sel . fixAnno ()
 
 abstractLocFix :: (IsAbstractInfo n, Functor f, Eq a) => AbstractSelector j n f a -> LocFix l j -> LocScope l n f a
 abstractLocFix sel = go where
@@ -61,6 +74,11 @@ instance (Typeable l, Show l) => Exception (UnboundError l)
 -- | Invariant: abstractInfoNames yields Seq of same length as arity
 class IsAbstractInfo n => IsNamedAbstractInfo a n | n -> a where
   abstractInfoNames :: n x -> Seq a
+
+unAbstractFix ::
+  (Functor j, IsNamedAbstractInfo a n, Traversable f)
+  => UnAbstractSelector j n f a -> Scope n f a -> Either (UnboundError ()) (Fix j)
+unAbstractFix unSel = fmap locFixForget . unAbstractLocFix unSel . scopeAnno ()
 
 unAbstractLocFix ::
   (IsNamedAbstractInfo a n, Traversable f)
