@@ -3,7 +3,6 @@
 
 module Blanks.Internal.Abstract
   ( IsAbstractInfo (..)
-  , IsPlacedAbstractInfo (..)
   , AbstractPlace (..)
   , Abstract (..)
   , AnnoPlace (..)
@@ -19,10 +18,9 @@ import GHC.Generics (Generic)
 
 -- * IsAbstractInfo
 
--- | Ad-hoc class that helps us count the arity of an 'Abstract'.
--- arity is _upper bound_ of gathered args - there may not be expressions attached
-class Traversable n => IsAbstractInfo n where
-  abstractInfoArity :: n a -> Int
+nProxy :: n a -> Proxy n
+nProxy = const Proxy
+{-# INLINE nProxy #-}
 
 data ShouldShift =
     ShouldShiftYes
@@ -30,12 +28,17 @@ data ShouldShift =
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (NFData)
 
-nProxy :: n a -> Proxy n
-nProxy = const Proxy
-{-# INLINE nProxy #-}
+-- | Ad-hoc class that helps us count the arity of an 'Abstract'.
+-- arity is _upper bound_ of gathered args - there may not be expressions attached
+class Placed n => IsAbstractInfo n where
+  abstractInfoArity :: n a -> Int
 
-class (Placed n, IsAbstractInfo n) => IsPlacedAbstractInfo n where
   abstractInfoShouldShift :: Proxy n -> Place n -> ShouldShift
+
+  abstractInfoTraverseShouldShift :: Applicative m => (Place n -> ShouldShift -> a -> m b) -> n a -> m (n b)
+  abstractInfoTraverseShouldShift f na =
+    let proxy = nProxy na
+    in traversePlaced (\p a -> f p (abstractInfoShouldShift proxy p) a) na
 
   abstractInfoMapShouldShift :: (Place n -> ShouldShift -> a -> b) -> n a -> n b
   abstractInfoMapShouldShift f na =
@@ -70,14 +73,13 @@ instance Placed n => Placed (Abstract n) where
     infoM = traversePlaced (f . AbstractPlaceInfo) info
     bodyM = f AbstractPlaceBody body
 
-instance IsAbstractInfo n => IsAbstractInfo (Abstract n) where
-  abstractInfoArity = abstractInfoArity . abstractInfo
-
 abstractProxy :: Proxy (Abstract n) -> Proxy n
 abstractProxy Proxy = Proxy
 {-# INLINE abstractProxy #-}
 
-instance IsPlacedAbstractInfo n => IsPlacedAbstractInfo (Abstract n) where
+instance IsAbstractInfo n => IsAbstractInfo (Abstract n) where
+  abstractInfoArity = abstractInfoArity . abstractInfo
+
   abstractInfoShouldShift proxy place =
     case place of
       AbstractPlaceInfo nplace -> abstractInfoShouldShift (abstractProxy proxy) nplace
@@ -106,12 +108,11 @@ instance Placed n => Placed (AnnoInfo n x) where
   type Place (AnnoInfo n x) = AnnoPlace n x
   traversePlaced f (AnnoInfo info anno) = fmap (`AnnoInfo` anno) (traversePlaced (f . (`AnnoPlace` anno)) info)
 
-instance IsAbstractInfo n => IsAbstractInfo (AnnoInfo n x) where
-  abstractInfoArity = abstractInfoArity . annoInfoInfo
-
 annoProxy :: Proxy (AnnoInfo n x) -> Proxy n
 annoProxy Proxy = Proxy
 {-# INLINE annoProxy #-}
 
-instance IsPlacedAbstractInfo n => IsPlacedAbstractInfo (AnnoInfo n x) where
+instance IsAbstractInfo n => IsAbstractInfo (AnnoInfo n x) where
+  abstractInfoArity = abstractInfoArity . annoInfoInfo
+
   abstractInfoShouldShift p = abstractInfoShouldShift (annoProxy p) . annoPlacePlace

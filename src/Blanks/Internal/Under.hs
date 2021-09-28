@@ -6,7 +6,7 @@ module Blanks.Internal.Under
   , underScopeShift
   ) where
 
-import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..), IsPlacedAbstractInfo (..), ShouldShift (..))
+import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..), ShouldShift (..))
 import Control.DeepSeq (NFData)
 import Data.Bifoldable (Bifoldable (..))
 import Data.Bifunctor (Bifunctor (..))
@@ -40,7 +40,7 @@ instance (Traversable n, Traversable f) => Bitraversable (UnderScope n f) where
   bitraverse f _ (UnderScopeAbstract ab) = fmap UnderScopeAbstract (traverse f ab)
   bitraverse f _ (UnderScopeEmbed fe) = fmap UnderScopeEmbed (traverse f fe)
 
-underScopeShift :: (IsPlacedAbstractInfo n, Functor f) => (Int -> Int -> e -> e) -> Int -> Int -> UnderScope n f e a -> UnderScope n f e a
+underScopeShift :: (IsAbstractInfo n, Functor f) => (Int -> Int -> e -> e) -> Int -> Int -> UnderScope n f e a -> UnderScope n f e a
 underScopeShift recShift c d us =
   case us of
     UnderScopeBound b ->

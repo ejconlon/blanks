@@ -2,7 +2,7 @@
 
 module Test.Blanks.Lib.SimpleScope where
 
-import Blanks (Abstract (..), IsAbstractInfo (..), IsPlacedAbstractInfo (..), Located (..), Placed (..), Scope, ShouldShift (..), Tracked, locScopeLocation,
+import Blanks (Abstract (..), IsAbstractInfo (..), IsAbstractInfo (..), Located (..), Placed (..), Scope, ShouldShift (..), Tracked, locScopeLocation,
                pattern ScopeAbstract, pattern ScopeBound, pattern ScopeEmbed, scopeBindFree1, trackScopeSimple)
 import Control.DeepSeq (NFData)
 import Data.Sequence (Seq)
@@ -29,12 +29,6 @@ instance Eq (SimpleInfo e) where
   SimpleInfoLet _ == SimpleInfoLet _ = True
   _ == _ = False
 
-instance IsAbstractInfo SimpleInfo where
-  abstractInfoArity s =
-    case s of
-      SimpleInfoLam cs -> Seq.length cs
-      SimpleInfoLet _ -> 1
-
 data SimpleInfoPlace =
     SimpleInfoPlaceLam
   | SimpleInfoPlaceLet
@@ -48,7 +42,11 @@ instance Placed SimpleInfo where
       SimpleInfoLam x -> pure (SimpleInfoLam x)
       SimpleInfoLet x -> pure (SimpleInfoLet x)
 
-instance IsPlacedAbstractInfo SimpleInfo where
+instance IsAbstractInfo SimpleInfo where
+  abstractInfoArity s =
+    case s of
+      SimpleInfoLam cs -> Seq.length cs
+      SimpleInfoLet _ -> 1
   abstractInfoShouldShift _ _ = ShouldShiftNo
 
 type SimpleScope = Scope SimpleInfo SimpleFunctor Char

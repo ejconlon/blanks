@@ -23,7 +23,7 @@ module Blanks.Internal.ScopeW
   , scopeWMapAnno
   ) where
 
-import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..), IsPlacedAbstractInfo (..))
+import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
 import Blanks.Internal.Under (UnderScope (..), underScopeShift)
 import Blanks.Util.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
 import Blanks.Util.Sub (SubError (..))
@@ -68,7 +68,7 @@ instance (Foldable t, Foldable n, Foldable f, Foldable g) => Foldable (ScopeW t 
 instance (Traversable t, Traversable n, Traversable f, Traversable g) => Traversable (ScopeW t n f g) where
   traverse f (ScopeW tu) = fmap ScopeW (traverse (bitraverse (traverse f) f) tu)
 
-type ScopeWC t u n f g = (Adjunction t u, Applicative u, IsPlacedAbstractInfo n, Functor f, NatNewtype (ScopeW t n f g) g)
+type ScopeWC t u n f g = (Adjunction t u, Applicative u, IsAbstractInfo n, Functor f, NatNewtype (ScopeW t n f g) g)
 
 -- * Smart constructors, shift, and bind
 

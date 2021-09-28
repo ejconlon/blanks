@@ -3,7 +3,7 @@
 
 module Blanks.Transform.Abstract where
 
-import Blanks.Internal.Abstract (Abstract (..), IsPlacedAbstractInfo (..))
+import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
 import Blanks.LocScope (LocScope, locScopeBindFree, pattern LocScopeAbstract, pattern LocScopeBound,
                         pattern LocScopeEmbed, pattern LocScopeFree)
 import Control.DeepSeq (NFData)
@@ -38,7 +38,7 @@ type AbstractSelector j n f a = forall x. j x -> AbstractSelection n f a x
 
 type UnAbstractSelector j n f a = forall x. AbstractSelection n f a x -> j x
 
-abstractLocFix :: (IsPlacedAbstractInfo n, Functor f, Eq a) => AbstractSelector j n f a -> LocFix l j -> LocScope l n f a
+abstractLocFix :: (IsAbstractInfo n, Functor f, Eq a) => AbstractSelector j n f a -> LocFix l j -> LocScope l n f a
 abstractLocFix sel = go where
   go (LocFix l j) =
     case sel j of
@@ -59,7 +59,7 @@ data UnboundError l = UnboundError
 instance (Typeable l, Show l) => Exception (UnboundError l)
 
 -- | Invariant: abstractInfoNames yields Seq of same length as arity
-class IsPlacedAbstractInfo n => IsNamedAbstractInfo a n | n -> a where
+class IsAbstractInfo n => IsNamedAbstractInfo a n | n -> a where
   abstractInfoNames :: n x -> Seq a
 
 unAbstractLocFix ::
