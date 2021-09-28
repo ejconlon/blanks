@@ -42,9 +42,7 @@ closureLift :: AbstractId -> [Int] -> LiftScope
 closureLift bid vars = LocScopeEmbed () (LiftFunctorAbstract bid (Seq.fromList vars))
 
 letLift :: Char -> LiftScope -> LiftScope -> LiftScope
-letLift a x y =
-  let y' = LocScopeAbstract () (Abstract (SimpleInfoLet a) (locScopeBindFree1 a y))
-  in LocScopeEmbed () (LiftFunctorBase (SimpleFunctorLet x y'))
+letLift a x = LocScopeAbstract () . Abstract (SimpleInfoLet a x) . locScopeBindFree1 a
 
 outerLamAbstractLift :: Int -> [Char] -> LiftInnerAbstract -> LiftOuterAbstract
 outerLamAbstractLift a = LiftAbstract a . Set.fromList
@@ -53,7 +51,7 @@ shouldLiftSimple :: SimpleInfo e -> Bool
 shouldLiftSimple i =
   case i of
     SimpleInfoLam _ -> True
-    SimpleInfoLet _ -> False
+    SimpleInfoLet _ _ -> False
 
 simpleLift :: SimpleScope -> SimpleLiftState LiftScopeResult
 simpleLift s = predLiftLocScope shouldLiftSimple (trackScope (scopeAnno () s))

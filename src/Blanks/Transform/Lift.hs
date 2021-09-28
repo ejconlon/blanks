@@ -165,6 +165,9 @@ liftLocScopeInner r bs sel ls =
       let Located t fe' = sequence fx
       pure (Located t (LocScopeEmbed l (LiftFunctorBase fe')))
     LocScopeAbstract (Located (Tracked fv bv) l) (Abstract n e) ->
+      -- TODO the logic in the abstract case was broken wrt free variable tracking...
+      -- It really needs a careful review.
+      --
       -- Some abstractions need to be lifted, some don't.
       let a = abstractInfoArity n
       in case sel n of
@@ -183,11 +186,11 @@ liftLocScopeInner r bs sel ls =
         LiftSelectionNo x -> do
           -- First process recursive parts of the info function
           x' <- traverse (liftLocScopeInner r bs sel) x
-          let Located _ x'' = seqLiftResult x'
+          let Located (Tracked fvX _) x'' = seqLiftResult x'
           -- Now just process the recursive parts of the body
           let bs' = Set.mapMonotonic (+ r) bv
-          Located (Tracked fv' _) e' <- liftLocScopeInner a bs' sel e
-          pure (Located (Tracked fv' bv) (LocScopeAbstract l (Abstract x'' e')))
+          Located (Tracked fvY _) e' <- liftLocScopeInner a bs' sel e
+          pure (Located (Tracked (fvX <> fvY) bv) (LocScopeAbstract l (Abstract x'' e')))
 
 -- | Lifts selected abstractions. To maintain abstract id state across invocations, compose in the 'State' monad and project out once at the end
 -- with 'runState'. (Note that you will have to accurately annotate with tracked variables using 'trackScope' before using this.)

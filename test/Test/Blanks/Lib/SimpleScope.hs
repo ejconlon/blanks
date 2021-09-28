@@ -14,40 +14,38 @@ import GHC.Generics (Generic)
 
 data SimpleFunctor a =
     SimpleFunctorApp !a !a
-  | SimpleFunctorLet !a !a
   | SimpleFunctorBase !Char
   deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
 
 data SimpleInfo e =
     SimpleInfoLam !(Seq Char)
-  | SimpleInfoLet !Char
+  | SimpleInfoLet !Char e
   deriving stock (Show, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
 
-instance Eq (SimpleInfo e) where
+instance Eq e => Eq (SimpleInfo e) where
   SimpleInfoLam s1 == SimpleInfoLam s2 = Seq.length s1 == Seq.length s2
-  SimpleInfoLet _ == SimpleInfoLet _ = True
+  SimpleInfoLet _ e1 == SimpleInfoLet _ e2 = e1 == e2
   _ == _ = False
 
 data SimpleInfoPlace =
-    SimpleInfoPlaceLam
-  | SimpleInfoPlaceLet
+    SimpleInfoPlaceLet
   deriving stock (Eq, Show, Generic)
   deriving anyclass (NFData)
 
 instance Placed SimpleInfo where
   type Place SimpleInfo = SimpleInfoPlace
-  traversePlaced _ si =
+  traversePlaced f si =
     case si of
       SimpleInfoLam x -> pure (SimpleInfoLam x)
-      SimpleInfoLet x -> pure (SimpleInfoLet x)
+      SimpleInfoLet x e -> fmap (SimpleInfoLet x) (f SimpleInfoPlaceLet e)
 
 instance IsAbstractInfo SimpleInfo where
   abstractInfoArity s =
     case s of
       SimpleInfoLam cs -> Seq.length cs
-      SimpleInfoLet _ -> 1
+      SimpleInfoLet _ _ -> 1
   abstractInfoShouldShift _ _ = ShouldShiftNo
 
 type SimpleScope = Scope SimpleInfo SimpleFunctor Char
@@ -74,7 +72,7 @@ app :: SimpleScope -> SimpleScope -> SimpleScope
 app x y = ScopeEmbed (SimpleFunctorApp x y)
 
 lets :: Char -> SimpleScope -> SimpleScope -> SimpleScope
-lets a x y = ScopeEmbed (SimpleFunctorLet x (ScopeAbstract (Abstract (SimpleInfoLet a) (scopeBindFree1 a y))))
+lets a x y = ScopeAbstract (Abstract (SimpleInfoLet a x) (scopeBindFree1 a y))
 
 svar, sbound, sfree, sfree2, sid, swonky, sconst, sflip, svar2, swonky2, sapp,
   swonky3, sbase, sbase2, slet, sletFree, sletFree2, sletWonky, sletWonky2,

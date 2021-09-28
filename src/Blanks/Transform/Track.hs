@@ -14,7 +14,7 @@ module Blanks.Transform.Track
   ) where
 
 import Blanks.Conversion (scopeAnno)
-import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
+import Blanks.Internal.Abstract (IsAbstractInfo (..), ShouldShift (..))
 import Blanks.LocScope (LocScope, locScopeHoistAnno, pattern LocScopeAbstract, pattern LocScopeBound,
                         pattern LocScopeEmbed, pattern LocScopeFree)
 import Blanks.Scope (Scope)
@@ -69,22 +69,25 @@ trackScopeInner :: (IsAbstractInfo n, Traversable f, Ord a) => LocScope l n f a 
 trackScopeInner s =
   case s of
     LocScopeBound l b ->
-      let !t = Tracked Set.empty (Set.singleton b)
-          !m = Located t l
+      let t = Tracked Set.empty (Set.singleton b)
+          m = Located t l
       in (t, LocScopeBound m b)
     LocScopeFree l a ->
-      let !t = Tracked (Set.singleton a) Set.empty
-          !m = Located t l
+      let t = Tracked (Set.singleton a) Set.empty
+          m = Located t l
       in (t, LocScopeFree m a)
-    LocScopeAbstract l (Abstract info body) ->
-      let (!t0, !body') = trackScopeInner body
-          (!t1, !info') = traverse trackScopeInner info
-          !t = shiftTracked (abstractInfoArity info) (t1 <> t0)
-          !m = Located t l
-      in (t, LocScopeAbstract m (Abstract info' body'))
+    LocScopeAbstract l ab ->
+      let r = abstractInfoArity ab
+          (t, ab') = flip abstractInfoTraverseShouldShift ab $ \_ ss i ->
+            let (x, i') = trackScopeInner i
+            in case ss of
+              ShouldShiftYes -> (shiftTracked r x, i')
+              ShouldShiftNo -> (x, i')
+          m = Located t l
+      in (t, LocScopeAbstract m ab')
     LocScopeEmbed l fe ->
-      let (!t, !fy) = traverse trackScopeInner fe
-          !m = Located t l
+      let (t, fy) = traverse trackScopeInner fe
+          m = Located t l
       in (t, LocScopeEmbed m fy)
 
 -- | Track variables as bottom-up annotations on the annotated scope tree.

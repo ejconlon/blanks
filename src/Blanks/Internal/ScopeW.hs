@@ -23,7 +23,7 @@ module Blanks.Internal.ScopeW
   , scopeWMapAnno
   ) where
 
-import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
+import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..), ShouldShift (..))
 import Blanks.Internal.Under (UnderScope (..), underScopeShift)
 import Blanks.Util.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
 import Blanks.Util.Sub (SubError (..))
@@ -116,9 +116,8 @@ scopeWBindN f = scopeWMod . go where
       UnderScopeBound b -> scopeWBound b
       UnderScopeFree a -> fmap (scopeWShift i) (f a)
       UnderScopeAbstract ab ->
-        -- TODO check shift
         let r = abstractInfoArity ab
-        in scopeWAbstract (fmap (scopeWBindN f (i + r)) ab)
+        in scopeWAbstract (abstractInfoMapShouldShift (\_ ss -> let i' = case ss of { ShouldShiftYes -> i + r ; _ -> i } in scopeWBindN f i') ab)
       UnderScopeEmbed fe -> scopeWEmbed (fmap (scopeWBindN f i) fe)
 
 scopeWBindOpt :: ScopeWC t u n f g => (a -> Maybe (u (g a))) -> g a -> g a
@@ -132,9 +131,8 @@ scopeWBindOptN f = scopeWModOpt . go where
       UnderScopeBound _ -> Nothing
       UnderScopeFree a -> fmap (fmap (scopeWShift i)) (f a)
       UnderScopeAbstract ab ->
-        -- TODO check shift
         let r = abstractInfoArity ab
-        in Just (scopeWAbstract (fmap (scopeWBindOptN f (i + r)) ab))
+        in Just (scopeWAbstract (abstractInfoMapShouldShift (\_ ss -> let i' = case ss of { ShouldShiftYes -> i + r ; _ -> i } in scopeWBindOptN f i') ab))
       UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWBindOptN f i) fe))
 
 scopeWLift :: (ScopeWC t u n f g, Monad u, Traversable f) => f a -> u (g a)
@@ -169,16 +167,11 @@ scopeWFillBoundH h vs = scopeWModOpt (go h) where
     case us of
       UnderScopeBound b -> vs Seq.!? (b - i)
       UnderScopeFree _ -> Nothing
-      UnderScopeAbstract (Abstract info body) ->
-        -- TODO check shift
+      UnderScopeAbstract ab@(Abstract info _) ->
         let r = abstractInfoArity info
             vs' = fmap (fmap (scopeWShift r)) vs
-            -- sub in info with original vars
-            info' = fmap (scopeWFillBoundH i vs) info
-            -- sub in body with shifted vars
-            body' = scopeWFillBoundH (r + i) vs' body
-            -- package it back up
-            ab' = Abstract info' body'
+            -- sub in info with original or shifted vars
+            ab' = abstractInfoMapShouldShift (\_ ss -> let (iX, vsX) = case ss of { ShouldShiftYes -> (i + r, vs') ; _ -> (i, vs) } in scopeWFillBoundH iX vsX) ab
         in Just (scopeWAbstract ab')
       UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWFillBoundH i vs) fe))
 
@@ -195,7 +188,6 @@ scopeWApply vs = scopeWModM go where
   go us =
     case us of
       UnderScopeAbstract ab ->
-        -- TODO check shift
         let r = abstractInfoArity ab
             len = Seq.length vs
         in if len == r
