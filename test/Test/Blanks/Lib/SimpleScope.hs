@@ -1,22 +1,28 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Test.Blanks.Lib.SimpleScope where
 
-import Blanks (Abstract (..), IsAbstractInfo (..), Located (..), Scope, Tracked, locScopeLocation,
+import Blanks (Abstract (..), IsAbstractInfo (..), IsPlacedAbstractInfo (..), Located (..), Placed (..), Scope, ShouldShift (..), Tracked, locScopeLocation,
                pattern ScopeAbstract, pattern ScopeBound, pattern ScopeEmbed, scopeBindFree1, trackScopeSimple)
+import Control.DeepSeq (NFData)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
+import GHC.Generics (Generic)
 
 data SimpleFunctor a =
     SimpleFunctorApp !a !a
   | SimpleFunctorLet !a !a
   | SimpleFunctorBase !Char
-  deriving stock (Eq, Show, Functor, Foldable, Traversable)
+  deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)
+  deriving anyclass (NFData)
 
 data SimpleInfo e =
     SimpleInfoLam !(Seq Char)
   | SimpleInfoLet !Char
-  deriving stock (Show, Functor, Foldable, Traversable)
+  deriving stock (Show, Generic, Functor, Foldable, Traversable)
+  deriving anyclass (NFData)
 
 instance Eq (SimpleInfo e) where
   SimpleInfoLam s1 == SimpleInfoLam s2 = Seq.length s1 == Seq.length s2
@@ -28,6 +34,22 @@ instance IsAbstractInfo SimpleInfo where
     case s of
       SimpleInfoLam cs -> Seq.length cs
       SimpleInfoLet _ -> 1
+
+data SimpleInfoPlace =
+    SimpleInfoPlaceLam
+  | SimpleInfoPlaceLet
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
+
+instance Placed SimpleInfo where
+  type Place SimpleInfo = SimpleInfoPlace
+  traversePlaced _ si =
+    case si of
+      SimpleInfoLam x -> pure (SimpleInfoLam x)
+      SimpleInfoLet x -> pure (SimpleInfoLet x)
+
+instance IsPlacedAbstractInfo SimpleInfo where
+  abstractInfoShouldShift _ _ = ShouldShiftNo
 
 type SimpleScope = Scope SimpleInfo SimpleFunctor Char
 

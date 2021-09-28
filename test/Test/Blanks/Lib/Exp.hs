@@ -31,7 +31,7 @@ module Test.Blanks.Lib.Exp
   , declToNamed
   ) where
 
-import Blanks (Abstract (..), IsAbstractInfo (..), LocScope, Located (..), Scope, locScopeBindFree1, locScopeForget,
+import Blanks (Abstract (..), IsAbstractInfo (..), IsPlacedAbstractInfo (..), LocScope, Located (..), Placed (..), Scope, ShouldShift (..), locScopeBindFree1, locScopeForget,
                locScopeUnBindFree1, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
                pattern LocScopeFree, scopeAnno)
 import Control.DeepSeq (NFData)
@@ -243,6 +243,22 @@ data Info e =
 
 instance IsAbstractInfo Info where
   abstractInfoArity _ = 1
+
+data InfoPlace =
+    InfoPlaceAbs
+  | InfoPlaceLet
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
+
+instance Placed Info where
+  type Place Info = InfoPlace
+  traversePlaced _ na =
+    case na of
+      InfoAbs i -> pure (InfoAbs i)
+      InfoLet i -> pure (InfoLet i)
+
+instance IsPlacedAbstractInfo Info where
+  abstractInfoShouldShift _ _ = ShouldShiftNo
 
 instance Eq (Info e) where
   InfoAbs _ == InfoAbs _ = True

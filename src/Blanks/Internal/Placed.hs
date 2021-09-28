@@ -21,15 +21,23 @@ import Data.Void (Void)
 -- Similar to https://hackage.haskell.org/package/keys-3.12.3/docs/Data-Key.html#t:TraversableWithKey
 class Traversable n => Placed n where
   type Place n :: Type
+
   traversePlaced :: Applicative m => (Place n -> a -> m b) -> n a -> m (n b)
+
+  mapPlaced :: (Place n -> a -> b) -> n a -> n b
+  mapPlaced = defaultMapPlaced
+
   gatherPlaced :: n a -> [Place n]
   gatherPlaced = defaultGatherPlaced
-  {-# INLINE gatherPlaced #-}
+
   -- These may be useful functions in the future:
-  -- mapPlaced :: (Place n -> a -> b) -> n a -> n b
   -- lookupPlaced :: Place n -> n a -> Maybe a
   -- updatedPlaced :: Place n -> a -> n a -> Maybe (n a)
   -- modifyPlaced :: Place n -> (a -> a) -> n a -> Maybe (n a)
+
+defaultMapPlaced :: Placed n => (Place n -> a -> b) -> n a -> n b
+defaultMapPlaced f = runIdentity . traversePlaced (\p -> pure . f p)
+{-# INLINE defaultMapPlaced #-}
 
 defaultGatherPlaced :: Placed n => n a -> [Place n]
 defaultGatherPlaced = execWriter . traversePlaced (\x _ -> tell [x])

@@ -23,7 +23,7 @@ module Blanks.Internal.ScopeW
   , scopeWMapAnno
   ) where
 
-import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..), abstractArity)
+import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..), IsPlacedAbstractInfo (..))
 import Blanks.Internal.Under (UnderScope (..), underScopeShift)
 import Blanks.Util.NatNewtype (NatNewtype, natNewtypeFrom, natNewtypeTo)
 import Blanks.Util.Sub (SubError (..))
@@ -68,7 +68,7 @@ instance (Foldable t, Foldable n, Foldable f, Foldable g) => Foldable (ScopeW t 
 instance (Traversable t, Traversable n, Traversable f, Traversable g) => Traversable (ScopeW t n f g) where
   traverse f (ScopeW tu) = fmap ScopeW (traverse (bitraverse (traverse f) f) tu)
 
-type ScopeWC t u n f g = (Adjunction t u, Applicative u, IsAbstractInfo n, Functor f, NatNewtype (ScopeW t n f g) g)
+type ScopeWC t u n f g = (Adjunction t u, Applicative u, IsPlacedAbstractInfo n, Functor f, NatNewtype (ScopeW t n f g) g)
 
 -- * Smart constructors, shift, and bind
 
@@ -116,7 +116,8 @@ scopeWBindN f = scopeWMod . go where
       UnderScopeBound b -> scopeWBound b
       UnderScopeFree a -> fmap (scopeWShift i) (f a)
       UnderScopeAbstract ab ->
-        let r = abstractArity ab
+        -- TODO check shift
+        let r = abstractInfoArity ab
         in scopeWAbstract (fmap (scopeWBindN f (i + r)) ab)
       UnderScopeEmbed fe -> scopeWEmbed (fmap (scopeWBindN f i) fe)
 
@@ -131,7 +132,8 @@ scopeWBindOptN f = scopeWModOpt . go where
       UnderScopeBound _ -> Nothing
       UnderScopeFree a -> fmap (fmap (scopeWShift i)) (f a)
       UnderScopeAbstract ab ->
-        let r = abstractArity ab
+        -- TODO check shift
+        let r = abstractInfoArity ab
         in Just (scopeWAbstract (fmap (scopeWBindOptN f (i + r)) ab))
       UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWBindOptN f i) fe))
 
@@ -168,6 +170,7 @@ scopeWFillBoundH h vs = scopeWModOpt (go h) where
       UnderScopeBound b -> vs Seq.!? (b - i)
       UnderScopeFree _ -> Nothing
       UnderScopeAbstract (Abstract info body) ->
+        -- TODO check shift
         let r = abstractInfoArity info
             vs' = fmap (fmap (scopeWShift r)) vs
             -- sub in info with original vars
@@ -192,7 +195,8 @@ scopeWApply vs = scopeWModM go where
   go us =
     case us of
       UnderScopeAbstract ab ->
-        let r = abstractArity ab
+        -- TODO check shift
+        let r = abstractInfoArity ab
             len = Seq.length vs
         in if len == r
               then Right (pure (scopeWShift (-1) (scopeWFillBound vs (abstractBody ab))))

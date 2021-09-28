@@ -6,7 +6,7 @@ module Blanks.Internal.Under
   , underScopeShift
   ) where
 
-import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..), abstractArity)
+import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..), IsPlacedAbstractInfo (..), ShouldShift (..))
 import Control.DeepSeq (NFData)
 import Data.Bifoldable (Bifoldable (..))
 import Data.Bifunctor (Bifunctor (..))
@@ -40,7 +40,7 @@ instance (Traversable n, Traversable f) => Bitraversable (UnderScope n f) where
   bitraverse f _ (UnderScopeAbstract ab) = fmap UnderScopeAbstract (traverse f ab)
   bitraverse f _ (UnderScopeEmbed fe) = fmap UnderScopeEmbed (traverse f fe)
 
-underScopeShift :: (IsAbstractInfo n, Functor f) => (Int -> Int -> e -> e) -> Int -> Int -> UnderScope n f e a -> UnderScope n f e a
+underScopeShift :: (IsPlacedAbstractInfo n, Functor f) => (Int -> Int -> e -> e) -> Int -> Int -> UnderScope n f e a -> UnderScope n f e a
 underScopeShift recShift c d us =
   case us of
     UnderScopeBound b ->
@@ -49,6 +49,8 @@ underScopeShift recShift c d us =
         else UnderScopeBound (b + d)
     UnderScopeFree _ -> us
     UnderScopeAbstract ab ->
-      let i = abstractArity ab
-      in UnderScopeAbstract (fmap (recShift (c + i) d) ab)
+      let i = abstractInfoArity ab
+      in UnderScopeAbstract $ flip abstractInfoMapShouldShift ab $ \_ ss ->
+        let c' = case ss of { ShouldShiftYes -> c + i ; ShouldShiftNo -> c }
+        in recShift c' d
     UnderScopeEmbed fe -> UnderScopeEmbed (fmap (recShift c d) fe)

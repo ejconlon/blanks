@@ -19,7 +19,7 @@ module Blanks.Scope
   , scopeApply1
   ) where
 
-import Blanks.Internal.Abstract (Abstract, IsAbstractInfo)
+import Blanks.Internal.Abstract (Abstract, IsPlacedAbstractInfo)
 import Blanks.Internal.ScopeW (ScopeW (..), scopeWApply, scopeWApply1, scopeWBind, scopeWBindFree, scopeWBindFree1,
                                scopeWBindOpt, scopeWFillBound, scopeWFillBound1, scopeWLift, scopeWUnBindFree,
                                scopeWUnBindFree1)
@@ -57,11 +57,11 @@ pattern ScopeEmbed fe = Scope (ScopeW (Identity (UnderScopeEmbed fe)))
 
 {-# COMPLETE ScopeBound, ScopeFree, ScopeAbstract, ScopeEmbed #-}
 
-instance (IsAbstractInfo n, Functor f) => Applicative (Scope n f) where
+instance (IsPlacedAbstractInfo n, Functor f) => Applicative (Scope n f) where
   pure = ScopeFree
   (<*>) = ap
 
-instance (IsAbstractInfo n, Functor f) => Monad (Scope n f) where
+instance (IsPlacedAbstractInfo n, Functor f) => Monad (Scope n f) where
   return = pure
   s >>= f = scopeBind f s
 
@@ -74,23 +74,23 @@ instance (Show (f (Scope n f a)), Show (n (Scope n f a)), Show a) => Show (Scope
 -- * Interface
 
 -- | Substitution as a kind of monadic bind.
-scopeBind :: (IsAbstractInfo n, Functor f) => (a -> Scope n f b) -> Scope n f a -> Scope n f b
+scopeBind :: (IsPlacedAbstractInfo n, Functor f) => (a -> Scope n f b) -> Scope n f a -> Scope n f b
 scopeBind f = scopeWBind (Identity . f)
 {-# INLINE scopeBind #-}
 
 -- | Optional substitution as another kind of monadic bind.
-scopeBindOpt :: (IsAbstractInfo n, Functor f) => (a -> Maybe (Scope n f a)) -> Scope n f a -> Scope n f a
+scopeBindOpt :: (IsPlacedAbstractInfo n, Functor f) => (a -> Maybe (Scope n f a)) -> Scope n f a -> Scope n f a
 scopeBindOpt f = scopeWBindOpt (fmap Identity . f)
 {-# INLINE scopeBindOpt #-}
 
 -- | Lift an expression functor into the scope functor.
-scopeLift :: (IsAbstractInfo n, Traversable f) => f a -> Scope n f a
+scopeLift :: (IsPlacedAbstractInfo n, Traversable f) => f a -> Scope n f a
 scopeLift = runIdentity . scopeWLift
 {-# INLINE scopeLift #-}
 
 -- | Binds free variables in an expression and returns a binder.
 scopeBindFree
-  :: (IsAbstractInfo n, Functor f, Eq a)
+  :: (IsPlacedAbstractInfo n, Functor f, Eq a)
   => Seq a
   -- ^ Free variables to bind, like the names of function parameters
   -> Scope n f a
@@ -100,14 +100,14 @@ scopeBindFree = scopeWBindFree
 {-# INLINE scopeBindFree #-}
 
 -- | 'scopeBindFree' for a single argument.
-scopeBindFree1 :: (IsAbstractInfo n, Functor f, Eq a) => a -> Scope n f a -> Scope n f a
+scopeBindFree1 :: (IsPlacedAbstractInfo n, Functor f, Eq a) => a -> Scope n f a -> Scope n f a
 scopeBindFree1 = scopeWBindFree1
 {-# INLINE scopeBindFree1 #-}
 
 -- | Instantiate the bound variables in an expression with other expressions.
 -- Take care to match the arity of the binder! ('scopeApply' is safer.)
 scopeFillBound
-  :: (IsAbstractInfo n, Functor f)
+  :: (IsPlacedAbstractInfo n, Functor f)
   => Seq (Scope n f a)
   -- ^ Expressions to substitute in place of bound vars
   -> Scope n f a
@@ -117,14 +117,14 @@ scopeFillBound vs = scopeWFillBound (fmap Identity vs)
 {-# INLINE scopeFillBound #-}
 
 -- | 'scopeFillBound' for a single argument.
-scopeFillBound1 :: (IsAbstractInfo n, Functor f) => Scope n f a -> Scope n f a -> Scope n f a
+scopeFillBound1 :: (IsPlacedAbstractInfo n, Functor f) => Scope n f a -> Scope n f a -> Scope n f a
 scopeFillBound1 v = scopeWFillBound1 (Identity v)
 {-# INLINE scopeFillBound1 #-}
 
 -- | Un-bind free variables in an expression. Basically the inverse of
 -- 'scopeBindFree'. Take care to match the arity of the binder! ('scopeApply' is safer.)
 scopeUnBindFree
-  :: (IsAbstractInfo n, Functor f)
+  :: (IsPlacedAbstractInfo n, Functor f)
   => Seq a
   -- ^ The names of the variables you're freeing
   -> Scope n f a
@@ -134,7 +134,7 @@ scopeUnBindFree = scopeWUnBindFree
 {-# INLINE scopeUnBindFree #-}
 
 -- 'scopeUnBindFree' for a single argument.
-scopeUnBindFree1 :: (IsAbstractInfo n, Functor f) => a -> Scope n f a -> Scope n f a
+scopeUnBindFree1 :: (IsPlacedAbstractInfo n, Functor f) => a -> Scope n f a -> Scope n f a
 scopeUnBindFree1 = scopeWUnBindFree1
 {-# INLINE scopeUnBindFree1 #-}
 
@@ -142,7 +142,7 @@ scopeUnBindFree1 = scopeWUnBindFree1
 -- Throws errors on mismatched arity, non binder expression, unbound vars, etc.
 -- A version of 'scopeFillBound' that fails loudly instead of silently!
 scopeApply
-  :: (IsAbstractInfo n, Functor f)
+  :: (IsPlacedAbstractInfo n, Functor f)
   => Seq (Scope n f a)
   -- ^ Expressions to substitute in place of bound vars
   -> Scope n f a
@@ -152,6 +152,6 @@ scopeApply vs = scopeWApply (fmap Identity vs)
 {-# INLINE scopeApply #-}
 
 -- | 'scopeApply' for a single argument.
-scopeApply1 :: (IsAbstractInfo n, Functor f) => Scope n f a -> Scope n f a -> Either SubError (Scope n f a)
+scopeApply1 :: (IsPlacedAbstractInfo n, Functor f) => Scope n f a -> Scope n f a -> Either SubError (Scope n f a)
 scopeApply1 v = scopeWApply1 (Identity v)
 {-# INLINE scopeApply1 #-}
