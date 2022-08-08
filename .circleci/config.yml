@@ -6,10 +6,10 @@ parameters:
     default: "blanks"
   cache_ver:
     type: string
-    default: "v3"
+    default: "v6"
   haskell_image:
     type: string
-    default: "ejconlon/haskell-custom"
+    default: "haskell"
 
 commands:
   install_native_deps:
@@ -76,9 +76,9 @@ workflows:
   build:
     jobs:
       - stack_build:
-          lts_ghc_ver: 8.10.7
+          lts_ghc_ver: 9.0.2
       - cabal_build:
-          name: cabal_build_8_10
-          ghc_ver: 8.10.7
+          name: cabal_build_9_0
+          ghc_ver: 9.0.2
           requires:
             - stack_build

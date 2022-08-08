@@ -5,8 +5,8 @@ module Blanks.Transform.Abstract where
 
 import Blanks.Conversion (locScopeForget, scopeAnno)
 import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..))
-import Blanks.LocScope (LocScope, locScopeBindFree, pattern LocScopeAbstract, pattern LocScopeBound,
-                        pattern LocScopeEmbed, pattern LocScopeFree)
+import Blanks.LocScope (LocScope, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
+                        pattern LocScopeFree, locScopeBindFree)
 import Blanks.Scope (Scope)
 import Control.DeepSeq (NFData)
 import Control.Exception (Exception)

@@ -15,8 +15,8 @@ module Blanks.Transform.Track
 
 import Blanks.Conversion (scopeAnno)
 import Blanks.Internal.Abstract (IsAbstractInfo (..), ShouldShift (..))
-import Blanks.LocScope (LocScope, locScopeHoistAnno, pattern LocScopeAbstract, pattern LocScopeBound,
-                        pattern LocScopeEmbed, pattern LocScopeFree)
+import Blanks.LocScope (LocScope, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
+                        pattern LocScopeFree, locScopeHoistAnno)
 import Blanks.Scope (Scope)
 import Blanks.Util.Located (Located (..))
 import Control.DeepSeq (NFData)
