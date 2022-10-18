@@ -19,7 +19,7 @@ data UnderScope (n :: Type -> Type) (f :: Type -> Type) (e :: Type) (a :: Type)
   | UnderScopeFree !a
   | UnderScopeAbstract !(Abstract n e)
   | UnderScopeEmbed !(f e)
-  deriving stock (Eq, Show, Functor, Generic)
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)
 
 instance (Functor n, Functor f) => Bifunctor (UnderScope n f) where
