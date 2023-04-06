@@ -11,7 +11,8 @@ module Blanks.Internal.Info
   , TyLetRecPlace (..)
   , TyLetRecArg (..)
   , TyLetRecInfo (..)
-  ) where
+  )
+where
 
 import Blanks.Internal.Abstract (IsAbstractInfo (..), ShouldShift (..))
 import Blanks.Internal.Placed (Placed (..))
@@ -27,9 +28,10 @@ import GHC.Generics (Generic)
 -- | Info for lambdas without type annotations
 newtype SimpleLamInfo e = SimpleLamInfo
   { simpleLamInfoArity :: Int
-    -- ^ The arity of the lambda
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+  -- ^ The arity of the lambda
+  }
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 instance Placed SimpleLamInfo where
   type Place SimpleLamInfo = Void
@@ -41,8 +43,8 @@ instance IsAbstractInfo SimpleLamInfo where
 
 -- * TyLam
 
-data TyLamPlace =
-    TyLamPlaceArg !Int
+data TyLamPlace
+  = TyLamPlaceArg !Int
   | TyLamPlaceRet
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (NFData)
@@ -51,12 +53,14 @@ data TyLamPlace =
 data TyLamInfo e = TyLamInfo
   { tyLamInfoArgs :: !(Seq e)
   , tyLamInfoRet :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 instance Placed TyLamInfo where
   type Place TyLamInfo = TyLamPlace
-  traversePlaced f (TyLamInfo args ret) = liftA2 TyLamInfo argsM retM where
+  traversePlaced f (TyLamInfo args ret) = liftA2 TyLamInfo argsM retM
+   where
     argsM = traversePlaced (f . TyLamPlaceArg) args
     retM = f TyLamPlaceRet ret
 
@@ -69,8 +73,9 @@ instance IsAbstractInfo TyLamInfo where
 -- | Info for a single (non-recursive) let without type annotation
 newtype SimpleLetOneInfo e = SimpleLetOneInfo
   { simpleLetOneInfoArg :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 instance Placed SimpleLetOneInfo where
   type Place SimpleLetOneInfo = ()
@@ -82,8 +87,8 @@ instance IsAbstractInfo SimpleLetOneInfo where
 
 -- * TyLetOne
 
-data TyLetOnePlace =
-    TyLetOnePlaceArg
+data TyLetOnePlace
+  = TyLetOnePlaceArg
   | TyLetOnePlaceTy
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (NFData)
@@ -92,12 +97,14 @@ data TyLetOnePlace =
 data TyLetOneInfo e = TyLetOneInfo
   { tyLetOneInfoArg :: e
   , tyLetOneInfoTy :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 instance Placed TyLetOneInfo where
   type Place TyLetOneInfo = TyLetOnePlace
-  traversePlaced f (TyLetOneInfo arg ty) = liftA2 TyLetOneInfo argM tyM where
+  traversePlaced f (TyLetOneInfo arg ty) = liftA2 TyLetOneInfo argM tyM
+   where
     argM = f TyLetOnePlaceArg arg
     tyM = f TyLetOnePlaceTy ty
 
@@ -113,8 +120,9 @@ instance IsAbstractInfo TyLetOneInfo where
 -- | Info for a recursive let with no type annotations
 newtype SimpleLetRecInfo e = SimpleLetRecInfo
   { simpleLetRecInfoArgs :: Seq e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 instance Placed SimpleLetRecInfo where
   type Place SimpleLetRecInfo = Int
@@ -126,8 +134,8 @@ instance IsAbstractInfo SimpleLetRecInfo where
 
 -- * TyLetRec
 
-data TyLetRecPlace =
-    TyLetRecPlaceArgExp !Int
+data TyLetRecPlace
+  = TyLetRecPlaceArgExp !Int
   | TyLetRecPlaceArgTy !Int
   | TyLetRecPlaceRet
   deriving stock (Eq, Ord, Show, Generic)
@@ -136,19 +144,22 @@ data TyLetRecPlace =
 data TyLetRecArg e = TyLetRecArg
   { tyLetRecArgExp :: e
   , tyLetRecArgTy :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 -- | Info for a recursive let with argument types and body type
 data TyLetRecInfo e = TyLetRecInfo
   { tyLetRecInfoArgs :: !(Seq (TyLetRecArg e))
   , tyLetRecInfoRet :: e
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 instance Placed TyLetRecInfo where
   type Place TyLetRecInfo = TyLetRecPlace
-  traversePlaced f (TyLetRecInfo args ret) = liftA2 TyLetRecInfo argsM retM where
+  traversePlaced f (TyLetRecInfo args ret) = liftA2 TyLetRecInfo argsM retM
+   where
     argsM = traversePlaced (\i (TyLetRecArg ex ty) -> liftA2 TyLetRecArg (f (TyLetRecPlaceArgExp i) ex) (f (TyLetRecPlaceArgTy i) ty)) args
     retM = f TyLetRecPlaceRet ret
 

@@ -1,13 +1,36 @@
 module Test.Blanks.Tests.ScopeTest
   ( testScope
-  ) where
+  )
+where
 
 import Blanks (SubError (..), scopeApply1, scopeFillBound1)
 import qualified Data.Set as Set
 import Test.Blanks.Lib.Assertions ((@/=))
-import Test.Blanks.Lib.SimpleScope (app, freeVars, lam, lets, sapp, sbase, sbase2, sbound, sconst, sflip, sfree, sfree2,
-                                    sid, slet, sletFree, sletFree2, sletWonky, sletWonky2, svar, svar2, swonky, swonky2,
-                                    var)
+import Test.Blanks.Lib.SimpleScope
+  ( app
+  , freeVars
+  , lam
+  , lets
+  , sapp
+  , sbase
+  , sbase2
+  , sbound
+  , sconst
+  , sflip
+  , sfree
+  , sfree2
+  , sid
+  , slet
+  , sletFree
+  , sletFree2
+  , sletWonky
+  , sletWonky2
+  , svar
+  , svar2
+  , swonky
+  , swonky2
+  , var
+  )
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
@@ -82,5 +105,4 @@ testScope =
           (sfree >>= const sid) @?= lam 'y' sid
           (sfree2 >>= const sid) @?= lam 'c' (lam 'd' sid)
           (sapp >>= const sid) @?= app sid sbound
-
-   in testGroup "Scope" [testEq, testFreeVars, testInstantiate, testApply, testVarSub, testIdSub]
+  in  testGroup "Scope" [testEq, testFreeVars, testInstantiate, testApply, testVarSub, testIdSub]

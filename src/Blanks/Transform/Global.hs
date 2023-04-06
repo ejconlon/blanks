@@ -12,16 +12,22 @@ module Blanks.Transform.Global
   , VarUnClassifier
   , nullUnClassifier
   , unGlobalScope
-  ) where
+  )
+where
 
-import Blanks.LocScope (LocScope, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
-                        pattern LocScopeFree)
+import Blanks.LocScope
+  ( LocScope
+  , pattern LocScopeAbstract
+  , pattern LocScopeBound
+  , pattern LocScopeEmbed
+  , pattern LocScopeFree
+  )
 import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
 
 -- | To "hide" free vars referring to globals, we rewrite the scope tree with a new functor that includes global refs.
-data GlobalFunctor g f a =
-    GlobalFunctorBase !(f a)
+data GlobalFunctor g f a
+  = GlobalFunctorBase !(f a)
   | GlobalFunctorGlobal !g
   deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
@@ -34,8 +40,8 @@ instance MatchGlobal (GlobalFunctor g f) g f where
   matchGlobal = id
 
 -- | Is a var global or just plain free? (Glorified boolean.)
-data VarClass g a =
-    VarClassGlobal !g
+data VarClass g a
+  = VarClassGlobal !g
   | VarClassFree !a
   deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
@@ -53,7 +59,8 @@ predClassifier p a = if p a then VarClassGlobal a else VarClassFree a
 
 -- | Rewrites the scope tree with the given classification of global vs free vars.
 globalScope :: (Functor n, Functor f) => VarClassifier g a z -> LocScope l n f a -> LocScope l n (GlobalFunctor g f) z
-globalScope cfier = go where
+globalScope cfier = go
+ where
   go s =
     case s of
       LocScopeBound l b -> LocScopeBound l b
@@ -76,7 +83,8 @@ nullUnClassifier c =
 
 -- | Un-rewrites the scope tree to unify global and free vars as free.
 unGlobalScope :: (Functor n, Functor h, MatchGlobal f g h) => VarUnClassifier g z a -> LocScope l n f z -> LocScope l n h a
-unGlobalScope unCfier = go where
+unGlobalScope unCfier = go
+ where
   go s =
     case s of
       LocScopeBound l b -> LocScopeBound l b

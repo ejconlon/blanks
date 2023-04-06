@@ -1,6 +1,7 @@
 module Main
   ( main
-  ) where
+  )
+where
 
 import Test.Blanks.Tests.ExpTest (testExp)
 import Test.Blanks.Tests.LiftTest (testLift)
@@ -10,10 +11,13 @@ import Test.Blanks.Tests.TrackedTest (testTracked)
 import Test.Tasty (defaultMain, testGroup)
 
 main :: IO ()
-main = defaultMain $ testGroup "Blanks"
-  [ testScope
-  , testTracked
-  , testExp
-  , testLift
-  , testProgram
-  ]
+main =
+  defaultMain $
+    testGroup
+      "Blanks"
+      [ testScope
+      , testTracked
+      , testExp
+      , testLift
+      , testProgram
+      ]

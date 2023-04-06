@@ -3,7 +3,8 @@
 -- for source locations and the like. See the test suite for examples.
 module Blanks
   ( module Blanks
-  ) where
+  )
+where
 
 import Blanks.Conversion as Blanks
 import Blanks.Internal.Abstract as Blanks

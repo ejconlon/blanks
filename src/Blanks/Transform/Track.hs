@@ -11,12 +11,19 @@ module Blanks.Transform.Track
   , forgetTrackedScope
   , trackScope
   , trackScopeSimple
-  ) where
+  )
+where
 
 import Blanks.Conversion (scopeAnno)
 import Blanks.Internal.Abstract (IsAbstractInfo (..), ShouldShift (..))
-import Blanks.LocScope (LocScope, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
-                        pattern LocScopeFree, locScopeHoistAnno)
+import Blanks.LocScope
+  ( LocScope
+  , locScopeHoistAnno
+  , pattern LocScopeAbstract
+  , pattern LocScopeBound
+  , pattern LocScopeEmbed
+  , pattern LocScopeFree
+  )
 import Blanks.Scope (Scope)
 import Blanks.Util.Located (Located (..))
 import Control.DeepSeq (NFData)
@@ -29,8 +36,9 @@ import GHC.Generics (Generic)
 data Tracked a = Tracked
   { trackedFree :: !(Set a)
   , trackedBound :: !(Set Int)
-  } deriving stock (Eq, Show, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
 
 trackedIsEmpty :: Tracked a -> Bool
 trackedIsEmpty (Tracked f b) = Set.null f && Set.null b
@@ -50,7 +58,7 @@ shiftTracked i t@(Tracked f b) =
     then t
     else
       let !b' = if Set.findMax b < i then Set.empty else Set.dropWhileAntitone (< 0) (Set.mapMonotonic (\x -> x - i) b)
-      in Tracked f b'
+      in  Tracked f b'
 
 instance Ord a => Semigroup (Tracked a) where
   Tracked f1 b1 <> Tracked f2 b2 = Tracked (Set.union f1 f2) (Set.union b1 b2)
@@ -71,24 +79,24 @@ trackScopeInner s =
     LocScopeBound l b ->
       let t = Tracked Set.empty (Set.singleton b)
           m = Located t l
-      in (t, LocScopeBound m b)
+      in  (t, LocScopeBound m b)
     LocScopeFree l a ->
       let t = Tracked (Set.singleton a) Set.empty
           m = Located t l
-      in (t, LocScopeFree m a)
+      in  (t, LocScopeFree m a)
     LocScopeAbstract l ab ->
       let r = abstractInfoArity ab
           (t, ab') = flip abstractInfoTraverseShouldShift ab $ \_ ss i ->
             let (x, i') = trackScopeInner i
-            in case ss of
-              ShouldShiftYes -> (shiftTracked r x, i')
-              ShouldShiftNo -> (x, i')
+            in  case ss of
+                  ShouldShiftYes -> (shiftTracked r x, i')
+                  ShouldShiftNo -> (x, i')
           m = Located t l
-      in (t, LocScopeAbstract m ab')
+      in  (t, LocScopeAbstract m ab')
     LocScopeEmbed l fe ->
       let (t, fy) = traverse trackScopeInner fe
           m = Located t l
-      in (t, LocScopeEmbed m fy)
+      in  (t, LocScopeEmbed m fy)
 
 -- | Track variables as bottom-up annotations on the annotated scope tree.
 trackScope :: (IsAbstractInfo n, Traversable f, Ord a) => LocScope l n f a -> LocScope (WithTracked a l) n f a

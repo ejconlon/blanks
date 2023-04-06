@@ -3,10 +3,16 @@ module Blanks.Conversion
   ( locScopeForget
   , scopeAnno
   , asLocScope
-  ) where
+  )
+where
 
-import Blanks.LocScope (LocScope, pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed,
-                        pattern LocScopeFree)
+import Blanks.LocScope
+  ( LocScope
+  , pattern LocScopeAbstract
+  , pattern LocScopeBound
+  , pattern LocScopeEmbed
+  , pattern LocScopeFree
+  )
 import Blanks.Scope (Scope, pattern ScopeAbstract, pattern ScopeBound, pattern ScopeEmbed, pattern ScopeFree)
 
 -- | Forget all the annotations and yield a plain 'Scope'.
@@ -20,7 +26,8 @@ locScopeForget ls =
 
 -- | Annotate every location in the 'Scope' with a given value as a 'LocScope'.
 scopeAnno :: (Functor n, Functor f) => l -> Scope n f a -> LocScope l n f a
-scopeAnno l = go where
+scopeAnno l = go
+ where
   go s =
     case s of
       ScopeBound b -> LocScopeBound l b

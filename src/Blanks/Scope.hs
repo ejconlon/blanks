@@ -17,12 +17,24 @@ module Blanks.Scope
   , scopeUnBindFree1
   , scopeApply
   , scopeApply1
-  ) where
+  )
+where
 
 import Blanks.Internal.Abstract (Abstract, IsAbstractInfo)
-import Blanks.Internal.ScopeW (ScopeW (..), scopeWApply, scopeWApply1, scopeWBind, scopeWBindFree, scopeWBindFree1,
-                               scopeWBindOpt, scopeWFillBound, scopeWFillBound1, scopeWLift, scopeWUnBindFree,
-                               scopeWUnBindFree1)
+import Blanks.Internal.ScopeW
+  ( ScopeW (..)
+  , scopeWApply
+  , scopeWApply1
+  , scopeWBind
+  , scopeWBindFree
+  , scopeWBindFree1
+  , scopeWBindOpt
+  , scopeWFillBound
+  , scopeWFillBound1
+  , scopeWLift
+  , scopeWUnBindFree
+  , scopeWUnBindFree1
+  )
 import Blanks.Internal.Under (UnderScope (..))
 import Blanks.Util.NatNewtype (NatNewtype)
 import Blanks.Util.Sub (SubError)
@@ -36,7 +48,8 @@ import Data.Sequence (Seq)
 -- See 'LocScope' for a version with additional annotations between layers.
 newtype Scope n f a = Scope
   { unScope :: ScopeW Identity n f (Scope n f) a
-  } deriving stock (Functor, Foldable, Traversable)
+  }
+  deriving stock (Functor, Foldable, Traversable)
 
 instance NatNewtype (ScopeW Identity n f (Scope n f)) (Scope n f)
 
@@ -69,7 +82,7 @@ instance (Eq (f (Scope n f a)), Eq (n (Scope n f a)), Eq a) => Eq (Scope n f a) 
   Scope su == Scope sv = su == sv
 
 instance (Show (f (Scope n f a)), Show (n (Scope n f a)), Show a) => Show (Scope n f a) where
-  showsPrec d (Scope (ScopeW tu)) = showString "Scope " . showParen True (showsPrec (d+1) tu)
+  showsPrec d (Scope (ScopeW tu)) = showString "Scope " . showParen True (showsPrec (d + 1) tu)
 
 -- * Interface
 
@@ -128,7 +141,7 @@ scopeUnBindFree
   => Seq a
   -- ^ The names of the variables you're freeing
   -> Scope n f a
-   -- ^ The expression to substitute in (typically a binder)
+  -- ^ The expression to substitute in (typically a binder)
   -> Scope n f a
 scopeUnBindFree = scopeWUnBindFree
 {-# INLINE scopeUnBindFree #-}

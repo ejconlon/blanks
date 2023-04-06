@@ -21,7 +21,8 @@ module Blanks.Internal.ScopeW
   , scopeWLiftAnno
   , scopeWHoistAnno
   , scopeWMapAnno
-  ) where
+  )
+where
 
 import Blanks.Internal.Abstract (Abstract (..), IsAbstractInfo (..), ShouldShift (..))
 import Blanks.Internal.Under (UnderScope (..), underScopeShift)
@@ -36,6 +37,7 @@ import Data.Kind (Type)
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
+
 -- import Data.Sequence (Seq)
 -- import qualified Data.Sequence as Seq
 
@@ -57,7 +59,7 @@ instance Eq (t (UnderScope n f (g a) a)) => Eq (ScopeW t n f g a) where
   ScopeW tu == ScopeW tv = tu == tv
 
 instance Show (t (UnderScope n f (g a) a)) => Show (ScopeW t n f g a) where
-  showsPrec d (ScopeW tu) = showString "ScopeW " . showParen True (showsPrec (d+1) tu)
+  showsPrec d (ScopeW tu) = showString "ScopeW " . showParen True (showsPrec (d + 1) tu)
 
 instance (Functor t, Functor n, Functor f, Functor g) => Functor (ScopeW t n f g) where
   fmap f (ScopeW tu) = ScopeW (fmap (bimap (fmap f) f) tu)
@@ -97,7 +99,7 @@ scopeWShift = scopeWShiftN 0
 scopeWShiftN :: ScopeWC t u n f g => Int -> Int -> g a -> g a
 scopeWShiftN c d e =
   let ScopeW tu = natNewtypeFrom e
-  in natNewtypeTo (ScopeW (fmap (underScopeShift scopeWShiftN c d) tu))
+  in  natNewtypeTo (ScopeW (fmap (underScopeShift scopeWShiftN c d) tu))
 
 scopeWAbstract :: ScopeWC t u n f g => Abstract n (g a) -> u (g a)
 scopeWAbstract ab = fmap (natNewtypeTo . ScopeW) (unit (UnderScopeAbstract ab))
@@ -110,14 +112,15 @@ scopeWBind f = scopeWBindN f 0
 {-# INLINE scopeWBind #-}
 
 scopeWBindN :: ScopeWC t u n f g => (a -> u (g b)) -> Int -> g a -> g b
-scopeWBindN f = scopeWMod . go where
+scopeWBindN f = scopeWMod . go
+ where
   go i us =
     case us of
       UnderScopeBound b -> scopeWBound b
       UnderScopeFree a -> fmap (scopeWShift i) (f a)
       UnderScopeAbstract ab ->
         let r = abstractInfoArity ab
-        in scopeWAbstract (abstractInfoMapShouldShift (\_ ss -> let i' = case ss of { ShouldShiftYes -> i + r ; _ -> i } in scopeWBindN f i') ab)
+        in  scopeWAbstract (abstractInfoMapShouldShift (\_ ss -> let i' = case ss of ShouldShiftYes -> i + r; _ -> i in scopeWBindN f i') ab)
       UnderScopeEmbed fe -> scopeWEmbed (fmap (scopeWBindN f i) fe)
 
 scopeWBindOpt :: ScopeWC t u n f g => (a -> Maybe (u (g a))) -> g a -> g a
@@ -125,14 +128,15 @@ scopeWBindOpt f = scopeWBindOptN f 0
 {-# INLINE scopeWBindOpt #-}
 
 scopeWBindOptN :: ScopeWC t u n f g => (a -> Maybe (u (g a))) -> Int -> g a -> g a
-scopeWBindOptN f = scopeWModOpt . go where
+scopeWBindOptN f = scopeWModOpt . go
+ where
   go i us =
     case us of
       UnderScopeBound _ -> Nothing
       UnderScopeFree a -> fmap (fmap (scopeWShift i)) (f a)
       UnderScopeAbstract ab ->
         let r = abstractInfoArity ab
-        in Just (scopeWAbstract (abstractInfoMapShouldShift (\_ ss -> let i' = case ss of { ShouldShiftYes -> i + r ; _ -> i } in scopeWBindOptN f i') ab))
+        in  Just (scopeWAbstract (abstractInfoMapShouldShift (\_ ss -> let i' = case ss of ShouldShiftYes -> i + r; _ -> i in scopeWBindOptN f i') ab))
       UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWBindOptN f i) fe))
 
 scopeWLift :: (ScopeWC t u n f g, Monad u, Traversable f) => f a -> u (g a)
@@ -145,13 +149,13 @@ scopeWBindFree ks e =
   let r = Seq.length ks
       e' = scopeWShift r e
       f = fmap scopeWBound . flip Seq.elemIndexL ks
-  in scopeWBindOpt f e'
+  in  scopeWBindOpt f e'
 
 scopeWBindFree1 :: (ScopeWC t u n f g, Eq a) => a -> g a -> g a
 scopeWBindFree1 = scopeWBindFree . Seq.singleton
 {-# INLINE scopeWBindFree1 #-}
 
-type FillC u n f =  (Functor u, IsAbstractInfo n, Functor f)
+type FillC u n f = (Functor u, IsAbstractInfo n, Functor f)
 
 scopeWFillBound :: (ScopeWC t u n f g, FillC u n f) => Seq (u (g a)) -> g a -> g a
 scopeWFillBound = scopeWFillBoundH 0
@@ -162,7 +166,8 @@ scopeWFillBound1 = scopeWFillBound . Seq.singleton
 {-# INLINE scopeWFillBound1 #-}
 
 scopeWFillBoundH :: (ScopeWC t u n f g, FillC u n f) => Int -> Seq (u (g a)) -> g a -> g a
-scopeWFillBoundH h vs = scopeWModOpt (go h) where
+scopeWFillBoundH h vs = scopeWModOpt (go h)
+ where
   go i us =
     case us of
       UnderScopeBound b -> vs Seq.!? (b - i)
@@ -171,8 +176,8 @@ scopeWFillBoundH h vs = scopeWModOpt (go h) where
         let r = abstractInfoArity info
             vs' = fmap (fmap (scopeWShift r)) vs
             -- sub in info with original or shifted vars
-            ab' = abstractInfoMapShouldShift (\_ ss -> let (iX, vsX) = case ss of { ShouldShiftYes -> (i + r, vs') ; _ -> (i, vs) } in scopeWFillBoundH iX vsX) ab
-        in Just (scopeWAbstract ab')
+            ab' = abstractInfoMapShouldShift (\_ ss -> let (iX, vsX) = case ss of ShouldShiftYes -> (i + r, vs'); _ -> (i, vs) in scopeWFillBoundH iX vsX) ab
+        in  Just (scopeWAbstract ab')
       UnderScopeEmbed fe -> Just (scopeWEmbed (fmap (scopeWFillBoundH i vs) fe))
 
 scopeWUnBindFree :: (ScopeWC t u n f g, FillC u n f) => Seq a -> g a -> g a
@@ -184,13 +189,14 @@ scopeWUnBindFree1 = scopeWUnBindFree . Seq.singleton
 {-# INLINE scopeWUnBindFree1 #-}
 
 scopeWApply :: ScopeWC t u n f g => Seq (u (g a)) -> g a -> Either SubError (g a)
-scopeWApply vs = scopeWModM go where
+scopeWApply vs = scopeWModM go
+ where
   go us =
     case us of
       UnderScopeAbstract ab ->
         let r = abstractInfoArity ab
             len = Seq.length vs
-        in if len == r
+        in  if len == r
               then Right (pure (scopeWShift (-1) (scopeWFillBound vs (abstractBody ab))))
               else Left (ApplyError len r)
       _ -> Left NonBinderError
@@ -208,10 +214,11 @@ scopeWHoistAnno :: (NatNewtype (ScopeW t n f g) g, NatNewtype (ScopeW w n f h) h
 scopeWHoistAnno nat ga =
   let ScopeW tu = natNewtypeFrom ga
       s = ScopeW (nat (fmap (first (scopeWHoistAnno nat)) tu))
-  in natNewtypeTo s
+  in  natNewtypeTo s
 
 scopeWMapAnno :: ScopeWC t u n f g => (t a -> t b) -> g a -> g b
-scopeWMapAnno f = scopeWMod go where
+scopeWMapAnno f = scopeWMod go
+ where
   go us = case us of
     UnderScopeBound b -> scopeWBound b
     UnderScopeFree a -> fmap (natNewtypeTo . ScopeW . fmap UnderScopeFree . f) (unit a)

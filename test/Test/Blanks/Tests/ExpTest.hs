@@ -1,11 +1,28 @@
 module Test.Blanks.Tests.ExpTest
   ( testExp
-  ) where
+  )
+where
 
-import Blanks (Abstract (..), pattern ScopeAbstract, pattern ScopeBound, pattern ScopeEmbed, pattern ScopeFree,
-               locScopeForget, locScopeLocation)
-import Test.Blanks.Lib.Exp (Exp (..), ExpScope, Ident (..), Info (..), cexpLoc, expToNamed, expToNameless,
-                            runCExpParser, synSpan)
+import Blanks
+  ( Abstract (..)
+  , locScopeForget
+  , locScopeLocation
+  , pattern ScopeAbstract
+  , pattern ScopeBound
+  , pattern ScopeEmbed
+  , pattern ScopeFree
+  )
+import Test.Blanks.Lib.Exp
+  ( Exp (..)
+  , ExpScope
+  , Ident (..)
+  , Info (..)
+  , cexpLoc
+  , expToNamed
+  , expToNameless
+  , runCExpParser
+  , synSpan
+  )
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
@@ -20,7 +37,8 @@ testSingle name input expected = testCase name $ do
   Just namedExp @?= renamedExp
 
 testExp :: TestTree
-testExp = testGroup "Exp" cases where
+testExp = testGroup "Exp" cases
+ where
   xIdent = Ident "x"
   yIdent = Ident "y"
   xExp = ScopeFree xIdent

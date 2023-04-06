@@ -4,7 +4,8 @@ module Blanks.Util.Sub
   ( SubError (..)
   , ThrowSub (..)
   , rethrowSub
-  ) where
+  )
+where
 
 import Control.DeepSeq (NFData)
 import Control.Exception (Exception, throwIO)

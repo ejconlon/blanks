@@ -2,6 +2,7 @@
 module Blanks.ReExports
   ( State
   , runState
-  ) where
+  )
+where
 
 import Control.Monad.State.Strict (State, runState)

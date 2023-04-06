@@ -1,17 +1,38 @@
 module Test.Blanks.Lib.LiftScope where
 
-import Blanks (Abstract (..), AbstractId, LiftAbstract (..), LiftFunctor (..), LiftState, LocScope,
-               pattern LocScopeAbstract, pattern LocScopeBound, pattern LocScopeEmbed, Located (..), State, Tracked,
-               WithTracked, locScopeBindFree1, locScopeLocation, predLiftLocScope, scopeAnno, trackScope)
+import Blanks
+  ( Abstract (..)
+  , AbstractId
+  , LiftAbstract (..)
+  , LiftFunctor (..)
+  , LiftState
+  , LocScope
+  , Located (..)
+  , State
+  , Tracked
+  , WithTracked
+  , locScopeBindFree1
+  , locScopeLocation
+  , predLiftLocScope
+  , scopeAnno
+  , trackScope
+  , pattern LocScopeAbstract
+  , pattern LocScopeBound
+  , pattern LocScopeEmbed
+  )
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Test.Blanks.Lib.SimpleScope (SimpleFunctor (..), SimpleInfo (..), SimpleScope)
 
 type SimpleLiftState = State (LiftState () SimpleInfo SimpleInfo SimpleFunctor Char)
+
 type LiftScope = LocScope () SimpleInfo (LiftFunctor SimpleFunctor) Char
+
 type LiftInnerAbstract = Abstract SimpleInfo LiftScope
+
 type LiftOuterAbstract = LiftAbstract () SimpleInfo SimpleInfo SimpleFunctor Char
+
 type LiftScopeResult = WithTracked Char LiftScope
 
 lamLift :: Char -> LiftScope -> LiftScope

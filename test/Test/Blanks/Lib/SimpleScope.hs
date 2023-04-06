@@ -2,9 +2,21 @@
 
 module Test.Blanks.Lib.SimpleScope where
 
-import Blanks (Abstract (..), IsAbstractInfo (..), Located (..), Placed (..), Scope, pattern ScopeAbstract,
-               pattern ScopeBound, pattern ScopeEmbed, ShouldShift (..), Tracked, locScopeLocation, scopeBindFree1,
-               trackScopeSimple)
+import Blanks
+  ( Abstract (..)
+  , IsAbstractInfo (..)
+  , Located (..)
+  , Placed (..)
+  , Scope
+  , ShouldShift (..)
+  , Tracked
+  , locScopeLocation
+  , scopeBindFree1
+  , trackScopeSimple
+  , pattern ScopeAbstract
+  , pattern ScopeBound
+  , pattern ScopeEmbed
+  )
 import Control.DeepSeq (NFData)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
@@ -12,14 +24,14 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
 
-data SimpleFunctor a =
-    SimpleFunctorApp !a !a
+data SimpleFunctor a
+  = SimpleFunctorApp !a !a
   | SimpleFunctorBase !Char
   deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
 
-data SimpleInfo e =
-    SimpleInfoLam !(Seq Char)
+data SimpleInfo e
+  = SimpleInfoLam !(Seq Char)
   | SimpleInfoLet !Char e
   deriving stock (Show, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
@@ -29,8 +41,8 @@ instance Eq e => Eq (SimpleInfo e) where
   SimpleInfoLet _ e1 == SimpleInfoLet _ e2 = e1 == e2
   _ == _ = False
 
-data SimpleInfoPlace =
-    SimpleInfoPlaceLet
+data SimpleInfoPlace
+  = SimpleInfoPlaceLet
   deriving stock (Eq, Show, Generic)
   deriving anyclass (NFData)
 
@@ -74,10 +86,36 @@ app x y = ScopeEmbed (SimpleFunctorApp x y)
 lets :: Char -> SimpleScope -> SimpleScope -> SimpleScope
 lets a x y = ScopeAbstract (Abstract (SimpleInfoLet a x) (scopeBindFree1 a y))
 
-svar, sbound, sfree, sfree2, sid, swonky, sconst, sflip, svar2, swonky2, sapp,
-  swonky3, sbase, sbase2, slet, sletFree, sletFree2, sletWonky, sletWonky2,
-  sletLamBodyId, sletLamBodyConst, sletLamBodyFree, slamLetBodyId, slamLetBodyConst, slamLetBodyFree,
-  sletLamArgInner, sletLamArgFree, slamLetArgOuter, slamLetArgFree :: SimpleScope
+svar
+  , sbound
+  , sfree
+  , sfree2
+  , sid
+  , swonky
+  , sconst
+  , sflip
+  , svar2
+  , swonky2
+  , sapp
+  , swonky3
+  , sbase
+  , sbase2
+  , slet
+  , sletFree
+  , sletFree2
+  , sletWonky
+  , sletWonky2
+  , sletLamBodyId
+  , sletLamBodyConst
+  , sletLamBodyFree
+  , slamLetBodyId
+  , slamLetBodyConst
+  , slamLetBodyFree
+  , sletLamArgInner
+  , sletLamArgFree
+  , slamLetArgOuter
+  , slamLetArgFree
+    :: SimpleScope
 svar = var 'x'
 sbound = bound 0
 sfree = lam 'y' (var 'x')

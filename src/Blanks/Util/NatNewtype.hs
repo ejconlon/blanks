@@ -4,7 +4,8 @@ module Blanks.Util.NatNewtype
   ( NatNewtype
   , natNewtypeFrom
   , natNewtypeTo
-  ) where
+  )
+where
 
 import Data.Coerce (Coercible, coerce)
 import Data.Kind (Type)
@@ -17,7 +18,9 @@ import Data.Kind (Type)
 class
   ( forall a. Coercible (m a) (g a)
   , forall a. Coercible (g a) (m a)
-  ) => NatNewtype (m :: Type -> Type) (g :: Type -> Type) | g -> m
+  ) =>
+  NatNewtype (m :: Type -> Type) (g :: Type -> Type)
+    | g -> m
 
 -- | Coerce from the wrapped type to the newtype.
 natNewtypeTo :: NatNewtype m g => m a -> g a

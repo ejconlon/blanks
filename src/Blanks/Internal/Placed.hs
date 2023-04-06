@@ -1,7 +1,8 @@
 module Blanks.Internal.Placed
   ( Placed (..)
   , defaultGatherPlaced
-  ) where
+  )
+where
 
 import Control.Applicative (liftA2)
 import Control.Monad.Writer.Strict (execWriter, tell)
@@ -30,10 +31,10 @@ class Traversable n => Placed n where
   gatherPlaced :: n a -> [Place n]
   gatherPlaced = defaultGatherPlaced
 
-  -- These may be useful functions in the future:
-  -- lookupPlaced :: Place n -> n a -> Maybe a
-  -- updatedPlaced :: Place n -> a -> n a -> Maybe (n a)
-  -- modifyPlaced :: Place n -> (a -> a) -> n a -> Maybe (n a)
+-- These may be useful functions in the future:
+-- lookupPlaced :: Place n -> n a -> Maybe a
+-- updatedPlaced :: Place n -> a -> n a -> Maybe (n a)
+-- modifyPlaced :: Place n -> (a -> a) -> n a -> Maybe (n a)
 
 defaultMapPlaced :: Placed n => (Place n -> a -> b) -> n a -> n b
 defaultMapPlaced f = runIdentity . traversePlaced (\p -> pure . f p)
@@ -45,7 +46,8 @@ defaultGatherPlaced = execWriter . traversePlaced (\x _ -> tell [x])
 
 instance Placed [] where
   type Place [] = Int
-  traversePlaced f = go 0 where
+  traversePlaced f = go 0
+   where
     go !i ss =
       case ss of
         [] -> pure []
@@ -53,7 +55,8 @@ instance Placed [] where
 
 instance Placed Seq where
   type Place Seq = Int
-  traversePlaced f = go 0 where
+  traversePlaced f = go 0
+   where
     go !i ss =
       case ss of
         Empty -> pure Empty
@@ -65,7 +68,8 @@ instance Placed (Map k) where
 
 instance Placed Tree where
   type Place Tree = Seq Int
-  traversePlaced f = go1 Empty where
+  traversePlaced f = go1 Empty
+   where
     go1 !acc (Node a fs) = liftA2 Node (f acc a) (go2 acc 0 fs)
     go2 !acc !i fs =
       case fs of

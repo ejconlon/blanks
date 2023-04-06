@@ -7,7 +7,8 @@ module Blanks.Util.Located
   , askColocated
   , colocated
   , runColocated
-  ) where
+  )
+where
 
 import Control.DeepSeq (NFData)
 import Control.Monad (ap)
@@ -24,13 +25,15 @@ import GHC.Generics (Generic)
 data Located l a = Located
   { locatedLoc :: !l
   , locatedVal :: a
-  } deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
 
 -- | Because we defined a unique left adjoint, we have to define the unique right.
 newtype Colocated l a = Colocated
   { unColocated :: Reader l a
-  } deriving newtype (Functor, Applicative, Monad, MonadReader l, Representable)
+  }
+  deriving newtype (Functor, Applicative, Monad, MonadReader l, Representable)
 
 -- | The 'Colocated' analogue to 'reader'
 colocated :: (l -> a) -> Colocated l a

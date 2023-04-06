@@ -1,7 +1,5 @@
 # blanks
 
-[![CircleCI](https://circleci.com/gh/ejconlon/blanks/tree/master.svg?style=svg)](https://circleci.com/gh/ejconlon/blanks/tree/master)
-
 Fill-in-the-blanks - A library factoring out substitution from ASTs.
 
 It's a pain to track de Bruijn indices yourself to implement capture-avoiding subsititution,

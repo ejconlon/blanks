@@ -25,7 +25,8 @@ module Blanks.LocScope
   , locScopeLiftAnno
   , locScopeHoistAnno
   , locScopeMapAnno
-  ) where
+  )
+where
 
 import Blanks.Internal.Abstract (Abstract, IsAbstractInfo)
 import Blanks.Internal.ScopeW
@@ -41,7 +42,8 @@ import Data.Sequence (Seq)
 -- | A 'Scope' annotated with some information between constructors.
 newtype LocScope l n f a = LocScope
   { unLocScope :: ScopeW (Located l) n f (LocScope l n f) a
-  } deriving stock (Functor, Foldable, Traversable)
+  }
+  deriving stock (Functor, Foldable, Traversable)
 
 instance NatNewtype (ScopeW (Located l) n f (LocScope l n f)) (LocScope l n f)
 
@@ -77,7 +79,8 @@ instance (Monoid l, IsAbstractInfo n, Functor f) => Applicative (LocScope l n f)
 
 instance (Monoid l, IsAbstractInfo n, Functor f) => Monad (LocScope l n f) where
   return = pure
-  s >>= f = locScopeBind go s where
+  s >>= f = locScopeBind go s
+   where
     go a = fmap (\l1 -> let LocScope (ScopeW (Located l2 b)) = f a in LocScope (ScopeW (Located (l1 <> l2) b))) askColocated
 
 instance (Monoid l, IsAbstractInfo n, Functor f) => MonadWriter l (LocScope l n f) where
@@ -90,7 +93,7 @@ instance (Eq (f (LocScope l n f a)), Eq l, Eq (n (LocScope l n f a)), Eq a) => E
   LocScope su == LocScope sv = su == sv
 
 instance (Show (f (LocScope l n f a)), Show l, Show (n (LocScope l n f a)), Show a) => Show (LocScope l n f a) where
-  showsPrec d (LocScope (ScopeW tu)) = showString "LocScope " . showParen True (showsPrec (d+1) tu)
+  showsPrec d (LocScope (ScopeW tu)) = showString "LocScope " . showParen True (showsPrec (d + 1) tu)
 
 -- * Interface
 

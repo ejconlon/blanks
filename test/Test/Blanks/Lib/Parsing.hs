@@ -14,7 +14,8 @@ module Test.Blanks.Lib.Parsing
   , identifier
   , branch
   , signed
-  ) where
+  )
+where
 
 import Control.Applicative (Alternative (..))
 import Control.DeepSeq (NFData)
@@ -41,8 +42,9 @@ data SourceSpan = SourceSpan
   , ssStartColumn :: !MP.Pos
   , ssEndLine :: !MP.Pos
   , ssEndColumn :: !MP.Pos
-  } deriving stock (Eq, Show, Ord, Generic)
-    deriving anyclass (NFData)
+  }
+  deriving stock (Eq, Show, Ord, Generic)
+  deriving anyclass (NFData)
 
 mkSourceSpan :: MP.SourcePos -> MP.SourcePos -> SourceSpan
 mkSourceSpan (MP.SourcePos n sl sc) (MP.SourcePos _ el ec) = SourceSpan n sl sc el ec
@@ -64,9 +66,9 @@ triple p = (,,) <$> p <*> p <*> p
 
 spaceConsumer :: Parser ()
 spaceConsumer = MPCL.space MPC.space1 lineCmnt blockCmnt
-  where
-    lineCmnt = MPCL.skipLineComment ";"
-    blockCmnt = MPCL.skipBlockComment "#|" "|#"
+ where
+  lineCmnt = MPCL.skipLineComment ";"
+  blockCmnt = MPCL.skipBlockComment "#|" "|#"
 
 lexeme :: Parser a -> Parser a
 lexeme = MPCL.lexeme spaceConsumer
@@ -88,7 +90,7 @@ branch :: [Parser a] -> Parser a
 branch xs =
   case xs of
     [] -> empty
-    x:xs' -> MP.try x <|> branch xs'
+    x : xs' -> MP.try x <|> branch xs'
 
 signed :: Parser Int
 signed = MPCL.signed spaceConsumer (lexeme MPCL.decimal)

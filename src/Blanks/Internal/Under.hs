@@ -4,7 +4,8 @@
 module Blanks.Internal.Under
   ( UnderScope (..)
   , underScopeShift
-  ) where
+  )
+where
 
 import Blanks.Internal.Abstract (Abstract, IsAbstractInfo (..), ShouldShift (..))
 import Control.DeepSeq (NFData)
@@ -50,7 +51,7 @@ underScopeShift recShift c d us =
     UnderScopeFree _ -> us
     UnderScopeAbstract ab ->
       let i = abstractInfoArity ab
-      in UnderScopeAbstract $ flip abstractInfoMapShouldShift ab $ \_ ss ->
-        let c' = case ss of { ShouldShiftYes -> c + i ; ShouldShiftNo -> c }
-        in recShift c' d
+      in  UnderScopeAbstract $ flip abstractInfoMapShouldShift ab $ \_ ss ->
+            let c' = case ss of ShouldShiftYes -> c + i; ShouldShiftNo -> c
+            in  recShift c' d
     UnderScopeEmbed fe -> UnderScopeEmbed (fmap (recShift c d) fe)

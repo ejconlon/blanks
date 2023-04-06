@@ -1,15 +1,34 @@
 module Test.Blanks.Tests.ProgramTest
   ( testProgram
-  ) where
+  )
+where
 
-import Blanks (emptyLiftState, globalScope, locScopeHoistAnno, locatedVal, predClassifier, predLiftLocScope, runState,
-               trackScope)
+import Blanks
+  ( emptyLiftState
+  , globalScope
+  , locScopeHoistAnno
+  , locatedVal
+  , predClassifier
+  , predLiftLocScope
+  , runState
+  , trackScope
+  )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Test.Blanks.Lib.Exp (CDecl (..), Decl (..), Level (..), declMapExp, declMapExpM, declToNameless, infoShouldLift,
-                            runCDeclParser, synSpan)
+import Test.Blanks.Lib.Exp
+  ( CDecl (..)
+  , Decl (..)
+  , Level (..)
+  , declMapExp
+  , declMapExpM
+  , declToNameless
+  , infoShouldLift
+  , runCDeclParser
+  , synSpan
+  )
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
+
 -- import Text.Pretty.Simple (pPrint)
 
 chooseProgram :: [String]
